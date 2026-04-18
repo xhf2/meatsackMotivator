@@ -44,7 +44,7 @@ All levels trigger with a single haptic buzz. Escalation increases venom only, n
 - **Level 3** — Nuclear. "Your ancestors survived wars and you can't walk to the kitchen, you arthritic jello mold."
 - **Level 4** — Existential. "2 hours of nothing. Two hours closer to death, spent getting weaker. What are you even doing with your life?"
 
-Escalation resets when the accelerometer detects sustained movement (not just a wrist flick to dismiss).
+Escalation resets when the accelerometer detects sustained movement — defined as 50+ steps within a 5-minute window. A wrist flick to dismiss the screen does NOT reset escalation.
 
 ### Context-aware language
 
