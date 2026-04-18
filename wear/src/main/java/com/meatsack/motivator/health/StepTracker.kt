@@ -7,14 +7,16 @@ import androidx.health.services.client.PassiveListenerCallback
 import androidx.health.services.client.data.DataPointContainer
 import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.PassiveListenerConfig
+import com.meatsack.shared.constants.EscalationLevel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class StepTracker(context: Context) {
     private val client = HealthServices.getClient(context).passiveMonitoringClient
 
     private val _totalStepsToday = MutableStateFlow(0)
-    val totalStepsToday: StateFlow<Int> = _totalStepsToday
+    val totalStepsToday: StateFlow<Int> = _totalStepsToday.asStateFlow()
 
     private var lastMovementTimestamp: Long = System.currentTimeMillis()
     private var stepsInCurrentWindow: Int = 0
@@ -22,8 +24,8 @@ class StepTracker(context: Context) {
 
     companion object {
         private const val TAG = "StepTracker"
-        private const val MOVEMENT_WINDOW_MS = 5 * 60 * 1000L // 5 minutes
-        private const val MOVEMENT_THRESHOLD_STEPS = 50
+        private val MOVEMENT_WINDOW_MS: Long =
+            EscalationLevel.MOVEMENT_RESET_WINDOW_MINUTES.toLong() * 60 * 1000L
     }
 
     private val callback = object : PassiveListenerCallback {
@@ -52,29 +54,35 @@ class StepTracker(context: Context) {
     }
 
     fun getMinutesSinceLastMovement(): Int {
-        val elapsed = System.currentTimeMillis() - lastMovementTimestamp
-        return (elapsed / 60_000).toInt()
+        synchronized(this) {
+            val elapsed = System.currentTimeMillis() - lastMovementTimestamp
+            return (elapsed / 60_000).toInt()
+        }
     }
 
     fun hasSignificantMovement(): Boolean {
-        return stepsInCurrentWindow >= MOVEMENT_THRESHOLD_STEPS
+        synchronized(this) {
+            return stepsInCurrentWindow >= EscalationLevel.MOVEMENT_RESET_STEPS
+        }
     }
 
     private fun trackMovement(currentTotal: Int) {
-        val now = System.currentTimeMillis()
+        synchronized(this) {
+            val now = System.currentTimeMillis()
 
-        // Reset window if it's been more than 5 minutes
-        if (now - windowStartTimestamp > MOVEMENT_WINDOW_MS) {
-            stepsInCurrentWindow = 0
-            windowStartTimestamp = now
-        }
+            // Reset window if it's been more than 5 minutes
+            if (now - windowStartTimestamp > MOVEMENT_WINDOW_MS) {
+                stepsInCurrentWindow = 0
+                windowStartTimestamp = now
+            }
 
-        stepsInCurrentWindow++
+            stepsInCurrentWindow++
 
-        if (stepsInCurrentWindow >= MOVEMENT_THRESHOLD_STEPS) {
-            lastMovementTimestamp = now
-            stepsInCurrentWindow = 0
-            windowStartTimestamp = now
+            if (stepsInCurrentWindow >= EscalationLevel.MOVEMENT_RESET_STEPS) {
+                lastMovementTimestamp = now
+                stepsInCurrentWindow = 0
+                windowStartTimestamp = now
+            }
         }
     }
 }
