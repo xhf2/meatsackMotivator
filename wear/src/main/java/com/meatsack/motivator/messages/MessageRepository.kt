@@ -5,8 +5,12 @@ import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.db.MessageDao
 import com.meatsack.shared.model.Message
+import kotlin.random.Random
 
-class MessageRepository(private val dao: MessageDao) {
+class MessageRepository(
+    private val dao: MessageDao,
+    private val random: Random = Random.Default,
+) {
 
     suspend fun selectMessage(
         level: EscalationLevel,
@@ -22,13 +26,13 @@ class MessageRepository(private val dao: MessageDao) {
         val voted = eligible.filter { it.votesUp > 0 || it.votesDown > 0 }
 
         // 30% chance to show an unvoted message if any exist
-        val pick = if (unvoted.isNotEmpty() && Math.random() < 0.3) {
-            unvoted.random()
-        } else if (voted.isNotEmpty()) {
-            // Weighted random by net vote score (minimum weight 1)
-            weightedRandom(voted)
-        } else {
-            eligible.random()
+        val pick = when {
+            unvoted.isNotEmpty() && random.nextDouble() < 0.3 -> unvoted.random()
+            voted.isNotEmpty() -> weightedRandom(voted)
+            // eligible is non-empty (we returned null above) and
+            // unvoted + voted partitions eligible exhaustively, so if
+            // voted is empty here then unvoted must be non-empty.
+            else -> unvoted.random()
         }
 
         dao.markShown(pick.id, System.currentTimeMillis())
@@ -46,10 +50,10 @@ class MessageRepository(private val dao: MessageDao) {
     private fun weightedRandom(messages: List<Message>): Message {
         val weights = messages.map { maxOf(1, it.votesUp - it.votesDown) }
         val totalWeight = weights.sum()
-        var random = (Math.random() * totalWeight).toInt()
+        var random = this.random.nextInt(totalWeight)
         for (i in messages.indices) {
             random -= weights[i]
-            if (random <= 0) return messages[i]
+            if (random < 0) return messages[i]
         }
         return messages.last()
     }
