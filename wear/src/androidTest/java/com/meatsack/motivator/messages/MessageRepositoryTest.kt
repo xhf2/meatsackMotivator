@@ -39,17 +39,21 @@ class MessageRepositoryTest {
     }
 
     private fun testMsg(text: String, level: EscalationLevel = EscalationLevel.AGGRESSIVE) = Message(
-        text = text, level = level,
-        triggerType = TriggerType.INACTIVITY, tone = MessageTone.FULL_SEND,
+        text = text,
+        level = level,
+        triggerType = TriggerType.INACTIVITY,
+        tone = MessageTone.FULL_SEND,
         source = MessageSource.PRE_WRITTEN,
     )
 
     @Test
     fun selectsMessageFromCorrectLevel() = runBlocking {
-        db.messageDao().insertAll(listOf(
-            testMsg("Level 1 msg", EscalationLevel.AGGRESSIVE),
-            testMsg("Level 2 msg", EscalationLevel.SAVAGE),
-        ))
+        db.messageDao().insertAll(
+            listOf(
+                testMsg("Level 1 msg", EscalationLevel.AGGRESSIVE),
+                testMsg("Level 2 msg", EscalationLevel.SAVAGE),
+            ),
+        )
         val msg = repo.selectMessage(EscalationLevel.AGGRESSIVE, TriggerType.INACTIVITY, MessageTone.FULL_SEND)
         assertNotNull(msg)
         assertEquals("Level 1 msg", msg!!.text)
@@ -77,11 +81,13 @@ class MessageRepositoryTest {
         // create weights = [3, 2, 1]. A deterministic Random with a
         // known seed lets us verify the algorithm's picks without
         // flaky probabilistic asserts.
-        db.messageDao().insertAll(listOf(
-            testMsg("weight-3"),
-            testMsg("weight-2"),
-            testMsg("weight-1"),
-        ))
+        db.messageDao().insertAll(
+            listOf(
+                testMsg("weight-3"),
+                testMsg("weight-2"),
+                testMsg("weight-1"),
+            ),
+        )
         val all = db.messageDao().getAllMessages()
         // getAllMessages orders by (votesUp - votesDown) DESC, but since
         // none are voted yet, the ORDER BY falls through and we rely on
@@ -104,7 +110,9 @@ class MessageRepositoryTest {
             // doesn't exclude previously-shown rows on re-selection.
             listOf(w3, w2, w1).forEach { db.messageDao().markShown(it.id, 0L) }
             val picked = seededRepo.selectMessage(
-                EscalationLevel.AGGRESSIVE, TriggerType.INACTIVITY, MessageTone.FULL_SEND
+                EscalationLevel.AGGRESSIVE,
+                TriggerType.INACTIVITY,
+                MessageTone.FULL_SEND,
             )
             counts[picked!!.text] = counts.getValue(picked.text) + 1
         }

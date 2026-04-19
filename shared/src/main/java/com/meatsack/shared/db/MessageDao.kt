@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
-import androidx.room.Update
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
@@ -12,7 +11,8 @@ import com.meatsack.shared.model.Message
 
 @Dao
 interface MessageDao {
-    @Query("""
+    @Query(
+        """
         SELECT * FROM messages
         WHERE level = :level
         AND triggerType = :triggerType
@@ -23,12 +23,13 @@ interface MessageDao {
         ORDER BY
             CASE WHEN votesUp = 0 AND votesDown = 0 THEN 0 ELSE 1 END,
             (votesUp - votesDown) DESC
-    """)
+    """,
+    )
     suspend fun getEligibleMessages(
         level: EscalationLevel,
         triggerType: TriggerType,
         tone: MessageTone,
-        cutoffTimestamp: Long
+        cutoffTimestamp: Long,
     ): List<Message>
 
     @Query("UPDATE messages SET votesUp = votesUp + 1 WHERE id = :messageId")

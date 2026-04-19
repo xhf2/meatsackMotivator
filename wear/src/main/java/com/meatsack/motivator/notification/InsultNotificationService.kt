@@ -54,8 +54,10 @@ class InsultNotificationService(private val context: Context) {
         }
 
         val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -77,7 +79,7 @@ class InsultNotificationService(private val context: Context) {
         val channel = NotificationChannel(
             CHANNEL_ID,
             "Insult Notifications",
-            NotificationManager.IMPORTANCE_HIGH
+            NotificationManager.IMPORTANCE_HIGH,
         ).apply {
             description = "Aggressive motivational messages"
             enableVibration(false)

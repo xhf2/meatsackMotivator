@@ -18,5 +18,5 @@ data class Message(
     val votesUp: Int = 0,
     val votesDown: Int = 0,
     val lastShownTimestamp: Long = 0,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
 )

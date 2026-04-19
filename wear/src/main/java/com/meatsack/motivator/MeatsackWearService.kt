@@ -92,7 +92,13 @@ class MeatsackWearService : Service() {
         val steps = stepTracker.totalStepsToday.value
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val ampm = if (hour < 12) "am" else "pm"
-        val displayHour = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        val displayHour = if (hour == 0) {
+            12
+        } else if (hour > 12) {
+            hour - 12
+        } else {
+            hour
+        }
         val statsText = "$steps steps. It's $displayHour$ampm. Pathetic."
 
         Log.d(TAG, "Firing insult: Level ${level.value}, idle ${minutesIdle}min")
@@ -103,7 +109,7 @@ class MeatsackWearService : Service() {
         val channel = NotificationChannel(
             FOREGROUND_CHANNEL_ID,
             "meatsackMotivator Service",
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_LOW,
         ).apply {
             description = "Keeps meatsackMotivator running"
         }

@@ -64,7 +64,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         Spacer(Modifier.height(16.dp))
 
         Text(
-            "Active Hours: ${activeStart}:00 - ${activeEnd}:00",
+            "Active Hours: $activeStart:00 - $activeEnd:00",
             style = MaterialTheme.typography.titleMedium,
         )
         Text("Start", style = MaterialTheme.typography.bodySmall)
@@ -86,7 +86,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         Spacer(Modifier.height(16.dp))
 
         Text(
-            "Quiet Hours: ${quietStart}:00 - ${quietEnd}:00",
+            "Quiet Hours: $quietStart:00 - $quietEnd:00",
             style = MaterialTheme.typography.titleMedium,
         )
         Text("Start", style = MaterialTheme.typography.bodySmall)

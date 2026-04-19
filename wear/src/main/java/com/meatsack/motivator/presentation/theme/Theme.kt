@@ -1,17 +1,17 @@
 package com.meatsack.motivator.presentation.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Colors
 import androidx.wear.compose.material.MaterialTheme
-import androidx.compose.runtime.Composable
 
 private val MeatsackColors = Colors(
-    primary = Color(0xFFFF3B30),      // Angry red
+    primary = Color(0xFFFF3B30), // Angry red
     onPrimary = Color.White,
-    secondary = Color(0xFFFF9500),    // Warning orange
+    secondary = Color(0xFFFF9500), // Warning orange
     onSecondary = Color.Black,
     background = Color.Black,
     onBackground = Color.White,
@@ -25,7 +25,7 @@ private val MeatsackColors = Colors(
 fun MeatsackTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colors = MeatsackColors,
-        content = content
+        content = content,
     )
 }
 

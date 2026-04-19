@@ -15,7 +15,7 @@ class MessageRepository(
     suspend fun selectMessage(
         level: EscalationLevel,
         triggerType: TriggerType,
-        tone: MessageTone
+        tone: MessageTone,
     ): Message? {
         val oneDayAgo = System.currentTimeMillis() - 24 * 60 * 60 * 1000
         val eligible = dao.getEligibleMessages(level, triggerType, tone, oneDayAgo)

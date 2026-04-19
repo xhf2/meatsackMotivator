@@ -50,9 +50,7 @@ class EscalationManager {
         return minutesPastThreshold % interval == 0
     }
 
-    fun isCurrentlySnoozed(): Boolean {
-        return isSnoozed && System.currentTimeMillis() < snoozeUntil
-    }
+    fun isCurrentlySnoozed(): Boolean = isSnoozed && System.currentTimeMillis() < snoozeUntil
 
     private fun calculateLevel(minutesIdle: Int): EscalationLevel {
         val threshold = EscalationLevel.INACTIVITY_THRESHOLD_MINUTES_DEFAULT

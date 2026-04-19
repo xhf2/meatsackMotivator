@@ -4,7 +4,8 @@ enum class EscalationLevel(val value: Int) {
     AGGRESSIVE(1),
     SAVAGE(2),
     NUCLEAR(3),
-    EXISTENTIAL(4);
+    EXISTENTIAL(4),
+    ;
 
     companion object {
         const val INACTIVITY_THRESHOLD_MINUTES_DEFAULT = 30
@@ -21,16 +22,16 @@ enum class TriggerType {
     INACTIVITY,
     BEHIND_PACE,
     END_OF_DAY,
-    NO_WORKOUT
+    NO_WORKOUT,
 }
 
 enum class MessageTone {
     FULL_SEND,
-    WORK_SAFE
+    WORK_SAFE,
 }
 
 enum class MessageSource {
     PRE_WRITTEN,
     AI_GENERATED,
-    USER_CUSTOM
+    USER_CUSTOM,
 }

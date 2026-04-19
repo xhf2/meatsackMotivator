@@ -69,6 +69,7 @@ adb -s emulator-5556 shell pm grant com.meatsack.motivator android.permission.AC
 
 - **Do not commit to `main`.** Work lives on feature branches (e.g., `feature/v1-implementation`). PR into `main`.
 - Branch naming: `fix/<desc>`, `feature/<desc>`.
+- **One-time setup per clone/worktree:** run `./.githooks/install.sh` to activate the pre-commit hook. It runs `./gradlew spotlessCheck` (ktlint) and unit tests. To auto-fix formatting, run `./gradlew spotlessApply && git add -u`.
 
 ## Known v1 Limitations
 

@@ -59,16 +59,18 @@ class MessageDaoTest {
 
     @Test
     fun getEligibleMessagesFiltersCorrectly() = runBlocking {
-        dao.insertAll(listOf(
-            testMessage("Level 1 inactivity", level = EscalationLevel.AGGRESSIVE),
-            testMessage("Level 2 inactivity", level = EscalationLevel.SAVAGE),
-            testMessage("Level 1 behind pace", triggerType = TriggerType.BEHIND_PACE),
-        ))
+        dao.insertAll(
+            listOf(
+                testMessage("Level 1 inactivity", level = EscalationLevel.AGGRESSIVE),
+                testMessage("Level 2 inactivity", level = EscalationLevel.SAVAGE),
+                testMessage("Level 1 behind pace", triggerType = TriggerType.BEHIND_PACE),
+            ),
+        )
         val results = dao.getEligibleMessages(
             EscalationLevel.AGGRESSIVE,
             TriggerType.INACTIVITY,
             MessageTone.FULL_SEND,
-            cutoffTimestamp = 0
+            cutoffTimestamp = 0,
         )
         assertEquals(1, results.size)
         assertEquals("Level 1 inactivity", results[0].text)
@@ -85,7 +87,7 @@ class MessageDaoTest {
             EscalationLevel.AGGRESSIVE,
             TriggerType.INACTIVITY,
             MessageTone.FULL_SEND,
-            cutoffTimestamp = 0
+            cutoffTimestamp = 0,
         )
         assertTrue(results.isEmpty())
     }
@@ -100,7 +102,7 @@ class MessageDaoTest {
             EscalationLevel.AGGRESSIVE,
             TriggerType.INACTIVITY,
             MessageTone.FULL_SEND,
-            cutoffTimestamp = now - 1000
+            cutoffTimestamp = now - 1000,
         )
         assertTrue(results.isEmpty())
     }

@@ -33,9 +33,9 @@ class EscalationManagerTest {
 
     @Test
     fun `triggers at escalation intervals`() {
-        assertTrue(manager.shouldTrigger(30))  // Level 1
-        assertTrue(manager.shouldTrigger(60))  // Level 2
-        assertTrue(manager.shouldTrigger(90))  // Level 3
+        assertTrue(manager.shouldTrigger(30)) // Level 1
+        assertTrue(manager.shouldTrigger(60)) // Level 2
+        assertTrue(manager.shouldTrigger(90)) // Level 3
         assertTrue(manager.shouldTrigger(120)) // Level 4
     }
 
