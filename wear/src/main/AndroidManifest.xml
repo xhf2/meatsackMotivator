@@ -6,8 +6,11 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
 
     <application
+        android:name=".MeatsackWearApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -24,6 +27,11 @@
             android:turnScreenOn="true"
             android:taskAffinity=""
             android:excludeFromRecents="true" />
+
+        <service
+            android:name=".MeatsackWearService"
+            android:exported="false"
+            android:foregroundServiceType="health" />
 
     </application>
 
