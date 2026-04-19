@@ -16,9 +16,12 @@ import com.meatsack.motivator.notification.InsultNotificationService
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.db.AppDatabase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -30,7 +33,7 @@ class MeatsackWearService : Service() {
     private lateinit var notificationService: InsultNotificationService
 
     private var pollingJob: Job? = null
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     companion object {
         private const val TAG = "MeatsackWearService"
@@ -60,6 +63,7 @@ class MeatsackWearService : Service() {
 
     override fun onDestroy() {
         pollingJob?.cancel()
+        scope.cancel()
         stepTracker.stopTracking()
         super.onDestroy()
     }
@@ -68,7 +72,16 @@ class MeatsackWearService : Service() {
         pollingJob = scope.launch {
             while (true) {
                 delay(POLL_INTERVAL_MS)
-                checkInactivity()
+                // Never let a single bad tick kill the loop — the service keeps its
+                // foreground notification alive either way, so a silent loop death
+                // would look healthy while the app has become a zombie.
+                try {
+                    checkInactivity()
+                } catch (ce: CancellationException) {
+                    throw ce
+                } catch (t: Throwable) {
+                    Log.e(TAG, "Poll tick failed", t)
+                }
             }
         }
     }

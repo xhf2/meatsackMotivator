@@ -14,6 +14,13 @@ class EscalationManager {
     private var isSnoozed: Boolean = false
     private var snoozeUntil: Long = 0
 
+    /**
+     * Minutes-idle at the moment we last fired an insult; null if we haven't fired
+     * this idle streak. Using minutesIdle (not wall clock) keeps the logic testable
+     * without a fake Clock and naturally resets on movement.
+     */
+    private var lastFiredAtIdle: Int? = null
+
     fun onInactivityDetected(minutesIdle: Int) {
         if (isSnoozed && System.currentTimeMillis() < snoozeUntil) return
 
@@ -24,12 +31,14 @@ class EscalationManager {
 
         isSnoozed = false
         _currentLevel.value = calculateLevel(minutesIdle)
+        lastFiredAtIdle = minutesIdle
     }
 
     fun onMovementDetected() {
         isActive = false
         inactivityStartTime = 0
         _currentLevel.value = EscalationLevel.AGGRESSIVE
+        lastFiredAtIdle = null
     }
 
     fun snooze(durationMinutes: Int) {
@@ -37,17 +46,19 @@ class EscalationManager {
         snoozeUntil = System.currentTimeMillis() + (durationMinutes * 60_000L)
     }
 
+    /**
+     * Fires on first cross of [INACTIVITY_THRESHOLD_MINUTES_DEFAULT] and then
+     * every [ESCALATION_INTERVAL_MINUTES] of *additional* idle time since the
+     * last fire. The previous modulo-on-minutesIdle rule silently skipped fires
+     * when the poller drifted past an exact boundary (e.g. 29→61 jumped 60 entirely).
+     */
     fun shouldTrigger(minutesIdle: Int): Boolean {
         if (isSnoozed && System.currentTimeMillis() < snoozeUntil) return false
-
         val threshold = EscalationLevel.INACTIVITY_THRESHOLD_MINUTES_DEFAULT
-        val interval = EscalationLevel.ESCALATION_INTERVAL_MINUTES
-
         if (minutesIdle < threshold) return false
-
-        // Trigger at threshold, then every interval after
-        val minutesPastThreshold = minutesIdle - threshold
-        return minutesPastThreshold % interval == 0
+        val interval = EscalationLevel.ESCALATION_INTERVAL_MINUTES
+        val last = lastFiredAtIdle ?: return true
+        return (minutesIdle - last) >= interval
     }
 
     fun isCurrentlySnoozed(): Boolean = isSnoozed && System.currentTimeMillis() < snoozeUntil

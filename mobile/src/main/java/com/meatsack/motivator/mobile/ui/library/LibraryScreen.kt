@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meatsack.motivator.mobile.sync.PhoneSyncSender
+import com.meatsack.motivator.mobile.sync.SyncResult
 import com.meatsack.shared.model.Message
 import kotlinx.coroutines.launch
 
@@ -49,8 +50,11 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
         Button(
             onClick = {
                 scope.launch {
-                    val synced = PhoneSyncSender(context).syncMessagesToWatch()
-                    val msg = if (synced > 0) "Synced $synced messages" else "Sync failed or empty"
+                    val msg = when (val result = PhoneSyncSender(context).syncMessagesToWatch()) {
+                        is SyncResult.Success -> "Synced ${result.count} messages"
+                        SyncResult.NoMessages -> "No messages to sync"
+                        is SyncResult.Failed -> "Sync failed: ${result.error.message ?: "unknown error"}"
+                    }
                     snackbarHostState.showSnackbar(msg)
                 }
             },
