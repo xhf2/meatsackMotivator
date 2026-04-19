@@ -5,6 +5,7 @@ import android.util.Log
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.meatsack.shared.db.AppDatabase
+import com.meatsack.shared.sync.MessageSerializer
 import kotlinx.coroutines.tasks.await
 
 class PhoneSyncSender(private val context: Context) {
@@ -27,12 +28,8 @@ class PhoneSyncSender(private val context: Context) {
             return 0
         }
 
-        val serialized = messages.joinToString("\n") { msg ->
-            "${msg.id}|${msg.text}|${msg.level.value}|${msg.triggerType.name}|${msg.tone.name}|${msg.source.name}|${msg.votesUp}|${msg.votesDown}"
-        }
-
         val request = PutDataMapRequest.create(PATH_MESSAGES).apply {
-            dataMap.putString(KEY_MESSAGE_DATA, serialized)
+            dataMap.putString(KEY_MESSAGE_DATA, MessageSerializer.serialize(messages))
             dataMap.putLong("timestamp", System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
 
