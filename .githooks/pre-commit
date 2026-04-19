@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Runs Spotless + fast unit tests before each commit.
+# Bypass for a single commit with: git commit --no-verify
+# (Don't habitually skip — if the hook fails, prefer fixing the root cause.)
+
+set -e
+
+cd "$(git rev-parse --show-toplevel)"
+
+if [ -z "$JAVA_HOME" ] && [ -d "/c/Program Files/Android/Android Studio/jbr" ]; then
+    export JAVA_HOME="/c/Program Files/Android/Android Studio/jbr"
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
+
+echo "[pre-commit] spotlessCheck …"
+if ! ./gradlew --quiet spotlessCheck; then
+    echo ""
+    echo "[pre-commit] Formatting issues found."
+    echo "[pre-commit] Run: ./gradlew spotlessApply && git add -u"
+    exit 1
+fi
+
+echo "[pre-commit] unit tests …"
+./gradlew --quiet :wear:testDebugUnitTest :shared:testDebugUnitTest :mobile:testDebugUnitTest
+
+echo "[pre-commit] ok"
