@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/jaber/AndroidStudioProjects/**)",
+      "Read(//c/Users/jaber/Documents/**)",
+      "Bash(./gradlew --no-daemon assembleDebug)",
+      "Bash(git *)",
+      "Bash(export JAVA_HOME=\"C:/Program Files/Android/Android Studio/jbr\")",
+      "Bash(./gradlew --no-daemon :mobile:assembleDebug)",
+      "Bash(adb devices *)",
+      "Bash(touch \"C:/Users/jaber/git_repos/meatsackMotivator/.git/objects/04/test_write_check\")",
+      "Bash(rm \"C:/Users/jaber/git_repos/meatsackMotivator/.git/objects/04/test_write_check\")",
+      "Bash(\"C:/Users/jaber/AppData/Local/Android/Sdk/platform-tools/adb.exe\" devices *)",
+      "Bash(./gradlew --no-daemon :wear:connectedDebugAndroidTest)",
+      "Bash(./gradlew --no-daemon :wear:assembleDebug)",
+      "Bash(./gradlew --no-daemon :wear:testDebugUnitTest --tests \"com.meatsack.motivator.escalation.EscalationManagerTest\")",
+      "Bash($ADB devices *)",
+      "Bash(export JAVA_HOME=\"/c/Program Files/Android/Android Studio/jbr\")",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Read(//c/Users/jaber/git_repos/meatsackMotivator-v1/**)",
+      "Bash(./gradlew :wear:assembleDebug)"
+    ]
+  }
+}
