@@ -41,7 +41,7 @@ Also closes tracked issues from v1 review:
 - `wear/src/main/java/com/meatsack/motivator/health/StepTracker.kt` → rename to `HealthTracker.kt`; subscribe to more data types
 - `mobile/src/main/java/com/meatsack/motivator/mobile/data/SettingsRepository.kt` — add `endOfDayHour` + `claudeApiKeyPresent` Flow
 - `mobile/src/main/java/com/meatsack/motivator/mobile/ui/settings/SettingsScreen.kt` — add API key row, end-of-day picker, Generate Now button
-- `mobile/src/main/java/com/meatsack/motivator/mobile/data/SeedData.kt` — seed BEHIND_PACE + END_OF_DAY messages
+- `shared/src/main/java/com/meatsack/shared/data/SeedData.kt` — seed BEHIND_PACE + END_OF_DAY messages
 
 ### New
 
@@ -1061,7 +1061,7 @@ git commit -m "feat(trigger): implement EndOfDayWorker with self-rescheduling"
 ### Task 8: Seed BEHIND_PACE + END_OF_DAY messages
 
 **Files:**
-- Modify: `mobile/src/main/java/com/meatsack/motivator/mobile/data/SeedData.kt`
+- Modify: `shared/src/main/java/com/meatsack/shared/data/SeedData.kt`
 
 - [ ] **Step 1: Add new message lists**
 
