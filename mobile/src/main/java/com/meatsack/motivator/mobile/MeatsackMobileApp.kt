@@ -2,7 +2,7 @@ package com.meatsack.motivator.mobile
 
 import android.app.Application
 import android.util.Log
-import com.meatsack.motivator.mobile.data.SeedData
+import com.meatsack.shared.data.SeedData
 import com.meatsack.shared.db.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
