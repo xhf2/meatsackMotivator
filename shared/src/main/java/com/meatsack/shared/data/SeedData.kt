@@ -1,4 +1,4 @@
-package com.meatsack.motivator.mobile.data
+package com.meatsack.shared.data
 
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageSource
