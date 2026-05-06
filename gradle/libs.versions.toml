@@ -16,6 +16,8 @@ testCore = "1.5.0"
 testRunner = "1.5.2"
 healthServices = "1.0.0-rc02"
 workManager = "2.10.0"
+anthropic = "1.0.0"
+securityCrypto = "1.1.0-alpha06"
 guava = "31.1-android"
 composeBom = "2024.12.01"
 wearCompose = "1.4.0"
@@ -45,6 +47,8 @@ androidx-test-runner = { group = "androidx.test", name = "runner", version.ref =
 androidx-health-services-client = { group = "androidx.health", name = "health-services-client", version.ref = "healthServices" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workManager" }
 androidx-work-testing = { group = "androidx.work", name = "work-testing", version.ref = "workManager" }
+anthropic-java = { group = "com.anthropic", name = "anthropic-java", version.ref = "anthropic" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 guava = { group = "com.google.guava", name = "guava", version.ref = "guava" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation" }
