@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class HealthTracker(context: Context) {
+class HealthTracker(private val context: Context) {
     private val client = HealthServices.getClient(context).passiveMonitoringClient
 
     private val _totalStepsToday = MutableStateFlow(0)
@@ -44,6 +44,10 @@ class HealthTracker(context: Context) {
                     val count = it.value.toInt()
                     _totalStepsToday.value = count
                     trackMovement(count)
+                    // Hand-off for WorkManager workers (BehindPaceWorker, EndOfDayWorker)
+                    // that don't have direct access to HealthServices.
+                    context.getSharedPreferences("watch_health", Context.MODE_PRIVATE)
+                        .edit().putInt("steps_today", count).apply()
                 }
                 dataPoints.getData(DataType.FLOORS_DAILY).lastOrNull()?.let {
                     _floorsToday.value = it.value.toInt()

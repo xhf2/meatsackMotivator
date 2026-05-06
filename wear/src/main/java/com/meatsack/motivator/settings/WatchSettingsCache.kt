@@ -22,9 +22,14 @@ class WatchSettingsCache(context: Context) {
         get() = prefs.getInt(KEY_ACTIVE_END, 22)
         set(value) = prefs.edit().putInt(KEY_ACTIVE_END, value).apply()
 
+    var dailyStepGoal: Int
+        get() = prefs.getInt(KEY_GOAL, 10_000)
+        set(value) = prefs.edit().putInt(KEY_GOAL, value).apply()
+
     companion object {
         private const val KEY_CONTEXT_AWARE = "context_aware_enabled"
         private const val KEY_ACTIVE_START = "active_hours_start"
         private const val KEY_ACTIVE_END = "active_hours_end"
+        private const val KEY_GOAL = "daily_step_goal"
     }
 }
