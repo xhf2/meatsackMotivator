@@ -15,6 +15,7 @@ import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
 import com.meatsack.motivator.settings.WatchSettingsCache
+import com.meatsack.motivator.trigger.TriggerScheduler
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.db.AppDatabase
 import kotlinx.coroutines.CancellationException
@@ -59,6 +60,7 @@ class MeatsackWearService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
         healthTracker.startTracking()
+        TriggerScheduler(this).scheduleHourlyPaceCheck()
         startPolling()
         Log.d(TAG, "meatsackMotivator service started. Watching you.")
         return START_STICKY
@@ -68,6 +70,7 @@ class MeatsackWearService : Service() {
         pollingJob?.cancel()
         scope.cancel()
         healthTracker.stopTracking()
+        TriggerScheduler(this).cancelAll()
         super.onDestroy()
     }
 
