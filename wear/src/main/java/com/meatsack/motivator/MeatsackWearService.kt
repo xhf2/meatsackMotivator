@@ -12,8 +12,9 @@ import androidx.core.app.NotificationCompat
 import com.meatsack.motivator.escalation.EscalationManager
 import com.meatsack.motivator.health.StepTracker
 import com.meatsack.motivator.messages.MessageRepository
+import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
-import com.meatsack.shared.constants.MessageTone
+import com.meatsack.motivator.settings.WatchSettingsCache
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.db.AppDatabase
 import kotlinx.coroutines.CancellationException
@@ -31,6 +32,7 @@ class MeatsackWearService : Service() {
     private lateinit var escalationManager: EscalationManager
     private lateinit var messageRepo: MessageRepository
     private lateinit var notificationService: InsultNotificationService
+    private lateinit var settings: WatchSettingsCache
 
     private var pollingJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -51,6 +53,7 @@ class MeatsackWearService : Service() {
         escalationManager = EscalationManager()
         messageRepo = MessageRepository(db.messageDao())
         notificationService = InsultNotificationService(applicationContext)
+        settings = WatchSettingsCache(applicationContext)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -98,7 +101,11 @@ class MeatsackWearService : Service() {
 
         escalationManager.onInactivityDetected(minutesIdle)
         val level = escalationManager.currentLevel.value
-        val tone = MessageTone.FULL_SEND
+        val tone = ToneResolver.resolve(
+            contextAwareEnabled = settings.contextAwareEnabled,
+            activeHoursStart = settings.activeHoursStart,
+            activeHoursEnd = settings.activeHoursEnd,
+        )
 
         val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone) ?: return
 

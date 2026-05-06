@@ -20,16 +20,33 @@ class SettingsRepository(private val context: Context) {
         val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
         val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
         val CONTEXT_AWARE_ENABLED = booleanPreferencesKey("context_aware_enabled")
+        val END_OF_DAY_HOUR = intPreferencesKey("end_of_day_hour")
     }
 
-    val dailyStepGoal: Flow<Int> = context.dataStore.data.map { it[DAILY_STEP_GOAL] ?: 10_000 }
-    val inactivityThreshold: Flow<Int> = context.dataStore.data.map { it[INACTIVITY_THRESHOLD] ?: 30 }
-    val activeHoursStart: Flow<Int> = context.dataStore.data.map { it[ACTIVE_HOURS_START] ?: 7 }
-    val activeHoursEnd: Flow<Int> = context.dataStore.data.map { it[ACTIVE_HOURS_END] ?: 22 }
-    val quietHoursStart: Flow<Int> = context.dataStore.data.map { it[QUIET_HOURS_START] ?: 22 }
-    val quietHoursEnd: Flow<Int> = context.dataStore.data.map { it[QUIET_HOURS_END] ?: 7 }
-    val contextAwareEnabled: Flow<Boolean> =
-        context.dataStore.data.map { it[CONTEXT_AWARE_ENABLED] ?: false }
+    val dailyStepGoal: Flow<Int> = context.dataStore.data.map {
+        it[DAILY_STEP_GOAL] ?: SettingsDefaults.DAILY_STEP_GOAL
+    }
+    val inactivityThreshold: Flow<Int> = context.dataStore.data.map {
+        it[INACTIVITY_THRESHOLD] ?: SettingsDefaults.INACTIVITY_THRESHOLD_MIN
+    }
+    val activeHoursStart: Flow<Int> = context.dataStore.data.map {
+        it[ACTIVE_HOURS_START] ?: SettingsDefaults.ACTIVE_HOURS_START
+    }
+    val activeHoursEnd: Flow<Int> = context.dataStore.data.map {
+        it[ACTIVE_HOURS_END] ?: SettingsDefaults.ACTIVE_HOURS_END
+    }
+    val quietHoursStart: Flow<Int> = context.dataStore.data.map {
+        it[QUIET_HOURS_START] ?: SettingsDefaults.QUIET_HOURS_START
+    }
+    val quietHoursEnd: Flow<Int> = context.dataStore.data.map {
+        it[QUIET_HOURS_END] ?: SettingsDefaults.QUIET_HOURS_END
+    }
+    val contextAwareEnabled: Flow<Boolean> = context.dataStore.data.map {
+        it[CONTEXT_AWARE_ENABLED] ?: SettingsDefaults.CONTEXT_AWARE_ENABLED
+    }
+    val endOfDayHour: Flow<Int> = context.dataStore.data.map {
+        it[END_OF_DAY_HOUR] ?: SettingsDefaults.END_OF_DAY_HOUR
+    }
 
     suspend fun setDailyStepGoal(goal: Int) {
         context.dataStore.edit { it[DAILY_STEP_GOAL] = goal }
@@ -55,5 +72,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setContextAwareEnabled(enabled: Boolean) {
         context.dataStore.edit { it[CONTEXT_AWARE_ENABLED] = enabled }
+    }
+
+    suspend fun setEndOfDayHour(hour: Int) {
+        require(hour in 0..23) { "Hour must be 0..23" }
+        context.dataStore.edit { it[END_OF_DAY_HOUR] = hour }
     }
 }
