@@ -3,14 +3,31 @@ package com.meatsack.motivator.mobile.ui.settings
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.meatsack.motivator.mobile.ai.AiMessageGenerator
+import com.meatsack.motivator.mobile.ai.ApiKeyStore
+import com.meatsack.motivator.mobile.ai.GenerationResult
 import com.meatsack.motivator.mobile.data.SettingsDefaults
 import com.meatsack.motivator.mobile.data.SettingsRepository
+import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageTone
+import com.meatsack.shared.constants.TriggerType
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val repo = SettingsRepository(application)
+    private val apiKeyStore = ApiKeyStore(application)
+
+    private val _apiKeyPresent = MutableStateFlow(apiKeyStore.hasKey())
+    val apiKeyPresent: StateFlow<Boolean> = _apiKeyPresent.asStateFlow()
+
+    private val _generationStatus = MutableStateFlow<GenerationResult?>(null)
+    val generationStatus: StateFlow<GenerationResult?> = _generationStatus.asStateFlow()
 
     val dailyStepGoal = repo.dailyStepGoal.stateIn(
         viewModelScope,
@@ -63,4 +80,24 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun toggleContextAware(enabled: Boolean) =
         viewModelScope.launch { repo.setContextAwareEnabled(enabled) }
     fun updateEndOfDayHour(hour: Int) = viewModelScope.launch { repo.setEndOfDayHour(hour) }
+
+    fun saveApiKey(key: String) {
+        if (key.isBlank()) apiKeyStore.clear() else apiKeyStore.save(key)
+        _apiKeyPresent.value = apiKeyStore.hasKey()
+    }
+
+    fun generateNow() = viewModelScope.launch {
+        _generationStatus.value = null
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        val generator = AiMessageGenerator(getApplication())
+        // v2 scope: generate at SAVAGE/INACTIVITY/FULL_SEND. Users who want
+        // other axes can run multiple generations.
+        _generationStatus.value = generator.generateBatch(
+            level = EscalationLevel.SAVAGE,
+            trigger = TriggerType.INACTIVITY,
+            tone = MessageTone.FULL_SEND,
+            hourOfDay = hour,
+            currentSteps = 0,
+        )
+    }
 }
