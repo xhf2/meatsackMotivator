@@ -60,7 +60,9 @@ class MeatsackWearService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
         healthTracker.startTracking()
-        TriggerScheduler(this).scheduleHourlyPaceCheck()
+        val scheduler = TriggerScheduler(this)
+        scheduler.scheduleHourlyPaceCheck()
+        scheduler.scheduleEndOfDay(settings.endOfDayHour)
         startPolling()
         Log.d(TAG, "meatsackMotivator service started. Watching you.")
         return START_STICKY
