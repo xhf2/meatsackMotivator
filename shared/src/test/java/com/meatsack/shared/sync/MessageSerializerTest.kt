@@ -186,4 +186,16 @@ class MessageSerializerTest {
         assertEquals(1, result.size)
         assertEquals(msg, result[0])
     }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun serialize_rejectsTextContainingPipe() {
+        val bad = sampleMessage(text = "text with | pipe")
+        MessageSerializer.serialize(listOf(bad))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun serialize_rejectsTextContainingNewline() {
+        val bad = sampleMessage(text = "text with\nnewline")
+        MessageSerializer.serialize(listOf(bad))
+    }
 }

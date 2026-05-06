@@ -33,6 +33,11 @@ android {
     kotlinOptions {
         jvmTarget = "11"
     }
+    // android.util.Log is a stub in pure JVM unit tests — returning defaults
+    // lets log calls no-op instead of throwing "Method w not mocked".
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {

@@ -22,16 +22,12 @@ object MessageSerializer {
 
     fun serialize(messages: List<Message>): String =
         messages.joinToString(LINE_SEPARATOR) { m ->
+            require(!m.text.contains(FIELD_SEPARATOR) && !m.text.contains(LINE_SEPARATOR)) {
+                "Message text cannot contain '|' or newline; id=${m.id}"
+            }
             listOf(
-                m.id,
-                m.text,
-                m.level.value,
-                m.triggerType.name,
-                m.tone.name,
-                m.source.name,
-                m.votesUp,
-                m.votesDown,
-                m.lastShownTimestamp,
+                m.id, m.text, m.level.value, m.triggerType.name, m.tone.name,
+                m.source.name, m.votesUp, m.votesDown, m.lastShownTimestamp,
                 if (m.isActive) 1 else 0,
             ).joinToString(FIELD_SEPARATOR)
         }
@@ -43,7 +39,13 @@ object MessageSerializer {
 
     private fun parseLine(line: String): Message? {
         val parts = line.split(FIELD_SEPARATOR)
-        if (parts.size != FIELD_COUNT) return null
+        if (parts.size != FIELD_COUNT) {
+            android.util.Log.w(
+                "MessageSerializer",
+                "Dropped line with ${parts.size} fields (expected $FIELD_COUNT): ${line.take(80)}",
+            )
+            return null
+        }
         return runCatching {
             Message(
                 id = parts[0].toLong(),
@@ -57,6 +59,8 @@ object MessageSerializer {
                 lastShownTimestamp = parts[8].toLong(),
                 isActive = parts[9].toInt() != 0,
             )
+        }.onFailure { error ->
+            android.util.Log.w("MessageSerializer", "Dropped malformed line: ${line.take(80)}", error)
         }.getOrNull()
     }
 }
