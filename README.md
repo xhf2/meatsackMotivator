@@ -21,6 +21,12 @@ Tap 👍 or 👎 on each insult. The algorithm learns which ones land.
 4. Move (50+ steps within a 5-minute window) → the idle timer resets and the escalation level drops back to AGGRESSIVE.
 5. The **phone app** manages the insult library: browse messages, see vote tallies, sync new messages to the watch.
 
+### v2 intelligence additions
+
+- **Scheduled triggers.** Every hour during your active window, the watch compares your step count against the pace needed to hit your daily goal. Behind? Aggressive → Existential escalation based on how far. At your configured end-of-day hour, a final reckoning fires if you missed the goal.
+- **AI-generated insults.** Paste an Anthropic API key in Settings and tap "Generate 10 new insults" — the app sends your top-upvoted messages as style examples so new content drifts toward what actually lands for you. AI messages are tagged `AI_GENERATED`, persist in your library, and are vote-able like any other.
+- **Context-aware tone.** Toggle "Context-aware language" in Settings. When on: work-safe wording during your active hours, full-send outside.
+
 ---
 
 ## Requirements
@@ -100,7 +106,7 @@ meatsackMotivator/
 ```
 
 - **`shared`** exposes the `AppDatabase` (Room + KSP), `Message` entity, and `MessageSerializer` used by both sides of the sync pipe. `RoomDatabase` leaks through the public API, so Room is declared `api` not `implementation`.
-- **`wear`** drives everything on the watch: `StepTracker` reads `STEPS_DAILY` via `androidx.health.services.client` and tracks "minutes since last movement"; `EscalationManager` decides whether to fire based on time-since-last-fire (resistant to poll-drift); `MessageRepository` picks a message (30% chance of showing an unvoted one to bootstrap ratings; otherwise weighted by net votes); `InsultNotificationService` vibrates and shows the full-screen takeover; `MeatsackWearService` is the foreground service that ties it all together and polls every 60 seconds.
+- **`wear`** drives everything on the watch: `HealthTracker` reads `STEPS_DAILY` (plus floors, calories, heart rate as of v2) via `androidx.health.services.client` and tracks "minutes since last movement"; `EscalationManager` decides whether to fire based on time-since-last-fire (resistant to poll-drift); `MessageRepository` picks a message (30% chance of showing an unvoted one to bootstrap ratings; otherwise weighted by net votes); `InsultNotificationService` vibrates and shows the full-screen takeover; `MeatsackWearService` is the foreground service that ties it all together, polls every 60 seconds, and (v2) schedules the hourly `BehindPaceWorker` + daily `EndOfDayWorker` via WorkManager.
 - **`mobile`** is a Compose app: `MainActivity` hosts a `NavGraph` with bottom nav for Library and Settings. `SettingsRepository` wraps `DataStore<Preferences>`. `PhoneSyncSender` serializes up to 50 active messages as a `|`-delimited payload and writes a DataItem at `/messages`.
 - **Phone ↔ Watch sync**: `PhoneSyncSender` writes a DataItem → Wear Data Layer propagates it via the paired Galaxy Wearable bridge → `WatchSyncReceiver` (a `WearableListenerService` on the watch) deserializes and inserts into the watch's local Room DB.
 
