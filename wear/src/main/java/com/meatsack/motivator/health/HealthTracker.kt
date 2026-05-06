@@ -24,8 +24,11 @@ class HealthTracker(private val context: Context) {
     private val _caloriesToday = MutableStateFlow(0)
     val caloriesToday: StateFlow<Int> = _caloriesToday.asStateFlow()
 
-    private val _lastHeartRate = MutableStateFlow<Int?>(null)
-    val lastHeartRate: StateFlow<Int?> = _lastHeartRate.asStateFlow()
+    // Heart rate intentionally not subscribed in v2: Wear OS 5+ Health Services
+    // requires the Health Connect permission android.permission.health.READ_HEART_RATE
+    // even in PASSIVE mode (the v2 plan's assumption that PASSIVE bypasses this on
+    // API 33+ turned out to be wrong on real Wear OS 5 emulators). Re-add in v3
+    // alongside proper Health Connect integration.
 
     private var lastMovementTimestamp: Long = System.currentTimeMillis()
     private var stepsInCurrentWindow: Int = 0
@@ -55,9 +58,6 @@ class HealthTracker(private val context: Context) {
                 dataPoints.getData(DataType.CALORIES_DAILY).lastOrNull()?.let {
                     _caloriesToday.value = it.value.toInt()
                 }
-                dataPoints.getData(DataType.HEART_RATE_BPM).lastOrNull()?.let {
-                    _lastHeartRate.value = it.value.toInt()
-                }
             } catch (t: Throwable) {
                 Log.e(TAG, "Failed to process health data point", t)
             }
@@ -71,7 +71,6 @@ class HealthTracker(private val context: Context) {
                     DataType.STEPS_DAILY,
                     DataType.FLOORS_DAILY,
                     DataType.CALORIES_DAILY,
-                    DataType.HEART_RATE_BPM,
                 ),
             )
             .build()
@@ -80,7 +79,7 @@ class HealthTracker(private val context: Context) {
         // returns a ListenableFuture. runCatching surfaces any synchronous
         // registration error (e.g., Health Services unavailable on device).
         runCatching { client.setPassiveListenerCallback(config, callback) }
-            .onSuccess { Log.d(TAG, "Health tracking started (steps, floors, calories, HR)") }
+            .onSuccess { Log.d(TAG, "Health tracking started (steps, floors, calories)") }
             .onFailure { Log.e(TAG, "Failed to register passive listener", it) }
     }
 
