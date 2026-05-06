@@ -10,7 +10,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.meatsack.motivator.escalation.EscalationManager
-import com.meatsack.motivator.health.StepTracker
+import com.meatsack.motivator.health.HealthTracker
 import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 
 class MeatsackWearService : Service() {
 
-    private lateinit var stepTracker: StepTracker
+    private lateinit var healthTracker: HealthTracker
     private lateinit var escalationManager: EscalationManager
     private lateinit var messageRepo: MessageRepository
     private lateinit var notificationService: InsultNotificationService
@@ -49,7 +49,7 @@ class MeatsackWearService : Service() {
     override fun onCreate() {
         super.onCreate()
         val db = AppDatabase.getDatabase(applicationContext)
-        stepTracker = StepTracker(applicationContext)
+        healthTracker = HealthTracker(applicationContext)
         escalationManager = EscalationManager()
         messageRepo = MessageRepository(db.messageDao())
         notificationService = InsultNotificationService(applicationContext)
@@ -58,7 +58,7 @@ class MeatsackWearService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
-        stepTracker.startTracking()
+        healthTracker.startTracking()
         startPolling()
         Log.d(TAG, "meatsackMotivator service started. Watching you.")
         return START_STICKY
@@ -67,7 +67,7 @@ class MeatsackWearService : Service() {
     override fun onDestroy() {
         pollingJob?.cancel()
         scope.cancel()
-        stepTracker.stopTracking()
+        healthTracker.stopTracking()
         super.onDestroy()
     }
 
@@ -90,9 +90,9 @@ class MeatsackWearService : Service() {
     }
 
     private suspend fun checkInactivity() {
-        val minutesIdle = stepTracker.getMinutesSinceLastMovement()
+        val minutesIdle = healthTracker.getMinutesSinceLastMovement()
 
-        if (stepTracker.hasSignificantMovement()) {
+        if (healthTracker.hasSignificantMovement()) {
             escalationManager.onMovementDetected()
             return
         }
@@ -109,7 +109,7 @@ class MeatsackWearService : Service() {
 
         val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone) ?: return
 
-        val steps = stepTracker.totalStepsToday.value
+        val steps = healthTracker.totalStepsToday.value
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val ampm = if (hour < 12) "am" else "pm"
         val displayHour = if (hour == 0) {
