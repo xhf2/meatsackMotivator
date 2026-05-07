@@ -3,28 +3,72 @@ package com.meatsack.motivator.mobile.ui.settings
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.meatsack.motivator.mobile.ai.AiMessageGenerator
+import com.meatsack.motivator.mobile.ai.ApiKeyStore
+import com.meatsack.motivator.mobile.ai.GenerationResult
+import com.meatsack.motivator.mobile.data.SettingsDefaults
 import com.meatsack.motivator.mobile.data.SettingsRepository
+import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageTone
+import com.meatsack.shared.constants.TriggerType
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val repo = SettingsRepository(application)
+    private val apiKeyStore = ApiKeyStore(application)
 
-    val dailyStepGoal =
-        repo.dailyStepGoal.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 10_000)
-    val inactivityThreshold =
-        repo.inactivityThreshold.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 30)
-    val activeHoursStart =
-        repo.activeHoursStart.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 7)
-    val activeHoursEnd =
-        repo.activeHoursEnd.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 22)
-    val quietHoursStart =
-        repo.quietHoursStart.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 22)
-    val quietHoursEnd =
-        repo.quietHoursEnd.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), 7)
-    val contextAwareEnabled =
-        repo.contextAwareEnabled.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), false)
+    private val _apiKeyPresent = MutableStateFlow(apiKeyStore.hasKey())
+    val apiKeyPresent: StateFlow<Boolean> = _apiKeyPresent.asStateFlow()
+
+    private val _generationStatus = MutableStateFlow<GenerationResult?>(null)
+    val generationStatus: StateFlow<GenerationResult?> = _generationStatus.asStateFlow()
+
+    val dailyStepGoal = repo.dailyStepGoal.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.DAILY_STEP_GOAL,
+    )
+    val inactivityThreshold = repo.inactivityThreshold.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.INACTIVITY_THRESHOLD_MIN,
+    )
+    val activeHoursStart = repo.activeHoursStart.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.ACTIVE_HOURS_START,
+    )
+    val activeHoursEnd = repo.activeHoursEnd.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.ACTIVE_HOURS_END,
+    )
+    val quietHoursStart = repo.quietHoursStart.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.QUIET_HOURS_START,
+    )
+    val quietHoursEnd = repo.quietHoursEnd.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.QUIET_HOURS_END,
+    )
+    val contextAwareEnabled = repo.contextAwareEnabled.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.CONTEXT_AWARE_ENABLED,
+    )
+    val endOfDayHour = repo.endOfDayHour.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SettingsDefaults.END_OF_DAY_HOUR,
+    )
 
     fun updateStepGoal(goal: Int) = viewModelScope.launch { repo.setDailyStepGoal(goal) }
     fun updateInactivityThreshold(min: Int) =
@@ -35,4 +79,32 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repo.setQuietHours(start, end) }
     fun toggleContextAware(enabled: Boolean) =
         viewModelScope.launch { repo.setContextAwareEnabled(enabled) }
+    fun updateEndOfDayHour(hour: Int) = viewModelScope.launch { repo.setEndOfDayHour(hour) }
+
+    fun saveApiKey(key: String) {
+        if (key.isBlank()) apiKeyStore.clear() else apiKeyStore.save(key)
+        _apiKeyPresent.value = apiKeyStore.hasKey()
+    }
+
+    fun generateNow() = viewModelScope.launch {
+        _generationStatus.value = null
+        // v2 scope: generate at SAVAGE/INACTIVITY/FULL_SEND. Users who want
+        // other axes can run multiple generations.
+        // try/catch guards against MessageSerializer.serialize's `require {}`
+        // throwing through generateBatch — without this the UI gets stuck in
+        // "generating…" forever on an unhandled exception.
+        _generationStatus.value = try {
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val generator = AiMessageGenerator(getApplication())
+            generator.generateBatch(
+                level = EscalationLevel.SAVAGE,
+                trigger = TriggerType.INACTIVITY,
+                tone = MessageTone.FULL_SEND,
+                hourOfDay = hour,
+                currentSteps = 0,
+            )
+        } catch (t: Throwable) {
+            GenerationResult.Failed(t)
+        }
+    }
 }

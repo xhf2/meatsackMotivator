@@ -21,6 +21,12 @@ Tap 👍 or 👎 on each insult. The algorithm learns which ones land.
 4. Move (50+ steps within a 5-minute window) → the idle timer resets and the escalation level drops back to AGGRESSIVE.
 5. The **phone app** manages the insult library: browse messages, see vote tallies, sync new messages to the watch.
 
+### v2 intelligence additions
+
+- **Scheduled triggers.** Every hour during your active window, the watch compares your step count against the pace needed to hit your daily goal. Behind? Aggressive → Existential escalation based on how far. At your configured end-of-day hour, a final reckoning fires if you missed the goal.
+- **AI-generated insults.** Paste an Anthropic API key in Settings and tap "Generate 10 new insults" — the app sends your top-upvoted messages as style examples so new content drifts toward what actually lands for you. AI messages are tagged `AI_GENERATED`, persist in your library, and are vote-able like any other.
+- **Context-aware tone.** Toggle "Context-aware language" in Settings. When on: work-safe wording during your active hours, full-send outside.
+
 ---
 
 ## Requirements
@@ -100,7 +106,7 @@ meatsackMotivator/
 ```
 
 - **`shared`** exposes the `AppDatabase` (Room + KSP), `Message` entity, and `MessageSerializer` used by both sides of the sync pipe. `RoomDatabase` leaks through the public API, so Room is declared `api` not `implementation`.
-- **`wear`** drives everything on the watch: `StepTracker` reads `STEPS_DAILY` via `androidx.health.services.client` and tracks "minutes since last movement"; `EscalationManager` decides whether to fire based on time-since-last-fire (resistant to poll-drift); `MessageRepository` picks a message (30% chance of showing an unvoted one to bootstrap ratings; otherwise weighted by net votes); `InsultNotificationService` vibrates and shows the full-screen takeover; `MeatsackWearService` is the foreground service that ties it all together and polls every 60 seconds.
+- **`wear`** drives everything on the watch: `HealthTracker` reads `STEPS_DAILY` (plus floors and calories as of v2; heart rate deferred to v3 pending Health Connect integration) via `androidx.health.services.client` and tracks "minutes since last movement"; `EscalationManager` decides whether to fire based on time-since-last-fire (resistant to poll-drift); `MessageRepository` picks a message (30% chance of showing an unvoted one to bootstrap ratings; otherwise weighted by net votes); `InsultNotificationService` vibrates and shows the full-screen takeover; `MeatsackWearService` is the foreground service that ties it all together, polls every 60 seconds, and (v2) schedules the hourly `BehindPaceWorker` + daily `EndOfDayWorker` via WorkManager.
 - **`mobile`** is a Compose app: `MainActivity` hosts a `NavGraph` with bottom nav for Library and Settings. `SettingsRepository` wraps `DataStore<Preferences>`. `PhoneSyncSender` serializes up to 50 active messages as a `|`-delimited payload and writes a DataItem at `/messages`.
 - **Phone ↔ Watch sync**: `PhoneSyncSender` writes a DataItem → Wear Data Layer propagates it via the paired Galaxy Wearable bridge → `WatchSyncReceiver` (a `WearableListenerService` on the watch) deserializes and inserts into the watch's local Room DB.
 
@@ -187,6 +193,8 @@ Instrumented tests (`connectedAndroidTest`) run locally when you have an emulato
 - **One-way sync** (phone → watch). Votes recorded on the watch don't currently propagate back to the phone.
 - **Emulator Health Services** auto-generates a synthetic step stream at ~2 steps/second, so real inactivity never triggers in the emulator. Use `TestFireActivity` for UI testing or drop `INACTIVITY_THRESHOLD_MINUTES_DEFAULT` to 1 in `shared/constants/EscalationLevel.kt` temporarily.
 - **Samsung battery optimization** is aggressive. If insults stop firing on real hardware after a few hours, whitelist meatsackMotivator on both phone and watch via Settings → Battery → Background usage limits → Never sleeping apps.
+- **v2: no phone → watch settings sync.** The Settings tab on the phone persists `dailyStepGoal`, `activeHours`, `contextAwareEnabled`, and `endOfDayHour` to DataStore, but those values don't reach the watch in v2. The watch's `WatchSettingsCache` reads defaults (10,000 goal; 7–22 active hours; full-send tone; 9 pm end-of-day). A settings DataItem path lands in v3.
+- **v2 verification scope.** All new v2 code paths (API key entry, AI generation, Library reactivity, watch service lifecycle, Health Services binding without HEART_RATE) were validated end-to-end on the Wear OS + phone emulator pair documented in CLAUDE.md. The final step — live observation of `WatchSyncReceiver` consuming an AI-generated DataItem — was blocked by an emulator-side GMS desync at release time; the receiver code itself is byte-identical to v1's shipped path, so this is "v1 receiver + v2-generated input." Final hardware integration test scheduled alongside v2.0.x dot-release on Galaxy Watch.
 
 Open follow-up work is tracked under [Issues](https://github.com/xhf2/meatsackMotivator/issues).
 

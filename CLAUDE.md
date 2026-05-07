@@ -36,8 +36,10 @@ All Gradle tasks assume `JAVA_HOME` points at Android Studio's bundled JDK (`/c/
 Three Gradle modules:
 
 - **`shared/`** — Room `AppDatabase`, `Message` entity, `MessageDao`, enum constants (`EscalationLevel`, `TriggerType`, `MessageTone`, `MessageSource`). Room is declared `api` so its types leak to dependents (because `AppDatabase : RoomDatabase()`).
-- **`wear/`** (`com.meatsack.motivator`) — Watch app. Foreground service `MeatsackWearService` that polls `StepTracker` every 60 s, asks `EscalationManager` whether to fire, routes through `MessageRepository` to pick a message, then delivers via `InsultNotificationService` (haptic + full-screen `InsultActivity`). `WatchSyncReceiver` (`WearableListenerService`) receives `/messages` DataItems from the phone.
+- **`wear/`** (`com.meatsack.motivator`) — Watch app. Foreground service `MeatsackWearService` that polls `HealthTracker` every 60 s, asks `EscalationManager` whether to fire, routes through `MessageRepository` to pick a message, then delivers via `InsultNotificationService` (haptic + full-screen `InsultActivity`). `WatchSyncReceiver` (`WearableListenerService`) receives `/messages` DataItems from the phone.
 - **`mobile/`** (`com.meatsack.motivator.mobile`) — Phone companion. `MainActivity` hosts a Compose `NavGraph` with bottom nav for Library and Settings. `SettingsRepository` backs a DataStore. `LibraryViewModel` reads from the shared Room DB; `LibraryScreen` has a Sync-to-Watch button that calls `PhoneSyncSender` (serializes the active low-hate messages and writes a DataItem at `/messages`).
+- **`mobile/ai/`** (v2) — Claude API integration. `ApiKeyStore` wraps EncryptedSharedPreferences for key storage. `Prompts.buildUserPrompt` constructs the per-call prompt using the user's top-upvoted messages as style examples. `ClaudeApiClient` is a thin wrapper over the Anthropic Java SDK. `AiMessageGenerator` orchestrates generate → filter → persist → sync.
+- **`wear/trigger/`** (v2) — `TriggerScheduler` + `BehindPaceWorker` (hourly) + `EndOfDayWorker` (daily at configurable hour). Both workers read step count from a SharedPreferences hand-off updated by `HealthTracker`, then select a message for the appropriate trigger type via `MessageRepository`.
 
 ## Data Flow (v1)
 
@@ -45,7 +47,7 @@ Three Gradle modules:
 2. User opens the phone app's **Library** tab and taps **Sync to Watch** — `PhoneSyncSender` writes a `/messages` DataItem.
 3. Watch's `WatchSyncReceiver` fires `onDataChanged`, deserializes, and inserts into the watch's Room DB.
 4. User opens the watch app (tap launcher icon) — `MainActivity` requests `ACTIVITY_RECOGNITION` then starts `MeatsackWearService`.
-5. `MeatsackWearService` polls every minute: `StepTracker.getMinutesSinceLastMovement()` → `EscalationManager.shouldTrigger(...)` → `MessageRepository.selectMessage(...)` → `InsultNotificationService.deliverInsult(...)`.
+5. `MeatsackWearService` polls every minute: `HealthTracker.getMinutesSinceLastMovement()` → `EscalationManager.shouldTrigger(...)` → `MessageRepository.selectMessage(...)` → `InsultNotificationService.deliverInsult(...)`.
 6. Full-screen `InsultActivity` wakes the screen. User taps 👍/👎 — vote hits local DAO.
 
 ## Emulator Dev Loop
@@ -75,4 +77,4 @@ adb -s emulator-5556 shell pm grant com.meatsack.motivator android.permission.AC
 
 - Message serialization uses a custom `|`-delimited string. Fine for v1 (≤50 messages × ~200 chars). If we ever need nested structure or multi-line text with `|`, switch to JSON (`kotlinx.serialization`) and bump the DataItem path (e.g. `/messages/v2`).
 - Sync is one-way (phone → watch). Votes recorded on the watch don't propagate back. A back-sync path will need a new DataItem path and a phone-side `WearableListenerService`.
-- Service relies on `StepTracker` daily-step deltas as a movement proxy. Emulators emit a synthetic step stream at ~2/sec, so "inactivity" never triggers naturally during development — drop `INACTIVITY_THRESHOLD_MINUTES_DEFAULT` to 1 temporarily or pause the emulator's Health Services to test the escalation path.
+- Service relies on `HealthTracker` daily-step deltas as a movement proxy. Emulators emit a synthetic step stream at ~2/sec, so "inactivity" never triggers naturally during development — drop `INACTIVITY_THRESHOLD_MINUTES_DEFAULT` to 1 temporarily or pause the emulator's Health Services to test the escalation path.

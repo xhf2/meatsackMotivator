@@ -7,19 +7,28 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.meatsack.motivator.mobile.ai.GenerationResult
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
@@ -107,6 +116,56 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
         Spacer(Modifier.height(16.dp))
 
+        Spacer(Modifier.height(24.dp))
+        Text("Anthropic API key", style = MaterialTheme.typography.titleMedium)
+
+        val apiKeyPresent by viewModel.apiKeyPresent.collectAsState()
+        var draftKey by remember { mutableStateOf("") }
+        OutlinedTextField(
+            value = draftKey,
+            onValueChange = { draftKey = it },
+            label = { Text(if (apiKeyPresent) "Replace key" else "Paste key") },
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Button(
+                onClick = {
+                    viewModel.saveApiKey(draftKey)
+                    draftKey = ""
+                },
+                enabled = draftKey.isNotBlank(),
+            ) { Text("Save") }
+            Spacer(Modifier.width(8.dp))
+            TextButton(onClick = { viewModel.saveApiKey("") }) { Text("Clear") }
+            Spacer(Modifier.weight(1f))
+            Text(
+                if (apiKeyPresent) "✓ Saved" else "Not set",
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+        val genStatus by viewModel.generationStatus.collectAsState()
+        Button(
+            onClick = { viewModel.generateNow() },
+            enabled = apiKeyPresent,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text("Generate 10 new insults")
+        }
+        genStatus?.let {
+            val text = when (it) {
+                is GenerationResult.Success -> "Generated ${it.messages.size} messages"
+                GenerationResult.NoApiKey -> "No API key set"
+                is GenerationResult.HttpError -> "HTTP ${it.status}"
+                is GenerationResult.Failed -> "Error: ${it.error.message}"
+            }
+            Text(text, style = MaterialTheme.typography.bodySmall)
+        }
+
+        Spacer(Modifier.height(24.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.fillMaxWidth(),

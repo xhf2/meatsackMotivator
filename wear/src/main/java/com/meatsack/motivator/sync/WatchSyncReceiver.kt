@@ -7,14 +7,13 @@ import com.google.android.gms.wearable.WearableListenerService
 import com.meatsack.motivator.MeatsackWearApp
 import com.meatsack.shared.db.AppDatabase
 import com.meatsack.shared.sync.MessageSerializer
+import com.meatsack.shared.sync.SyncChannel
 import kotlinx.coroutines.launch
 
 class WatchSyncReceiver : WearableListenerService() {
 
     companion object {
         private const val TAG = "WatchSyncReceiver"
-        private const val PATH_MESSAGES = "/messages"
-        private const val KEY_MESSAGE_DATA = "message_data"
 
         // Hard ceiling to bound the blast radius of a malformed or hostile payload.
         // v1 syncs at most 50 messages at a time; 500 is 10x headroom.
@@ -24,12 +23,15 @@ class WatchSyncReceiver : WearableListenerService() {
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         dataEvents.forEach { event ->
             val path = event.dataItem.uri.path
-            if (path != PATH_MESSAGES) return@forEach
+            if (path != SyncChannel.PATH_MESSAGES) return@forEach
             val sourceNode = event.dataItem.uri.host
             val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
-            val serialized = dataMap.getString(KEY_MESSAGE_DATA)
+            val serialized = dataMap.getString(SyncChannel.KEY_MESSAGE_DATA)
             if (serialized == null) {
-                Log.w(TAG, "Missing $KEY_MESSAGE_DATA in $PATH_MESSAGES from node=$sourceNode")
+                Log.w(
+                    TAG,
+                    "Missing ${SyncChannel.KEY_MESSAGE_DATA} in ${SyncChannel.PATH_MESSAGES} from node=$sourceNode",
+                )
                 return@forEach
             }
 

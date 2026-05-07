@@ -39,6 +39,24 @@ android {
     buildFeatures {
         compose = true
     }
+    // anthropic-java pulls in Apache HttpClient5 transitively; multiple
+    // jars contribute META-INF resource files with the same path which the
+    // Android packager refuses to merge. Drop them from the APK.
+    packaging {
+        resources {
+            excludes +=
+                setOf(
+                    "META-INF/DEPENDENCIES",
+                    "META-INF/LICENSE",
+                    "META-INF/LICENSE.txt",
+                    "META-INF/license.txt",
+                    "META-INF/NOTICE",
+                    "META-INF/NOTICE.txt",
+                    "META-INF/notice.txt",
+                    "META-INF/INDEX.LIST",
+                )
+        }
+    }
 }
 
 dependencies {
@@ -60,6 +78,8 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.anthropic.java)
+    implementation(libs.androidx.security.crypto)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

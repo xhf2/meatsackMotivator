@@ -8,6 +8,7 @@ import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.model.Message
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface MessageDao {
@@ -50,6 +51,24 @@ interface MessageDao {
     @Query("SELECT * FROM messages ORDER BY (votesUp - votesDown) DESC")
     suspend fun getAllMessages(): List<Message>
 
+    /**
+     * Reactive variant of [getAllMessages]. Room emits a new list every time
+     * the messages table changes, so observers (e.g. the Library UI) update
+     * live after inserts/votes without needing manual reload.
+     */
+    @Query("SELECT * FROM messages ORDER BY (votesUp - votesDown) DESC")
+    fun getAllMessagesFlow(): Flow<List<Message>>
+
     @Query("SELECT COUNT(*) FROM messages")
     suspend fun getMessageCount(): Int
+
+    @Query(
+        """
+        SELECT text FROM messages
+        WHERE isActive = 1
+        ORDER BY (votesUp - votesDown) DESC
+        LIMIT :limit
+    """,
+    )
+    suspend fun getTopUpvotedTexts(limit: Int): List<String>
 }

@@ -6,6 +6,7 @@ import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.meatsack.shared.db.AppDatabase
 import com.meatsack.shared.sync.MessageSerializer
+import com.meatsack.shared.sync.SyncChannel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.tasks.await
 
@@ -23,8 +24,6 @@ class PhoneSyncSender(private val context: Context) {
 
     companion object {
         private const val TAG = "PhoneSyncSender"
-        private const val PATH_MESSAGES = "/messages"
-        private const val KEY_MESSAGE_DATA = "message_data"
         private const val CACHE_SIZE = 50
     }
 
@@ -39,9 +38,9 @@ class PhoneSyncSender(private val context: Context) {
             return SyncResult.NoMessages
         }
 
-        val request = PutDataMapRequest.create(PATH_MESSAGES).apply {
-            dataMap.putString(KEY_MESSAGE_DATA, MessageSerializer.serialize(messages))
-            dataMap.putLong("timestamp", System.currentTimeMillis())
+        val request = PutDataMapRequest.create(SyncChannel.PATH_MESSAGES).apply {
+            dataMap.putString(SyncChannel.KEY_MESSAGE_DATA, MessageSerializer.serialize(messages))
+            dataMap.putLong(SyncChannel.KEY_TIMESTAMP, System.currentTimeMillis())
         }.asPutDataRequest().setUrgent()
 
         return try {

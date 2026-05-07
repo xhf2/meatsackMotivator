@@ -10,10 +10,12 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.meatsack.motivator.escalation.EscalationManager
-import com.meatsack.motivator.health.StepTracker
+import com.meatsack.motivator.health.HealthTracker
 import com.meatsack.motivator.messages.MessageRepository
+import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
-import com.meatsack.shared.constants.MessageTone
+import com.meatsack.motivator.settings.WatchSettingsCache
+import com.meatsack.motivator.trigger.TriggerScheduler
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.db.AppDatabase
 import kotlinx.coroutines.CancellationException
@@ -27,10 +29,11 @@ import kotlinx.coroutines.launch
 
 class MeatsackWearService : Service() {
 
-    private lateinit var stepTracker: StepTracker
+    private lateinit var healthTracker: HealthTracker
     private lateinit var escalationManager: EscalationManager
     private lateinit var messageRepo: MessageRepository
     private lateinit var notificationService: InsultNotificationService
+    private lateinit var settings: WatchSettingsCache
 
     private var pollingJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -47,15 +50,19 @@ class MeatsackWearService : Service() {
     override fun onCreate() {
         super.onCreate()
         val db = AppDatabase.getDatabase(applicationContext)
-        stepTracker = StepTracker(applicationContext)
+        healthTracker = HealthTracker(applicationContext)
         escalationManager = EscalationManager()
         messageRepo = MessageRepository(db.messageDao())
         notificationService = InsultNotificationService(applicationContext)
+        settings = WatchSettingsCache(applicationContext)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
-        stepTracker.startTracking()
+        healthTracker.startTracking()
+        val scheduler = TriggerScheduler(this)
+        scheduler.scheduleHourlyPaceCheck()
+        scheduler.scheduleEndOfDay(settings.endOfDayHour)
         startPolling()
         Log.d(TAG, "meatsackMotivator service started. Watching you.")
         return START_STICKY
@@ -64,7 +71,14 @@ class MeatsackWearService : Service() {
     override fun onDestroy() {
         pollingJob?.cancel()
         scope.cancel()
-        stepTracker.stopTracking()
+        healthTracker.stopTracking()
+        // Deliberately *not* cancelling WorkManager jobs here: foreground
+        // services can be killed by the OS at any time (memory pressure,
+        // reboot, battery optimizer), and cancelling on every kill would mean
+        // the hourly + end-of-day workers stop firing until the user manually
+        // relaunches the watch app. WorkManager outliving the service is the
+        // intended shape; re-enqueue on the next service start is idempotent
+        // (KEEP / REPLACE policies in TriggerScheduler).
         super.onDestroy()
     }
 
@@ -87,9 +101,9 @@ class MeatsackWearService : Service() {
     }
 
     private suspend fun checkInactivity() {
-        val minutesIdle = stepTracker.getMinutesSinceLastMovement()
+        val minutesIdle = healthTracker.getMinutesSinceLastMovement()
 
-        if (stepTracker.hasSignificantMovement()) {
+        if (healthTracker.hasSignificantMovement()) {
             escalationManager.onMovementDetected()
             return
         }
@@ -98,11 +112,15 @@ class MeatsackWearService : Service() {
 
         escalationManager.onInactivityDetected(minutesIdle)
         val level = escalationManager.currentLevel.value
-        val tone = MessageTone.FULL_SEND
+        val tone = ToneResolver.resolve(
+            contextAwareEnabled = settings.contextAwareEnabled,
+            activeHoursStart = settings.activeHoursStart,
+            activeHoursEnd = settings.activeHoursEnd,
+        )
 
         val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone) ?: return
 
-        val steps = stepTracker.totalStepsToday.value
+        val steps = healthTracker.totalStepsToday.value
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val ampm = if (hour < 12) "am" else "pm"
         val displayHour = if (hour == 0) {
