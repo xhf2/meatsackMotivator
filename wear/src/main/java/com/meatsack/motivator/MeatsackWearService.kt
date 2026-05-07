@@ -72,7 +72,13 @@ class MeatsackWearService : Service() {
         pollingJob?.cancel()
         scope.cancel()
         healthTracker.stopTracking()
-        TriggerScheduler(this).cancelAll()
+        // Deliberately *not* cancelling WorkManager jobs here: foreground
+        // services can be killed by the OS at any time (memory pressure,
+        // reboot, battery optimizer), and cancelling on every kill would mean
+        // the hourly + end-of-day workers stop firing until the user manually
+        // relaunches the watch app. WorkManager outliving the service is the
+        // intended shape; re-enqueue on the next service start is idempotent
+        // (KEEP / REPLACE policies in TriggerScheduler).
         super.onDestroy()
     }
 

@@ -1,8 +1,10 @@
 package com.meatsack.motivator.trigger
 
 import android.content.Context
+import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.meatsack.motivator.health.HealthTracker
 import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
@@ -16,12 +18,23 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
     override suspend fun doWork(): Result {
         val ctx = applicationContext
         val settings = WatchSettingsCache(ctx)
+
+        // Always reschedule for tomorrow first — if any path below early-returns
+        // (goal hit, no message, stale data) the chain must not die.
+        TriggerScheduler(ctx).scheduleEndOfDay(settings.endOfDayHour)
+
         val db = AppDatabase.getDatabase(ctx)
         val repo = MessageRepository(db.messageDao())
         val notifier = InsultNotificationService(ctx)
 
-        val currentSteps = ctx.getSharedPreferences("watch_health", Context.MODE_PRIVATE)
-            .getInt("steps_today", 0)
+        val healthPrefs = ctx.getSharedPreferences(HealthTracker.WATCH_HEALTH_PREFS, Context.MODE_PRIVATE)
+        val lastUpdated = healthPrefs.getLong(HealthTracker.KEY_LAST_UPDATED, 0L)
+        val ageMs = System.currentTimeMillis() - lastUpdated
+        if (lastUpdated == 0L || ageMs > HealthTracker.STALE_THRESHOLD_MS) {
+            Log.w(TAG, "Step data missing or stale (age=${ageMs}ms); skipping end-of-day insult")
+            return Result.success()
+        }
+        val currentSteps = healthPrefs.getInt(HealthTracker.KEY_STEPS_TODAY, 0)
         val goal = settings.dailyStepGoal
 
         // Level depends on outcome. Missed by a lot -> existential. Near miss -> savage.
@@ -39,13 +52,17 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
         )
         val message = repo.selectMessage(level, TriggerType.END_OF_DAY, tone)
             ?: repo.selectMessage(level, TriggerType.INACTIVITY, tone)
-            ?: return Result.success()
+            ?: run {
+                Log.w(TAG, "No END_OF_DAY or fallback message for level=$level tone=$tone")
+                return Result.success()
+            }
 
         val stats = "$currentSteps / $goal. Day's over."
         notifier.deliverInsult(message, stats)
-
-        // Reschedule for tomorrow
-        TriggerScheduler(ctx).scheduleEndOfDay(settings.endOfDayHour)
         return Result.success()
+    }
+
+    companion object {
+        private const val TAG = "EndOfDayWorker"
     }
 }

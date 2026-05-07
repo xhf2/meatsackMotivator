@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.meatsack.motivator.health.HealthTracker
 import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
@@ -21,11 +22,18 @@ class BehindPaceWorker(context: Context, params: WorkerParameters) : CoroutineWo
         val repo = MessageRepository(db.messageDao())
         val notifier = InsultNotificationService(ctx)
 
-        // HealthTracker (foreground service) writes the latest count here;
-        // this hand-off lets WorkManager-driven workers read it without
-        // re-subscribing to Health Services on a separate channel.
-        val currentSteps = ctx.getSharedPreferences("watch_health", Context.MODE_PRIVATE)
-            .getInt("steps_today", 0)
+        // HealthTracker (foreground service) writes both step count and a
+        // last-updated timestamp. Reject stale or never-written values so we
+        // don't fire EXISTENTIAL based on a phantom 0 on first launch /
+        // post-process-death / post-midnight before the first datapoint.
+        val healthPrefs = ctx.getSharedPreferences(HealthTracker.WATCH_HEALTH_PREFS, Context.MODE_PRIVATE)
+        val lastUpdated = healthPrefs.getLong(HealthTracker.KEY_LAST_UPDATED, 0L)
+        val ageMs = System.currentTimeMillis() - lastUpdated
+        if (lastUpdated == 0L || ageMs > HealthTracker.STALE_THRESHOLD_MS) {
+            Log.w(TAG, "Step data missing or stale (age=${ageMs}ms); skipping pace check")
+            return Result.success()
+        }
+        val currentSteps = healthPrefs.getInt(HealthTracker.KEY_STEPS_TODAY, 0)
         val goal = settings.dailyStepGoal
         val now = Calendar.getInstance()
 
@@ -47,9 +55,12 @@ class BehindPaceWorker(context: Context, params: WorkerParameters) : CoroutineWo
             settings.activeHoursEnd,
         )
         val message = repo.selectMessage(level, TriggerType.BEHIND_PACE, tone) ?: run {
-            Log.w(TAG, "No message for level=$level tone=$tone — falling back to inactivity pool")
+            Log.w(TAG, "No BEHIND_PACE message for level=$level tone=$tone — falling back to inactivity pool")
             repo.selectMessage(level, TriggerType.INACTIVITY, tone)
-        } ?: return Result.success()
+        } ?: run {
+            Log.w(TAG, "No fallback message either; skipping insult")
+            return Result.success()
+        }
 
         val stats = "$currentSteps / $expected steps. Behind pace."
         notifier.deliverInsult(message, stats)

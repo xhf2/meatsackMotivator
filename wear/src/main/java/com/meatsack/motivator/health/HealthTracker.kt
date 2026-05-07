@@ -36,6 +36,19 @@ class HealthTracker(private val context: Context) {
 
     companion object {
         private const val TAG = "HealthTracker"
+
+        /** SharedPreferences file for the worker hand-off (steps + freshness). */
+        const val WATCH_HEALTH_PREFS = "watch_health"
+        const val KEY_STEPS_TODAY = "steps_today"
+        const val KEY_LAST_UPDATED = "last_updated"
+
+        /**
+         * If a worker reads step data older than this, it should treat the
+         * SharedPreferences mirror as untrustworthy (e.g., post-process-death,
+         * post-day-rollover before the first datapoint arrives).
+         */
+        const val STALE_THRESHOLD_MS = 60 * 60 * 1000L // 1 hour
+
         private val MOVEMENT_WINDOW_MS: Long =
             EscalationLevel.MOVEMENT_RESET_WINDOW_MINUTES.toLong() * 60 * 1000L
     }
@@ -48,9 +61,15 @@ class HealthTracker(private val context: Context) {
                     _totalStepsToday.value = count
                     trackMovement(count)
                     // Hand-off for WorkManager workers (BehindPaceWorker, EndOfDayWorker)
-                    // that don't have direct access to HealthServices.
-                    context.getSharedPreferences("watch_health", Context.MODE_PRIVATE)
-                        .edit().putInt("steps_today", count).apply()
+                    // that don't have direct access to HealthServices. The timestamp
+                    // is what lets workers reject stale or never-written values
+                    // (otherwise default-0 reads would falsely flag the user as
+                    // behind pace on first launch / after process death).
+                    context.getSharedPreferences(WATCH_HEALTH_PREFS, Context.MODE_PRIVATE)
+                        .edit()
+                        .putInt(KEY_STEPS_TODAY, count)
+                        .putLong(KEY_LAST_UPDATED, System.currentTimeMillis())
+                        .apply()
                 }
                 dataPoints.getData(DataType.FLOORS_DAILY).lastOrNull()?.let {
                     _floorsToday.value = it.value.toInt()

@@ -3,6 +3,7 @@ package com.meatsack.motivator.mobile.ai
 import android.content.Context
 import android.util.Log
 import com.meatsack.motivator.mobile.sync.PhoneSyncSender
+import com.meatsack.motivator.mobile.sync.SyncResult
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageSource
 import com.meatsack.shared.constants.MessageTone
@@ -65,7 +66,14 @@ class AiMessageGenerator(
                 }
                 db.messageDao().insertAll(entities)
                 Log.d(TAG, "Inserted ${entities.size} AI messages; syncing to watch")
-                PhoneSyncSender(context).syncMessagesToWatch()
+                when (val syncResult = PhoneSyncSender(context).syncMessagesToWatch()) {
+                    is SyncResult.Success ->
+                        Log.d(TAG, "Synced ${syncResult.count} messages to watch")
+                    SyncResult.NoMessages ->
+                        Log.w(TAG, "Sync had nothing to send despite just inserting $entities.size rows")
+                    is SyncResult.Failed ->
+                        Log.w(TAG, "Sync to watch failed after AI generation", syncResult.error)
+                }
                 GenerationResult.Success(valid)
             }
             else -> result

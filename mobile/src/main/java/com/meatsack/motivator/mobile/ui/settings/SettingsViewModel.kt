@@ -88,16 +88,23 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun generateNow() = viewModelScope.launch {
         _generationStatus.value = null
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-        val generator = AiMessageGenerator(getApplication())
         // v2 scope: generate at SAVAGE/INACTIVITY/FULL_SEND. Users who want
         // other axes can run multiple generations.
-        _generationStatus.value = generator.generateBatch(
-            level = EscalationLevel.SAVAGE,
-            trigger = TriggerType.INACTIVITY,
-            tone = MessageTone.FULL_SEND,
-            hourOfDay = hour,
-            currentSteps = 0,
-        )
+        // try/catch guards against MessageSerializer.serialize's `require {}`
+        // throwing through generateBatch — without this the UI gets stuck in
+        // "generating…" forever on an unhandled exception.
+        _generationStatus.value = try {
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+            val generator = AiMessageGenerator(getApplication())
+            generator.generateBatch(
+                level = EscalationLevel.SAVAGE,
+                trigger = TriggerType.INACTIVITY,
+                tone = MessageTone.FULL_SEND,
+                hourOfDay = hour,
+                currentSteps = 0,
+            )
+        } catch (t: Throwable) {
+            GenerationResult.Failed(t)
+        }
     }
 }
