@@ -45,13 +45,11 @@ fun InsultScreen(
                 verticalArrangement = Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                // Branding watermark
                 Text(
                     text = "meatsackMotivator",
                     style = MeatsackTypography.brandText,
                 )
 
-                // Insult message
                 Text(
                     text = insultText,
                     style = MeatsackTypography.insultText,
@@ -59,19 +57,16 @@ fun InsultScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
 
-                // Stats context line
                 Text(
                     text = statsText,
                     style = MeatsackTypography.statsText,
                     textAlign = TextAlign.Center,
                 )
 
-                // Vote buttons
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Thumbs down
                     Button(
                         onClick = onThumbsDown,
                         modifier = Modifier.size(40.dp),
@@ -83,7 +78,6 @@ fun InsultScreen(
                         Text("👎", style = MeatsackTypography.insultText.copy(fontSize = androidx.compose.ui.unit.TextUnit.Unspecified))
                     }
 
-                    // Thumbs up
                     Button(
                         onClick = onThumbsUp,
                         modifier = Modifier.size(40.dp),
