@@ -103,8 +103,27 @@ class HealthTracker(private val context: Context) {
     }
 
     fun stopTracking() {
-        client.clearPassiveListenerCallbackAsync()
-        Log.d(TAG, "Health tracking stopped")
+        val future = client.clearPassiveListenerCallbackAsync()
+        future.addListener(
+            {
+                try {
+                    future.get()
+                    Log.d(TAG, "Health tracking stopped")
+                } catch (ie: InterruptedException) {
+                    // Restore interrupt flag so callers up the stack can observe it.
+                    Thread.currentThread().interrupt()
+                    Log.e(TAG, "Interrupted while clearing passive listener callback", ie)
+                } catch (ce: java.util.concurrent.CancellationException) {
+                    Log.w(TAG, "Clear passive listener callback was cancelled", ce)
+                } catch (ee: java.util.concurrent.ExecutionException) {
+                    Log.e(TAG, "Failed to clear passive listener callback", ee.cause ?: ee)
+                }
+            },
+            // Direct executor: listener does only cheap log calls. future.get() returns
+            // immediately because the listener contract guarantees completion. Do not
+            // add blocking work here without switching to a real executor.
+            Runnable::run,
+        )
     }
 
     fun getMinutesSinceLastMovement(): Int {
