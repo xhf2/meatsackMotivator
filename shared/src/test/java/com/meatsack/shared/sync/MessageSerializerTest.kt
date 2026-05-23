@@ -111,7 +111,7 @@ class MessageSerializerTest {
     }
 
     @Test
-    fun deserialize_malformedLine_isDroppedSilently() {
+    fun deserialize_malformedLine_isDropped() {
         // Mix one valid + one malformed (too few fields) + one valid.
         val valid1 = sampleMessage(id = 1)
         val valid2 = sampleMessage(id = 2, text = "another")
@@ -127,7 +127,7 @@ class MessageSerializerTest {
     }
 
     @Test
-    fun deserialize_nonNumericField_isDroppedSilently() {
+    fun deserialize_nonNumericField_isDropped() {
         val valid = sampleMessage()
         val bad = "99|text|NOT_A_NUMBER|INACTIVITY|FULL_SEND|PRE_WRITTEN|0|0|0|1"
         val payload = MessageSerializer.serialize(listOf(valid)) + "\n" + bad
@@ -136,22 +136,23 @@ class MessageSerializerTest {
     }
 
     @Test
-    fun deserialize_unknownEnumName_isDroppedSilently() {
+    fun deserialize_unknownEnumName_isDropped() {
         val bad = "1|text|1|UNKNOWN_TRIGGER|FULL_SEND|PRE_WRITTEN|0|0|0|1"
         val result = MessageSerializer.deserialize(bad)
         assertTrue(result.isEmpty())
     }
 
     @Test
-    fun deserialize_unknownLevelValue_isDroppedSilently() {
-        // Level 99 doesn't map to any EscalationLevel; fromValue throws, line is dropped.
+    fun deserialize_unknownLevelValue_isDropped() {
+        // Level 99 doesn't map to any EscalationLevel; fromValueOrNull returns null,
+        // the line is logged at WARN and dropped.
         val bad = "1|text|99|INACTIVITY|FULL_SEND|PRE_WRITTEN|0|0|0|1"
         val result = MessageSerializer.deserialize(bad)
         assertTrue(result.isEmpty())
     }
 
     @Test
-    fun deserialize_tooManyFields_isDroppedSilently() {
+    fun deserialize_tooManyFields_isDropped() {
         // Documents the known limitation: if text contains '|', the line splits into
         // extra fields and is rejected rather than parsed incorrectly.
         val badTextWithPipe = "1|text with|pipe|1|INACTIVITY|FULL_SEND|PRE_WRITTEN|0|0|0|1"

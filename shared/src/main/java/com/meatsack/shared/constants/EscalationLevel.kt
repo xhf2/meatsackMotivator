@@ -13,8 +13,12 @@ enum class EscalationLevel(val value: Int) {
         const val MOVEMENT_RESET_STEPS = 50
         const val MOVEMENT_RESET_WINDOW_MINUTES = 5
 
+        fun fromValueOrNull(value: Int): EscalationLevel? =
+            entries.firstOrNull { it.value == value }
+
         fun fromValue(value: Int): EscalationLevel =
-            entries.first { it.value == value }
+            fromValueOrNull(value)
+                ?: throw IllegalArgumentException("Unknown EscalationLevel value: $value")
     }
 }
 

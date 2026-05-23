@@ -9,10 +9,17 @@ import com.meatsack.shared.model.Message
 /**
  * Symmetric (de)serializer for shipping [Message] lists over the Wear Data Layer.
  *
- * Format: one message per `\n`-separated line, 10 `|`-separated fields in the order
- * declared by [FIELD_COUNT]. Invariants: message text must not contain `|` or `\n`;
- * enum names must match current definitions. Malformed lines are dropped silently so
- * a corrupt payload never takes down the receiver.
+ * Format: one message per `\n`-separated line, 10 `|`-separated fields in this fixed
+ * order: id, text, level, triggerType, tone, source, votesUp, votesDown,
+ * lastShownTimestamp, isActive.
+ *
+ * Invariants:
+ * - Message text must not contain `|` or `\n`. Enforced by [serialize].
+ * - Renaming an enum constant is a breaking wire change: a watch on an old APK will
+ *   silently drop affected lines (logged as a warning, not surfaced to the user).
+ *
+ * Malformed lines are dropped (and logged at WARN) rather than throwing, so a corrupt
+ * payload never takes down the receiver.
  */
 object MessageSerializer {
 
@@ -47,10 +54,17 @@ object MessageSerializer {
             return null
         }
         return runCatching {
+            val level = EscalationLevel.fromValueOrNull(parts[2].toInt())
+                ?: return null.also {
+                    android.util.Log.w(
+                        "MessageSerializer",
+                        "Dropped line with unknown EscalationLevel '${parts[2]}': ${line.take(80)}",
+                    )
+                }
             Message(
                 id = parts[0].toLong(),
                 text = parts[1],
-                level = EscalationLevel.fromValue(parts[2].toInt()),
+                level = level,
                 triggerType = TriggerType.valueOf(parts[3]),
                 tone = MessageTone.valueOf(parts[4]),
                 source = MessageSource.valueOf(parts[5]),

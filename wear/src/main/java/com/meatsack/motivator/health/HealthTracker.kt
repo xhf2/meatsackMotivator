@@ -124,7 +124,6 @@ class HealthTracker(private val context: Context) {
         synchronized(this) {
             val now = System.currentTimeMillis()
 
-            // Reset window if it's been more than 5 minutes
             if (now - windowStartTimestamp > MOVEMENT_WINDOW_MS) {
                 stepsInCurrentWindow = 0
                 windowStartTimestamp = now

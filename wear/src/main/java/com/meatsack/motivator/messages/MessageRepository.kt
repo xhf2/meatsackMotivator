@@ -11,6 +11,9 @@ class MessageRepository(
     private val dao: MessageDao,
     private val random: Random = Random.Default,
 ) {
+    companion object {
+        private const val UNVOTED_PICK_PROBABILITY = 0.3
+    }
 
     suspend fun selectMessage(
         level: EscalationLevel,
@@ -21,13 +24,13 @@ class MessageRepository(
         val eligible = dao.getEligibleMessages(level, triggerType, tone, oneDayAgo)
         if (eligible.isEmpty()) return null
 
-        // Separate unvoted (AI-generated, not yet rated) from voted
         val unvoted = eligible.filter { it.votesUp == 0 && it.votesDown == 0 }
         val voted = eligible.filter { it.votesUp > 0 || it.votesDown > 0 }
 
-        // 30% chance to show an unvoted message if any exist
+        // Bias toward unvoted so AI-generated messages get a chance to earn ratings
+        // before the upvote-weighted random in `voted` permanently buries them.
         val pick = when {
-            unvoted.isNotEmpty() && random.nextDouble() < 0.3 -> unvoted.random()
+            unvoted.isNotEmpty() && random.nextDouble() < UNVOTED_PICK_PROBABILITY -> unvoted.random()
             voted.isNotEmpty() -> weightedRandom(voted)
             // eligible is non-empty (we returned null above) and
             // unvoted + voted partitions eligible exhaustively, so if
