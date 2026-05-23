@@ -103,8 +103,15 @@ class HealthTracker(private val context: Context) {
     }
 
     fun stopTracking() {
-        client.clearPassiveListenerCallbackAsync()
-        Log.d(TAG, "Health tracking stopped")
+        val future = client.clearPassiveListenerCallbackAsync()
+        future.addListener(
+            {
+                runCatching { future.get() }
+                    .onSuccess { Log.d(TAG, "Health tracking stopped") }
+                    .onFailure { Log.e(TAG, "Failed to clear passive listener callback", it) }
+            },
+            Runnable::run,
+        )
     }
 
     fun getMinutesSinceLastMovement(): Int {

@@ -21,6 +21,14 @@ class SettingsRepository(private val context: Context) {
         val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
         val CONTEXT_AWARE_ENABLED = booleanPreferencesKey("context_aware_enabled")
         val END_OF_DAY_HOUR = intPreferencesKey("end_of_day_hour")
+
+        internal fun validateHour(name: String, hour: Int) {
+            require(hour in 0..23) { "$name must be in 0..23; was $hour" }
+        }
+
+        internal fun validatePositive(name: String, value: Int) {
+            require(value > 0) { "$name must be positive; was $value" }
+        }
     }
 
     val dailyStepGoal: Flow<Int> = context.dataStore.data.map {
@@ -49,14 +57,18 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun setDailyStepGoal(goal: Int) {
+        validatePositive("Daily step goal", goal)
         context.dataStore.edit { it[DAILY_STEP_GOAL] = goal }
     }
 
     suspend fun setInactivityThreshold(minutes: Int) {
+        validatePositive("Inactivity threshold", minutes)
         context.dataStore.edit { it[INACTIVITY_THRESHOLD] = minutes }
     }
 
     suspend fun setActiveHours(start: Int, end: Int) {
+        validateHour("Active hours start", start)
+        validateHour("Active hours end", end)
         context.dataStore.edit {
             it[ACTIVE_HOURS_START] = start
             it[ACTIVE_HOURS_END] = end
@@ -64,6 +76,8 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun setQuietHours(start: Int, end: Int) {
+        validateHour("Quiet hours start", start)
+        validateHour("Quiet hours end", end)
         context.dataStore.edit {
             it[QUIET_HOURS_START] = start
             it[QUIET_HOURS_END] = end
@@ -75,7 +89,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun setEndOfDayHour(hour: Int) {
-        require(hour in 0..23) { "Hour must be 0..23" }
+        validateHour("End of day hour", hour)
         context.dataStore.edit { it[END_OF_DAY_HOUR] = hour }
     }
 }
