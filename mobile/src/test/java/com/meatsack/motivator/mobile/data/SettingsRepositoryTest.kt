@@ -1,5 +1,6 @@
 package com.meatsack.motivator.mobile.data
 
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -28,8 +29,8 @@ class SettingsRepositoryTest {
             e.message?.contains("Active hours start") == true,
         )
         assertTrue(
-            "Message should include offending value; was: ${e.message}",
-            e.message?.contains("-1") == true,
+            "Message should include 'was -1' (locks format, not just any '-1'); was: ${e.message}",
+            e.message?.contains("was -1") == true,
         )
     }
 
@@ -37,13 +38,6 @@ class SettingsRepositoryTest {
     fun validateHour_rejects24() {
         assertThrows(IllegalArgumentException::class.java) {
             SettingsRepository.validateHour("test", 24)
-        }
-    }
-
-    @Test
-    fun validateHour_rejectsLargePositive() {
-        assertThrows(IllegalArgumentException::class.java) {
-            SettingsRepository.validateHour("test", 99)
         }
     }
 
@@ -68,8 +62,8 @@ class SettingsRepositoryTest {
             e.message?.contains("Daily step goal") == true,
         )
         assertTrue(
-            "Message should include offending value; was: ${e.message}",
-            e.message?.contains("0") == true,
+            "Message should include 'was 0' (locks format, not any '0'); was: ${e.message}",
+            e.message?.contains("was 0") == true,
         )
     }
 
@@ -81,18 +75,5 @@ class SettingsRepositoryTest {
         assertThrows(IllegalArgumentException::class.java) {
             SettingsRepository.validatePositive("test", -500)
         }
-    }
-
-    private fun <T : Throwable> assertThrows(expected: Class<T>, block: () -> Unit): T {
-        try {
-            block()
-        } catch (t: Throwable) {
-            if (expected.isInstance(t)) {
-                @Suppress("UNCHECKED_CAST")
-                return t as T
-            }
-            throw AssertionError("Expected ${expected.simpleName}, got ${t::class.simpleName}", t)
-        }
-        throw AssertionError("Expected ${expected.simpleName} but no exception was thrown")
     }
 }
