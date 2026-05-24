@@ -19,9 +19,16 @@ class BehindPaceWorker(context: Context, params: WorkerParameters) : CoroutineWo
         val ctx = applicationContext
         val settings = WatchSettingsCache(ctx)
 
-        // Always reschedule for tomorrow first — if any path below early-returns
-        // (on pace, no message, stale data) the chain must not die.
-        TriggerScheduler(ctx).scheduleBehindPaceCheck(settings.behindPaceCheckHour)
+        // Reschedule for tomorrow first so any early-return below doesn't kill
+        // the chain. Wrapped so a thrown enqueue (WorkManager init race,
+        // negative delay from clock jump, OEM SecurityException) returns
+        // Result.retry() instead of silently zombie-ing the daily insult.
+        try {
+            TriggerScheduler(ctx).scheduleBehindPaceCheck(settings.behindPaceCheckHour)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to reschedule BehindPaceWorker; retry queued", t)
+            return Result.retry()
+        }
 
         val db = AppDatabase.getDatabase(ctx)
         val repo = MessageRepository(db.messageDao())
