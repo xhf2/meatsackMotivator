@@ -19,9 +19,16 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
         val ctx = applicationContext
         val settings = WatchSettingsCache(ctx)
 
-        // Always reschedule for tomorrow first — if any path below early-returns
-        // (goal hit, no message, stale data) the chain must not die.
-        TriggerScheduler(ctx).scheduleEndOfDay(settings.endOfDayHour)
+        // Reschedule for tomorrow first so any early-return below doesn't kill
+        // the chain. Wrapped so a thrown enqueue (WorkManager init race,
+        // negative delay from clock jump, OEM SecurityException) returns
+        // Result.retry() instead of silently zombie-ing the daily reckoning.
+        try {
+            TriggerScheduler(ctx).scheduleEndOfDay(settings.endOfDayHour)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Failed to reschedule EndOfDayWorker; retry queued", t)
+            return Result.retry()
+        }
 
         val db = AppDatabase.getDatabase(ctx)
         val repo = MessageRepository(db.messageDao())
