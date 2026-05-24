@@ -61,7 +61,7 @@ class MeatsackWearService : Service() {
         startForeground(FOREGROUND_NOTIFICATION_ID, createForegroundNotification())
         healthTracker.startTracking()
         val scheduler = TriggerScheduler(this)
-        scheduler.scheduleHourlyPaceCheck()
+        scheduler.scheduleBehindPaceCheck(settings.behindPaceCheckHour)
         scheduler.scheduleEndOfDay(settings.endOfDayHour)
         startPolling()
         Log.d(TAG, "meatsackMotivator service started. Watching you.")

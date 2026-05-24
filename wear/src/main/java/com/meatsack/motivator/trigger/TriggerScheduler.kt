@@ -1,26 +1,28 @@
 package com.meatsack.motivator.trigger
 
 import android.content.Context
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
 /**
  * Owns the WorkManager scheduling for the two time-driven insult
- * triggers added in v2: an hourly pace-vs-goal check and a once-daily
- * end-of-day reckoning.
+ * triggers added in v2: a once-daily pace-vs-goal check (default noon)
+ * and a once-daily end-of-day reckoning. Both use OneTimeWorkRequest +
+ * a self-reschedule from inside the worker so a single OS-kill cannot
+ * break the daily chain.
  */
 class TriggerScheduler(context: Context) {
     private val wm = WorkManager.getInstance(context)
 
-    fun scheduleHourlyPaceCheck() {
-        val request = PeriodicWorkRequestBuilder<BehindPaceWorker>(1, TimeUnit.HOURS)
+    fun scheduleBehindPaceCheck(hour: Int) {
+        val delayMs = millisUntilNextHour(hour)
+        val request = OneTimeWorkRequestBuilder<BehindPaceWorker>()
+            .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
             .build()
-        wm.enqueueUniquePeriodicWork(UNIQUE_PACE, ExistingPeriodicWorkPolicy.KEEP, request)
+        wm.enqueueUniqueWork(UNIQUE_PACE, ExistingWorkPolicy.REPLACE, request)
     }
 
     fun scheduleEndOfDay(hour: Int) {

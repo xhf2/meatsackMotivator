@@ -30,11 +30,16 @@ class WatchSettingsCache(context: Context) {
         get() = prefs.getInt(KEY_END_OF_DAY, 21)
         set(value) = prefs.edit().putInt(KEY_END_OF_DAY, value).apply()
 
+    var behindPaceCheckHour: Int
+        get() = prefs.getInt(KEY_BEHIND_PACE_HOUR, 12)
+        set(value) = prefs.edit().putInt(KEY_BEHIND_PACE_HOUR, value).apply()
+
     companion object {
         private const val KEY_CONTEXT_AWARE = "context_aware_enabled"
         private const val KEY_ACTIVE_START = "active_hours_start"
         private const val KEY_ACTIVE_END = "active_hours_end"
         private const val KEY_GOAL = "daily_step_goal"
         private const val KEY_END_OF_DAY = "end_of_day_hour"
+        private const val KEY_BEHIND_PACE_HOUR = "behind_pace_check_hour"
     }
 }

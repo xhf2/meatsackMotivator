@@ -18,6 +18,11 @@ class BehindPaceWorker(context: Context, params: WorkerParameters) : CoroutineWo
     override suspend fun doWork(): Result {
         val ctx = applicationContext
         val settings = WatchSettingsCache(ctx)
+
+        // Always reschedule for tomorrow first — if any path below early-returns
+        // (on pace, no message, stale data) the chain must not die.
+        TriggerScheduler(ctx).scheduleBehindPaceCheck(settings.behindPaceCheckHour)
+
         val db = AppDatabase.getDatabase(ctx)
         val repo = MessageRepository(db.messageDao())
         val notifier = InsultNotificationService(ctx)
