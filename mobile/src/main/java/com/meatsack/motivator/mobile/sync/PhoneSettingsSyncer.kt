@@ -1,7 +1,11 @@
 package com.meatsack.motivator.mobile.sync
 
+import android.content.Context
 import android.util.Log
 import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.PutDataMapRequest
+import com.google.android.gms.wearable.Wearable
+import com.meatsack.motivator.mobile.data.SettingsRepository
 import com.meatsack.shared.sync.SettingsKeys
 import com.meatsack.shared.sync.SettingsSnapshot
 import kotlinx.coroutines.CancellationException
@@ -12,8 +16,10 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.retryWhen
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -80,5 +86,52 @@ class PhoneSettingsSyncer(
         } catch (e: Exception) {
             Log.e(TAG, "Settings sync failed", e)
         }
+    }
+}
+
+/**
+ * Production SettingsSource backed by SettingsRepository. Combines the 7
+ * watch-relevant Flows into a single SettingsSnapshot.
+ */
+class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsSource {
+    override val snapshots: Flow<SettingsSnapshot> = kotlinx.coroutines.flow.combine(
+        repo.dailyStepGoal,
+        repo.inactivityThreshold,
+        repo.activeHoursStart,
+        repo.activeHoursEnd,
+        repo.contextAwareEnabled,
+        repo.endOfDayHour,
+        repo.behindPaceCheckHour,
+    ) { values ->
+        SettingsSnapshot(
+            dailyStepGoal = values[0] as Int,
+            inactivityThreshold = values[1] as Int,
+            activeHoursStart = values[2] as Int,
+            activeHoursEnd = values[3] as Int,
+            contextAwareEnabled = values[4] as Boolean,
+            endOfDayHour = values[5] as Int,
+            behindPaceCheckHour = values[6] as Int,
+        )
+    }
+
+    override suspend fun current(): SettingsSnapshot =
+        SettingsSnapshot(
+            dailyStepGoal = repo.dailyStepGoal.first(),
+            inactivityThreshold = repo.inactivityThreshold.first(),
+            activeHoursStart = repo.activeHoursStart.first(),
+            activeHoursEnd = repo.activeHoursEnd.first(),
+            contextAwareEnabled = repo.contextAwareEnabled.first(),
+            endOfDayHour = repo.endOfDayHour.first(),
+            behindPaceCheckHour = repo.behindPaceCheckHour.first(),
+        )
+}
+
+/** Production sink that writes via Wearable.getDataClient. */
+class WearableSettingsSink(private val context: Context) : SettingsSink {
+    override suspend fun put(path: String, dataMap: DataMap) {
+        val req = PutDataMapRequest.create(path).apply {
+            this.dataMap.putAll(dataMap)
+        }.asPutDataRequest().setUrgent()
+        Wearable.getDataClient(context).putDataItem(req).await()
     }
 }

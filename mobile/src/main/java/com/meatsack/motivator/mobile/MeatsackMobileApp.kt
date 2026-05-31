@@ -2,6 +2,10 @@ package com.meatsack.motivator.mobile
 
 import android.app.Application
 import android.util.Log
+import com.meatsack.motivator.mobile.data.SettingsRepository
+import com.meatsack.motivator.mobile.sync.PhoneSettingsSyncer
+import com.meatsack.motivator.mobile.sync.RepositorySettingsSource
+import com.meatsack.motivator.mobile.sync.WearableSettingsSink
 import com.meatsack.shared.data.SeedData
 import com.meatsack.shared.db.AppDatabase
 import kotlinx.coroutines.CoroutineScope
@@ -17,9 +21,19 @@ class MeatsackMobileApp : Application() {
      */
     val applicationScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    lateinit var settingsSyncer: PhoneSettingsSyncer
+        private set
+
     override fun onCreate() {
         super.onCreate()
         seedDatabaseIfEmpty()
+        val repo = SettingsRepository(this)
+        settingsSyncer = PhoneSettingsSyncer(
+            settings = RepositorySettingsSource(repo),
+            sink = WearableSettingsSink(this),
+        )
+        settingsSyncer.start(applicationScope)
+        Log.d(TAG, "PhoneSettingsSyncer started")
     }
 
     private fun seedDatabaseIfEmpty() {
