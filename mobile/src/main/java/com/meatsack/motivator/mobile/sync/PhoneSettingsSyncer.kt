@@ -5,7 +5,17 @@ import com.google.android.gms.wearable.DataMap
 import com.meatsack.shared.sync.SettingsKeys
 import com.meatsack.shared.sync.SettingsSnapshot
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.retryWhen
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Source of SettingsSnapshot updates. Production wires this to combine() over
@@ -31,11 +41,32 @@ class PhoneSettingsSyncer(
 
     companion object {
         private const val TAG = "PhoneSettingsSyncer"
+        private const val MAX_RETRY_ATTEMPTS = 3
+    }
+
+    @OptIn(kotlinx.coroutines.FlowPreview::class)
+    fun start(scope: CoroutineScope) {
+        scope.launch {
+            settings.snapshots
+                .debounce(500.milliseconds)
+                .distinctUntilChanged()
+                .retryWhen { cause, attempt ->
+                    if (attempt < MAX_RETRY_ATTEMPTS) {
+                        Log.w(TAG, "settings flow failure (attempt=$attempt), retrying", cause)
+                        delay(((1L shl attempt.toInt()).coerceAtMost(8)).seconds)
+                        true
+                    } else {
+                        Log.e(TAG, "settings flow gave up after $MAX_RETRY_ATTEMPTS retries", cause)
+                        false
+                    }
+                }
+                .catch { e -> Log.e(TAG, "settings flow terminated", e) }
+                .collect { snap -> writeSnapshot(snap) }
+        }
     }
 
     suspend fun syncNow() {
-        val snap = settings.current()
-        writeSnapshot(snap)
+        writeSnapshot(settings.current())
     }
 
     private suspend fun writeSnapshot(snap: SettingsSnapshot) {
