@@ -4,9 +4,8 @@ import android.content.Context
 import com.meatsack.shared.sync.SettingsDefaults
 
 /**
- * Cache of user settings mirrored from the phone. Populated by a
- * future settings-sync DataItem (Task 16); reads default values until
- * the first sync.
+ * Cache of user settings mirrored from the phone over the /settings DataItem.
+ * Reads SettingsDefaults until the first sync arrives.
  */
 class WatchSettingsCache(context: Context) {
     private val prefs = context.getSharedPreferences("watch_settings", Context.MODE_PRIVATE)
