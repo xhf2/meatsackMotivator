@@ -34,6 +34,10 @@ class WatchSettingsCache(context: Context) {
         get() = prefs.getInt(KEY_BEHIND_PACE_HOUR, SettingsDefaults.BEHIND_PACE_CHECK_HOUR)
         set(value) = prefs.edit().putInt(KEY_BEHIND_PACE_HOUR, value).apply()
 
+    var inactivityThreshold: Int
+        get() = prefs.getInt(KEY_INACTIVITY_THRESHOLD, SettingsDefaults.INACTIVITY_THRESHOLD_MIN)
+        set(value) = prefs.edit().putInt(KEY_INACTIVITY_THRESHOLD, value).apply()
+
     companion object {
         private const val KEY_CONTEXT_AWARE = "context_aware_enabled"
         private const val KEY_ACTIVE_START = "active_hours_start"
@@ -41,5 +45,6 @@ class WatchSettingsCache(context: Context) {
         private const val KEY_GOAL = "daily_step_goal"
         private const val KEY_END_OF_DAY = "end_of_day_hour"
         private const val KEY_BEHIND_PACE_HOUR = "behind_pace_check_hour"
+        private const val KEY_INACTIVITY_THRESHOLD = "inactivity_threshold_min"
     }
 }
