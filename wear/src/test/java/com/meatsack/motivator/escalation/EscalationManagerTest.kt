@@ -104,4 +104,22 @@ class EscalationManagerTest {
         assertFalse(manager.shouldTrigger(30))
         assertFalse(manager.shouldTrigger(120))
     }
+
+    @Test
+    fun `custom threshold provider overrides default`() {
+        val customManager = EscalationManager(thresholdProvider = { 45 })
+        assertFalse("44 is below custom threshold 45", customManager.shouldTrigger(44))
+        assertTrue("45 should trigger", customManager.shouldTrigger(45))
+    }
+
+    @Test
+    fun `provider is called per shouldTrigger invocation (live config)`() {
+        var threshold = 30
+        val liveManager = EscalationManager(thresholdProvider = { threshold })
+        assertTrue("30 triggers with threshold=30", liveManager.shouldTrigger(30))
+        liveManager.onMovementDetected() // reset
+        threshold = 60
+        assertFalse("30 should not trigger after raising threshold to 60", liveManager.shouldTrigger(30))
+        assertTrue("60 triggers with threshold=60", liveManager.shouldTrigger(60))
+    }
 }

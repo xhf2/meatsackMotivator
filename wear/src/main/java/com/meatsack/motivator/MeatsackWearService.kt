@@ -51,10 +51,10 @@ class MeatsackWearService : Service() {
         super.onCreate()
         val db = AppDatabase.getDatabase(applicationContext)
         healthTracker = HealthTracker(applicationContext)
-        escalationManager = EscalationManager()
+        settings = WatchSettingsCache(applicationContext)
+        escalationManager = EscalationManager(thresholdProvider = { settings.inactivityThreshold })
         messageRepo = MessageRepository(db.messageDao())
         notificationService = InsultNotificationService(applicationContext)
-        settings = WatchSettingsCache(applicationContext)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
