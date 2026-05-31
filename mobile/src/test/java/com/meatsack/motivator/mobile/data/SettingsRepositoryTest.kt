@@ -76,4 +76,15 @@ class SettingsRepositoryTest {
             SettingsRepository.validatePositive("test", -500)
         }
     }
+
+    @Test
+    fun validateHour_rejectsTooLarge_forBehindPaceCheck() {
+        val e = assertThrows(IllegalArgumentException::class.java) {
+            SettingsRepository.validateHour("Behind pace check hour", 24)
+        }
+        assertTrue(
+            "Message should include field name; was: ${e.message}",
+            e.message?.contains("Behind pace check hour") == true,
+        )
+    }
 }
