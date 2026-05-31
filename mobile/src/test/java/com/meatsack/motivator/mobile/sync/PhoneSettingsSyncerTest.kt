@@ -45,11 +45,12 @@ class PhoneSettingsSyncerTest {
         val sink = FakeSink()
         val syncer = PhoneSettingsSyncer(FakeSettingsSource(custom), sink)
 
-        syncer.syncNow()
+        val result = syncer.syncNow()
 
         val dm = sink.lastDataMap
         assertNotNull("expected sink to receive a DataMap", dm)
         val parsed = SettingsSnapshot.fromDataMap(dm!!)
+        assertEquals(SettingsSyncResult.Success, result)
         assertEquals(custom, parsed)
         assertEquals(1, sink.callCount)
     }
@@ -71,8 +72,8 @@ class PhoneSettingsSyncerTest {
     fun syncNow_swallowsAndLogsOtherExceptions() = runTest {
         val sink = FakeSink().apply { failNextWith = RuntimeException("network down") }
         val syncer = PhoneSettingsSyncer(FakeSettingsSource(SettingsSnapshot.defaults), sink)
-        syncer.syncNow() // should not throw
-        // Nothing else to assert — no exception is the success criterion.
+        val result = syncer.syncNow()
+        assertTrue("expected Failed", result is SettingsSyncResult.Failed)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

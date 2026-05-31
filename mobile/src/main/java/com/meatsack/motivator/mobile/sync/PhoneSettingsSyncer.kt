@@ -24,6 +24,16 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
+ * Outcome of a single settings sync attempt. Mirrors `PhoneSyncSender.SyncResult` —
+ * distinguishing Success from Failed lets `MainActivity.onResume` log failures at
+ * ERROR rather than silently swallowing them at WARN.
+ */
+sealed class SettingsSyncResult {
+    data object Success : SettingsSyncResult()
+    data class Failed(val error: Throwable) : SettingsSyncResult()
+}
+
+/**
  * Source of SettingsSnapshot updates. Production wires this to combine() over
  * SettingsRepository flows; tests use an in-memory MutableStateFlow.
  */
@@ -71,21 +81,19 @@ class PhoneSettingsSyncer(
         }
     }
 
-    suspend fun syncNow() {
-        writeSnapshot(settings.current())
-    }
+    suspend fun syncNow(): SettingsSyncResult = writeSnapshot(settings.current())
 
-    private suspend fun writeSnapshot(snap: SettingsSnapshot) {
-        try {
-            val dm = DataMap()
-            snap.toDataMap(dm)
-            sink.put(SettingsKeys.PATH, dm)
-            Log.d(TAG, "Synced settings: $snap")
-        } catch (ce: CancellationException) {
-            throw ce
-        } catch (e: Exception) {
-            Log.e(TAG, "Settings sync failed", e)
-        }
+    private suspend fun writeSnapshot(snap: SettingsSnapshot): SettingsSyncResult = try {
+        val dm = DataMap()
+        snap.toDataMap(dm)
+        sink.put(SettingsKeys.PATH, dm)
+        Log.d(TAG, "Synced settings: $snap")
+        SettingsSyncResult.Success
+    } catch (ce: CancellationException) {
+        throw ce
+    } catch (e: Exception) {
+        Log.e(TAG, "Settings sync failed", e)
+        SettingsSyncResult.Failed(e)
     }
 }
 
