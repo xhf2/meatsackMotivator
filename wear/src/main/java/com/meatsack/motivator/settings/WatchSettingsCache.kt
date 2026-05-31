@@ -5,7 +5,7 @@ import com.meatsack.shared.sync.SettingsDefaults
 
 /**
  * Cache of user settings mirrored from the phone over the /settings DataItem.
- * Reads SettingsDefaults until the first sync arrives.
+ * Each key falls back to SettingsDefaults until that key has been written by a sync.
  */
 class WatchSettingsCache(context: Context) {
     private val prefs = context.getSharedPreferences("watch_settings", Context.MODE_PRIVATE)

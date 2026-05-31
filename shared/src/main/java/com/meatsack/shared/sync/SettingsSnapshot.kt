@@ -5,7 +5,8 @@ import com.google.android.gms.wearable.DataMap
 /**
  * Wire-shape for the /settings DataItem channel. Single source of truth for the
  * field set — adding a property here forces both phone (writer) and watch
- * (reader) to handle the new field, which is the structural fix for issue #23.
+ * (reader) to handle the new field — centralizing the field set prevents the
+ * phone-side and watch-side from drifting independently.
  *
  * fromDataMap returns SettingsDefaults values for any missing keys (forward
  * and backward compatibility) and coerces hour fields to 0..23 (defense in
