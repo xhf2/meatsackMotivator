@@ -116,6 +116,24 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
         Spacer(Modifier.height(16.dp))
 
+        val behindPaceHour by viewModel.behindPaceCheckHour.collectAsState()
+        Text(
+            "Behind-pace check hour: $behindPaceHour:00",
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Slider(
+            value = behindPaceHour.toFloat(),
+            onValueChange = { viewModel.updateBehindPaceCheckHour(it.toInt()) },
+            valueRange = 0f..23f,
+            steps = 22,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            "Time of day to check whether you're behind your step goal.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Spacer(Modifier.height(16.dp))
+
         Spacer(Modifier.height(24.dp))
         Text("Anthropic API key", style = MaterialTheme.typography.titleMedium)
 
