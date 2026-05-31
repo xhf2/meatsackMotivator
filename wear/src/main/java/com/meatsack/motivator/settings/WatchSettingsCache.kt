@@ -1,6 +1,7 @@
 package com.meatsack.motivator.settings
 
 import android.content.Context
+import com.meatsack.shared.sync.SettingsDefaults
 
 /**
  * Cache of user settings mirrored from the phone. Populated by a
@@ -11,27 +12,27 @@ class WatchSettingsCache(context: Context) {
     private val prefs = context.getSharedPreferences("watch_settings", Context.MODE_PRIVATE)
 
     var contextAwareEnabled: Boolean
-        get() = prefs.getBoolean(KEY_CONTEXT_AWARE, false)
+        get() = prefs.getBoolean(KEY_CONTEXT_AWARE, SettingsDefaults.CONTEXT_AWARE_ENABLED)
         set(value) = prefs.edit().putBoolean(KEY_CONTEXT_AWARE, value).apply()
 
     var activeHoursStart: Int
-        get() = prefs.getInt(KEY_ACTIVE_START, 7)
+        get() = prefs.getInt(KEY_ACTIVE_START, SettingsDefaults.ACTIVE_HOURS_START)
         set(value) = prefs.edit().putInt(KEY_ACTIVE_START, value).apply()
 
     var activeHoursEnd: Int
-        get() = prefs.getInt(KEY_ACTIVE_END, 22)
+        get() = prefs.getInt(KEY_ACTIVE_END, SettingsDefaults.ACTIVE_HOURS_END)
         set(value) = prefs.edit().putInt(KEY_ACTIVE_END, value).apply()
 
     var dailyStepGoal: Int
-        get() = prefs.getInt(KEY_GOAL, 10_000)
+        get() = prefs.getInt(KEY_GOAL, SettingsDefaults.DAILY_STEP_GOAL)
         set(value) = prefs.edit().putInt(KEY_GOAL, value).apply()
 
     var endOfDayHour: Int
-        get() = prefs.getInt(KEY_END_OF_DAY, 21)
+        get() = prefs.getInt(KEY_END_OF_DAY, SettingsDefaults.END_OF_DAY_HOUR)
         set(value) = prefs.edit().putInt(KEY_END_OF_DAY, value).apply()
 
     var behindPaceCheckHour: Int
-        get() = prefs.getInt(KEY_BEHIND_PACE_HOUR, 12)
+        get() = prefs.getInt(KEY_BEHIND_PACE_HOUR, SettingsDefaults.BEHIND_PACE_CHECK_HOUR)
         set(value) = prefs.edit().putInt(KEY_BEHIND_PACE_HOUR, value).apply()
 
     companion object {
