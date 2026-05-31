@@ -45,6 +45,8 @@ class SettingsSnapshotTest {
     @Test
     fun fromDataMap_outOfRangeHours_clampedTo0to23() {
         val dm = DataMap()
+        // Non-hour fields intentionally absent — fromDataMap returns defaults
+        // for them, verified separately in fromDataMap_missingKeys_returnsDefaults.
         dm.putInt(SettingsKeys.KEY_ACTIVE_HOURS_START, -5)
         dm.putInt(SettingsKeys.KEY_ACTIVE_HOURS_END, 99)
         dm.putInt(SettingsKeys.KEY_END_OF_DAY_HOUR, 24)
