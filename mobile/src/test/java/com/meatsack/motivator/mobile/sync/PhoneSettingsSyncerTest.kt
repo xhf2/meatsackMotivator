@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PhoneSettingsSyncerTest {
@@ -60,7 +61,7 @@ class PhoneSettingsSyncerTest {
         } catch (_: kotlinx.coroutines.CancellationException) {
             threw = true
         }
-        assert(threw) { "syncNow should rethrow CancellationException" }
+        assertTrue("syncNow should rethrow CancellationException", threw)
     }
 
     @Test
