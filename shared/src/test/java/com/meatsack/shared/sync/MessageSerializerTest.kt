@@ -199,4 +199,24 @@ class MessageSerializerTest {
         val bad = sampleMessage(text = "text with\nnewline")
         MessageSerializer.serialize(listOf(bad))
     }
+
+    @Test
+    fun serialize_acceptsExactly100Chars() {
+        val text100 = "x".repeat(100)
+        val serialized = MessageSerializer.serialize(listOf(sampleMessage(text = text100)))
+        assertNotNull(serialized)
+        assertTrue("100-char text should round-trip", serialized.contains(text100))
+    }
+
+    @Test
+    fun serialize_rejects101Chars() {
+        val text101 = "x".repeat(101)
+        val e = org.junit.Assert.assertThrows(IllegalArgumentException::class.java) {
+            MessageSerializer.serialize(listOf(sampleMessage(text = text101)))
+        }
+        assertTrue(
+            "Error message should include actual length; was: ${e.message}",
+            e.message?.contains("101") == true,
+        )
+    }
 }

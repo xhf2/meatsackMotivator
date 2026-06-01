@@ -1,6 +1,7 @@
 package com.meatsack.shared.sync
 
 import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageLimits
 import com.meatsack.shared.constants.MessageSource
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
@@ -29,8 +30,13 @@ object MessageSerializer {
 
     fun serialize(messages: List<Message>): String =
         messages.joinToString(LINE_SEPARATOR) { m ->
-            require(!m.text.contains(FIELD_SEPARATOR) && !m.text.contains(LINE_SEPARATOR)) {
-                "Message text cannot contain '|' or newline; id=${m.id}"
+            require(
+                !m.text.contains(FIELD_SEPARATOR) &&
+                    !m.text.contains(LINE_SEPARATOR) &&
+                    m.text.length <= MessageLimits.MAX_MESSAGE_TEXT_LENGTH,
+            ) {
+                "Message text invalid (length=${m.text.length}, max=${MessageLimits.MAX_MESSAGE_TEXT_LENGTH}, " +
+                    "has '|'=${m.text.contains(FIELD_SEPARATOR)}, has newline=${m.text.contains(LINE_SEPARATOR)}); id=${m.id}"
             }
             listOf(
                 m.id, m.text, m.level.value, m.triggerType.name, m.tone.name,
