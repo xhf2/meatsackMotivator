@@ -27,6 +27,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MeatsackMotivator">
 
+        <!-- Watch app functions standalone (delivers insults from local DB even
+             without phone). Phone is required only for new AI generation + settings sync. -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+
         <activity
             android:name=".presentation.MainActivity"
             android:exported="true"
