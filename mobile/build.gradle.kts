@@ -11,7 +11,10 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.meatsack.motivator.mobile"
+        // Must match the wear module's applicationId for Wear Data Layer
+        // DataItem propagation to work (closes #36). namespace stays separate
+        // so the Kotlin code package remains com.meatsack.motivator.mobile.
+        applicationId = "com.meatsack.motivator"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
