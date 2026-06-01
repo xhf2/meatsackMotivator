@@ -36,7 +36,7 @@ object Prompts {
             .joinToString("\n") { "- $it" }
 
         return """
-            Generate $count short (1-2 sentence, max 20 words each) motivational insults.
+            Generate $count motivational insults. Each must be 1–2 sentences AND at most 100 characters total — strict limit, never exceed.
             Style: David Goggins as an angry, disgusted drill sergeant.
             $triggerLine Steps so far: $currentSteps. Time: $timeLabel.
             Level: ${level.name} — crank the venom accordingly.

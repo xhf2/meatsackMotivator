@@ -5,6 +5,7 @@ import android.util.Log
 import com.meatsack.motivator.mobile.sync.PhoneSyncSender
 import com.meatsack.motivator.mobile.sync.SyncResult
 import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageLimits
 import com.meatsack.shared.constants.MessageSource
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
@@ -48,7 +49,19 @@ class AiMessageGenerator(
         return when (val result = client.generate(Prompts.SYSTEM_PROMPT, userPrompt)) {
             is GenerationResult.Success -> {
                 val valid = result.messages
-                    .filter { it.length <= 200 && !it.contains('|') && !it.contains('\n') }
+                    .filter {
+                        it.length <= MessageLimits.MAX_MESSAGE_TEXT_LENGTH &&
+                            !it.contains('|') &&
+                            !it.contains('\n')
+                    }
+                val dropped = result.messages.size - valid.size
+                if (dropped > 0) {
+                    Log.w(
+                        TAG,
+                        "Dropped $dropped/${result.messages.size} generations " +
+                            "(over ${MessageLimits.MAX_MESSAGE_TEXT_LENGTH} chars or contains '|'/newline)",
+                    )
+                }
                 if (valid.isEmpty()) {
                     Log.w(TAG, "Claude returned no valid messages after filtering")
                     return GenerationResult.Success(emptyList())

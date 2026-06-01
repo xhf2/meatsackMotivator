@@ -104,7 +104,7 @@ object SeedData {
         msg("You weak, excuse-making piece of shit. STAND UP.", EscalationLevel.NUCLEAR),
         msg("90 minutes of nothing. You sarcopenic pansy ass motherfucker. MOVE.", EscalationLevel.NUCLEAR),
         msg("You're a weakness-worshipping fraud. Your body is giving up on you because YOU gave up first.", EscalationLevel.NUCLEAR),
-        msg("You soft-bellied comfort addict. 90 minutes. Your muscles are screaming and you can't hear them over your excuses.", EscalationLevel.NUCLEAR),
+        msg("You soft-bellied comfort addict. 90 minutes. Your muscles scream; your excuses drown them out.", EscalationLevel.NUCLEAR),
         msg("GET UP, you osteopenic waste of a skeleton. 90 goddamn minutes.", EscalationLevel.NUCLEAR),
         msg("Your bones are turning to chalk while you sit there, you pathetic snooze-button-hitting disgrace.", EscalationLevel.NUCLEAR),
         msg("You potential-wasting coward. 90 minutes of choosing to be weak.", EscalationLevel.NUCLEAR),
@@ -120,7 +120,7 @@ object SeedData {
     private val inactivityLevel4Full = listOf(
         msg("2 hours of nothing. Two hours closer to death, spent getting weaker.", EscalationLevel.EXISTENTIAL),
         msg("What are you even doing with your life?", EscalationLevel.EXISTENTIAL),
-        msg("2 hours. You beached fucking walrus of a human. Every minute is a choice and you keep choosing weakness.", EscalationLevel.EXISTENTIAL),
+        msg("2 hours. You beached walrus. Every minute is a choice and you keep choosing weakness.", EscalationLevel.EXISTENTIAL),
         msg("Two hours. Your body is a temple and you've turned it into a landfill. GET UP.", EscalationLevel.EXISTENTIAL),
         msg("You've been sitting so long your blood has a parking brake on it. TWO HOURS. MOVE.", EscalationLevel.EXISTENTIAL),
         msg("2 hours of bone-density-losing, muscle-wasting, excuse-making NOTHING. Is this who you are?", EscalationLevel.EXISTENTIAL),
