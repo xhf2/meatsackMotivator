@@ -1,11 +1,14 @@
 package com.meatsack.motivator.escalation
 
 import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.sync.SettingsDefaults
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class EscalationManager {
+class EscalationManager(
+    private val thresholdProvider: () -> Int = { SettingsDefaults.INACTIVITY_THRESHOLD_MIN },
+) {
     private val _currentLevel = MutableStateFlow(EscalationLevel.AGGRESSIVE)
     val currentLevel: StateFlow<EscalationLevel> = _currentLevel.asStateFlow()
 
@@ -54,7 +57,7 @@ class EscalationManager {
      */
     fun shouldTrigger(minutesIdle: Int): Boolean {
         if (isSnoozed && System.currentTimeMillis() < snoozeUntil) return false
-        val threshold = EscalationLevel.INACTIVITY_THRESHOLD_MINUTES_DEFAULT
+        val threshold = thresholdProvider()
         if (minutesIdle < threshold) return false
         val interval = EscalationLevel.ESCALATION_INTERVAL_MINUTES
         val last = lastFiredAtIdle ?: return true
@@ -64,7 +67,7 @@ class EscalationManager {
     fun isCurrentlySnoozed(): Boolean = isSnoozed && System.currentTimeMillis() < snoozeUntil
 
     private fun calculateLevel(minutesIdle: Int): EscalationLevel {
-        val threshold = EscalationLevel.INACTIVITY_THRESHOLD_MINUTES_DEFAULT
+        val threshold = thresholdProvider()
         val interval = EscalationLevel.ESCALATION_INTERVAL_MINUTES
         val minutesPastThreshold = maxOf(0, minutesIdle - threshold)
         val escalations = minutesPastThreshold / interval

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import com.meatsack.shared.sync.SettingsDefaults as SharedDefaults
 
 private val Context.dataStore by preferencesDataStore("meatsack_settings")
 
@@ -21,6 +22,7 @@ class SettingsRepository(private val context: Context) {
         val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
         val CONTEXT_AWARE_ENABLED = booleanPreferencesKey("context_aware_enabled")
         val END_OF_DAY_HOUR = intPreferencesKey("end_of_day_hour")
+        val BEHIND_PACE_CHECK_HOUR = intPreferencesKey("behind_pace_check_hour")
 
         internal fun validateHour(name: String, hour: Int) {
             require(hour in 0..23) { "$name must be in 0..23; was $hour" }
@@ -32,16 +34,16 @@ class SettingsRepository(private val context: Context) {
     }
 
     val dailyStepGoal: Flow<Int> = context.dataStore.data.map {
-        it[DAILY_STEP_GOAL] ?: SettingsDefaults.DAILY_STEP_GOAL
+        it[DAILY_STEP_GOAL] ?: SharedDefaults.DAILY_STEP_GOAL
     }
     val inactivityThreshold: Flow<Int> = context.dataStore.data.map {
-        it[INACTIVITY_THRESHOLD] ?: SettingsDefaults.INACTIVITY_THRESHOLD_MIN
+        it[INACTIVITY_THRESHOLD] ?: SharedDefaults.INACTIVITY_THRESHOLD_MIN
     }
     val activeHoursStart: Flow<Int> = context.dataStore.data.map {
-        it[ACTIVE_HOURS_START] ?: SettingsDefaults.ACTIVE_HOURS_START
+        it[ACTIVE_HOURS_START] ?: SharedDefaults.ACTIVE_HOURS_START
     }
     val activeHoursEnd: Flow<Int> = context.dataStore.data.map {
-        it[ACTIVE_HOURS_END] ?: SettingsDefaults.ACTIVE_HOURS_END
+        it[ACTIVE_HOURS_END] ?: SharedDefaults.ACTIVE_HOURS_END
     }
     val quietHoursStart: Flow<Int> = context.dataStore.data.map {
         it[QUIET_HOURS_START] ?: SettingsDefaults.QUIET_HOURS_START
@@ -50,10 +52,13 @@ class SettingsRepository(private val context: Context) {
         it[QUIET_HOURS_END] ?: SettingsDefaults.QUIET_HOURS_END
     }
     val contextAwareEnabled: Flow<Boolean> = context.dataStore.data.map {
-        it[CONTEXT_AWARE_ENABLED] ?: SettingsDefaults.CONTEXT_AWARE_ENABLED
+        it[CONTEXT_AWARE_ENABLED] ?: SharedDefaults.CONTEXT_AWARE_ENABLED
     }
     val endOfDayHour: Flow<Int> = context.dataStore.data.map {
-        it[END_OF_DAY_HOUR] ?: SettingsDefaults.END_OF_DAY_HOUR
+        it[END_OF_DAY_HOUR] ?: SharedDefaults.END_OF_DAY_HOUR
+    }
+    val behindPaceCheckHour: Flow<Int> = context.dataStore.data.map {
+        it[BEHIND_PACE_CHECK_HOUR] ?: SharedDefaults.BEHIND_PACE_CHECK_HOUR
     }
 
     suspend fun setDailyStepGoal(goal: Int) {
@@ -91,5 +96,10 @@ class SettingsRepository(private val context: Context) {
     suspend fun setEndOfDayHour(hour: Int) {
         validateHour("End of day hour", hour)
         context.dataStore.edit { it[END_OF_DAY_HOUR] = hour }
+    }
+
+    suspend fun setBehindPaceCheckHour(hour: Int) {
+        validateHour("Behind pace check hour", hour)
+        context.dataStore.edit { it[BEHIND_PACE_CHECK_HOUR] = hour }
     }
 }

@@ -1,38 +1,42 @@
 package com.meatsack.motivator.settings
 
 import android.content.Context
+import com.meatsack.shared.sync.SettingsDefaults
 
 /**
- * Cache of user settings mirrored from the phone. Populated by a
- * future settings-sync DataItem (Task 16); reads default values until
- * the first sync.
+ * Cache of user settings mirrored from the phone over the /settings DataItem.
+ * Each key falls back to SettingsDefaults until that key has been written by a sync.
  */
 class WatchSettingsCache(context: Context) {
     private val prefs = context.getSharedPreferences("watch_settings", Context.MODE_PRIVATE)
 
     var contextAwareEnabled: Boolean
-        get() = prefs.getBoolean(KEY_CONTEXT_AWARE, false)
+        get() = prefs.getBoolean(KEY_CONTEXT_AWARE, SettingsDefaults.CONTEXT_AWARE_ENABLED)
         set(value) = prefs.edit().putBoolean(KEY_CONTEXT_AWARE, value).apply()
 
     var activeHoursStart: Int
-        get() = prefs.getInt(KEY_ACTIVE_START, 7)
+        get() = prefs.getInt(KEY_ACTIVE_START, SettingsDefaults.ACTIVE_HOURS_START)
         set(value) = prefs.edit().putInt(KEY_ACTIVE_START, value).apply()
 
     var activeHoursEnd: Int
-        get() = prefs.getInt(KEY_ACTIVE_END, 22)
+        get() = prefs.getInt(KEY_ACTIVE_END, SettingsDefaults.ACTIVE_HOURS_END)
         set(value) = prefs.edit().putInt(KEY_ACTIVE_END, value).apply()
 
     var dailyStepGoal: Int
-        get() = prefs.getInt(KEY_GOAL, 10_000)
+        get() = prefs.getInt(KEY_GOAL, SettingsDefaults.DAILY_STEP_GOAL)
         set(value) = prefs.edit().putInt(KEY_GOAL, value).apply()
 
     var endOfDayHour: Int
-        get() = prefs.getInt(KEY_END_OF_DAY, 21)
+        get() = prefs.getInt(KEY_END_OF_DAY, SettingsDefaults.END_OF_DAY_HOUR)
         set(value) = prefs.edit().putInt(KEY_END_OF_DAY, value).apply()
 
     var behindPaceCheckHour: Int
-        get() = prefs.getInt(KEY_BEHIND_PACE_HOUR, 12)
+        get() = prefs.getInt(KEY_BEHIND_PACE_HOUR, SettingsDefaults.BEHIND_PACE_CHECK_HOUR)
         set(value) = prefs.edit().putInt(KEY_BEHIND_PACE_HOUR, value).apply()
+
+    var inactivityThreshold: Int
+        get() = prefs.getInt(KEY_INACTIVITY_THRESHOLD, SettingsDefaults.INACTIVITY_THRESHOLD_MIN)
+        set(value) = prefs.edit().putInt(KEY_INACTIVITY_THRESHOLD, value).apply()
 
     companion object {
         private const val KEY_CONTEXT_AWARE = "context_aware_enabled"
@@ -41,5 +45,6 @@ class WatchSettingsCache(context: Context) {
         private const val KEY_GOAL = "daily_step_goal"
         private const val KEY_END_OF_DAY = "end_of_day_hour"
         private const val KEY_BEHIND_PACE_HOUR = "behind_pace_check_hour"
+        private const val KEY_INACTIVITY_THRESHOLD = "inactivity_threshold_min"
     }
 }

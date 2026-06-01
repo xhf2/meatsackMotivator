@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Calendar
+import com.meatsack.shared.sync.SettingsDefaults as SharedDefaults
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val repo = SettingsRepository(application)
@@ -32,22 +33,22 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val dailyStepGoal = repo.dailyStepGoal.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
-        SettingsDefaults.DAILY_STEP_GOAL,
+        SharedDefaults.DAILY_STEP_GOAL,
     )
     val inactivityThreshold = repo.inactivityThreshold.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
-        SettingsDefaults.INACTIVITY_THRESHOLD_MIN,
+        SharedDefaults.INACTIVITY_THRESHOLD_MIN,
     )
     val activeHoursStart = repo.activeHoursStart.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
-        SettingsDefaults.ACTIVE_HOURS_START,
+        SharedDefaults.ACTIVE_HOURS_START,
     )
     val activeHoursEnd = repo.activeHoursEnd.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
-        SettingsDefaults.ACTIVE_HOURS_END,
+        SharedDefaults.ACTIVE_HOURS_END,
     )
     val quietHoursStart = repo.quietHoursStart.stateIn(
         viewModelScope,
@@ -62,12 +63,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     val contextAwareEnabled = repo.contextAwareEnabled.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
-        SettingsDefaults.CONTEXT_AWARE_ENABLED,
+        SharedDefaults.CONTEXT_AWARE_ENABLED,
     )
     val endOfDayHour = repo.endOfDayHour.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
-        SettingsDefaults.END_OF_DAY_HOUR,
+        SharedDefaults.END_OF_DAY_HOUR,
+    )
+    val behindPaceCheckHour = repo.behindPaceCheckHour.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SharedDefaults.BEHIND_PACE_CHECK_HOUR,
     )
 
     fun updateStepGoal(goal: Int) = viewModelScope.launch { repo.setDailyStepGoal(goal) }
@@ -80,6 +86,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun toggleContextAware(enabled: Boolean) =
         viewModelScope.launch { repo.setContextAwareEnabled(enabled) }
     fun updateEndOfDayHour(hour: Int) = viewModelScope.launch { repo.setEndOfDayHour(hour) }
+    fun updateBehindPaceCheckHour(hour: Int) =
+        viewModelScope.launch { repo.setBehindPaceCheckHour(hour) }
 
     fun saveApiKey(key: String) {
         if (key.isBlank()) apiKeyStore.clear() else apiKeyStore.save(key)

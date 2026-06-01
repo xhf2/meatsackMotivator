@@ -42,6 +42,9 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
     // anthropic-java pulls in Apache HttpClient5 transitively; multiple
     // jars contribute META-INF resource files with the same path which the
     // Android packager refuses to merge. Drop them from the APK.
@@ -85,6 +88,7 @@ dependencies {
     implementation(libs.androidx.security.crypto)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
