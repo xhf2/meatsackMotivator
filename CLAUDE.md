@@ -67,6 +67,24 @@ Because the watch foreground service has `type="health"`, `ACTIVITY_RECOGNITION`
 adb -s emulator-5556 shell pm grant com.meatsack.motivator android.permission.ACTIVITY_RECOGNITION
 ```
 
+### Installing without cross-contamination
+
+The phone and watch modules now share `applicationId = com.meatsack.motivator` (required for Wear Data Layer DataItem propagation). The wear manifest declares `<uses-feature android:name="android.hardware.type.watch" android:required="true"/>` so `:wear:installDebug` auto-targets only the watch. The `:mobile:installDebug` task does **not** form-factor-filter — it will install on both emulators by default, which overwrites the watch's APK.
+
+Recommended dev install procedure (target each device explicitly):
+
+```bash
+./gradlew :mobile:assembleDebug :wear:assembleDebug
+adb -s emulator-5556 install -r mobile/build/outputs/apk/debug/mobile-debug.apk     # phone only
+adb -s emulator-5554 install -r wear/build/outputs/apk/debug/wear-debug.apk         # watch only
+```
+
+If you accidentally cross-install (or had separate `applicationId`s before the pre-existing v1 sync bug was fixed), uninstall first:
+
+```bash
+adb -s <device-id> uninstall com.meatsack.motivator
+```
+
 ## Git Workflow
 
 - **Do not commit to `main`.** Work lives on feature branches (e.g., `feature/v1-implementation`). PR into `main`.

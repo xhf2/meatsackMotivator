@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Required for Wear OS device filtering: this APK only installs on watches. -->
+    <!-- Paired with the mobile APK now sharing applicationId; see #36. -->
+    <uses-feature android:name="android.hardware.type.watch" android:required="true" />
+
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <uses-permission android:name="android.permission.BODY_SENSORS_BACKGROUND"
         android:maxSdkVersion="32" />
