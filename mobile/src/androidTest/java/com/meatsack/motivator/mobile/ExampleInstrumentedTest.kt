@@ -11,6 +11,6 @@ class ExampleInstrumentedTest {
     @Test
     fun useAppContext() {
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("com.meatsack.motivator.mobile", appContext.packageName)
+        assertEquals("com.meatsack.motivator", appContext.packageName)
     }
 }
