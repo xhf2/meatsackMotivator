@@ -26,6 +26,8 @@ class InsultNotificationService(private val context: Context) {
         // Each insult is its own notification (id = message.id) and auto-expires so
         // the stream can't grow unbounded.
         private const val NOTIFICATION_TIMEOUT_MS = 30L * 60L * 1000L
+
+        const val INSULT_TAG = "insult"
     }
 
     init {
@@ -83,7 +85,7 @@ class InsultNotificationService(private val context: Context) {
             .addAction(R.drawable.ic_thumb_up, "👍", votePendingIntent(message.id, notifId, isUp = true))
             .build()
 
-        NotificationManagerCompat.from(context).notify(notifId, notification)
+        NotificationManagerCompat.from(context).notify(INSULT_TAG, notifId, notification)
     }
 
     private fun votePendingIntent(messageId: Long, notifId: Int, isUp: Boolean): PendingIntent {
