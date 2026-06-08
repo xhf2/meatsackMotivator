@@ -37,7 +37,7 @@ class VoteReceiver : BroadcastReceiver() {
         val notifId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, -1)
 
         // Acknowledge the tap immediately by dismissing the notification.
-        if (notifId > 0) NotificationManagerCompat.from(context).cancel(notifId)
+        if (notifId != -1) NotificationManagerCompat.from(context).cancel(notifId)
 
         val action = VoteAction.from(messageId, isUp)
         if (action is VoteAction.Ignore) return
