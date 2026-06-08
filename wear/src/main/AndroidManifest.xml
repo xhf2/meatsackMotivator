@@ -80,6 +80,10 @@
             </intent-filter>
         </service>
 
+        <receiver
+            android:name=".notification.VoteReceiver"
+            android:exported="false" />
+
     </application>
 
 </manifest>
