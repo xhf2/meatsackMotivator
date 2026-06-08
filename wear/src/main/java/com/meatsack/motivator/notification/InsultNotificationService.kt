@@ -69,7 +69,11 @@ class InsultNotificationService(private val context: Context) {
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setContentTitle(message.text)
             .setContentText(statsText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message.text))
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .bigText(message.text)
+                    .setSummaryText(statsText),
+            )
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setContentIntent(contentIntent)
