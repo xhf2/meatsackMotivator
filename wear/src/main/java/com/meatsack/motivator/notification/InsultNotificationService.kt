@@ -10,6 +10,8 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.meatsack.motivator.R
 import com.meatsack.motivator.presentation.InsultActivity
 import com.meatsack.shared.model.Message
 
@@ -17,10 +19,13 @@ class InsultNotificationService(private val context: Context) {
 
     companion object {
         const val CHANNEL_ID = "meatsack_insults"
-        const val NOTIFICATION_ID = 1
         const val EXTRA_MESSAGE_ID = "message_id"
         const val EXTRA_MESSAGE_TEXT = "message_text"
         const val EXTRA_STATS_TEXT = "stats_text"
+
+        // Each insult is its own notification (id = message.id) and auto-expires so
+        // the stream can't grow unbounded.
+        private const val NOTIFICATION_TIMEOUT_MS = 30L * 60L * 1000L
     }
 
     init {
@@ -29,7 +34,7 @@ class InsultNotificationService(private val context: Context) {
 
     fun deliverInsult(message: Message, statsText: String) {
         vibrate()
-        showFullScreenNotification(message, statsText)
+        showInsultNotification(message, statsText)
     }
 
     private fun vibrate() {
@@ -45,34 +50,51 @@ class InsultNotificationService(private val context: Context) {
         vibrator.vibrate(effect)
     }
 
-    private fun showFullScreenNotification(message: Message, statsText: String) {
-        val intent = Intent(context, InsultActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            putExtra(EXTRA_MESSAGE_ID, message.id)
-            putExtra(EXTRA_MESSAGE_TEXT, message.text)
-            putExtra(EXTRA_STATS_TEXT, statsText)
-        }
+    private fun showInsultNotification(message: Message, statsText: String) {
+        val notifId = message.id.toInt()
 
-        val pendingIntent = PendingIntent.getActivity(
+        val contentIntent = PendingIntent.getActivity(
             context,
-            0,
-            intent,
+            notifId,
+            Intent(context, InsultActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                putExtra(EXTRA_MESSAGE_ID, message.id)
+                putExtra(EXTRA_MESSAGE_TEXT, message.text)
+                putExtra(EXTRA_STATS_TEXT, statsText)
+            },
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setContentTitle("meatsackMotivator")
-            .setContentText(message.text)
+            .setContentTitle(message.text)
+            .setContentText(statsText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message.text))
             .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setFullScreenIntent(pendingIntent, true)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setContentIntent(contentIntent)
             .setAutoCancel(true)
+            .setTimeoutAfter(NOTIFICATION_TIMEOUT_MS)
+            .addAction(R.drawable.ic_thumb_down, "👎", votePendingIntent(message.id, notifId, isUp = false))
+            .addAction(R.drawable.ic_thumb_up, "👍", votePendingIntent(message.id, notifId, isUp = true))
             .build()
 
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        NotificationManagerCompat.from(context).notify(notifId, notification)
+    }
+
+    private fun votePendingIntent(messageId: Long, notifId: Int, isUp: Boolean): PendingIntent {
+        val intent = Intent(context, VoteReceiver::class.java).apply {
+            action = VoteReceiver.ACTION_VOTE
+            putExtra(EXTRA_MESSAGE_ID, messageId)
+            putExtra(VoteReceiver.EXTRA_VOTE_UP, isUp)
+            putExtra(VoteReceiver.EXTRA_NOTIFICATION_ID, notifId)
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            VoteReceiver.requestCode(messageId, isUp),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     private fun createNotificationChannel() {
