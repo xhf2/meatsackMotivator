@@ -1,16 +1,20 @@
 package com.meatsack.motivator.notification
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.meatsack.motivator.R
 import com.meatsack.motivator.presentation.InsultActivity
 import com.meatsack.shared.model.Message
@@ -18,6 +22,7 @@ import com.meatsack.shared.model.Message
 class InsultNotificationService(private val context: Context) {
 
     companion object {
+        private const val TAG = "InsultNotification"
         const val CHANNEL_ID = "meatsack_insults"
         const val EXTRA_MESSAGE_ID = "message_id"
         const val EXTRA_MESSAGE_TEXT = "message_text"
@@ -53,6 +58,15 @@ class InsultNotificationService(private val context: Context) {
     }
 
     private fun showInsultNotification(message: Message, statsText: String) {
+        // POST_NOTIFICATIONS is requested at runtime in MainActivity; if the user
+        // denied it, posting would be a silent OS-level drop. Make that explicit.
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.w(TAG, "POST_NOTIFICATIONS denied; skipping insult notification for id=${message.id}")
+            return
+        }
+
         val notifId = message.id.toInt()
 
         val contentIntent = PendingIntent.getActivity(
