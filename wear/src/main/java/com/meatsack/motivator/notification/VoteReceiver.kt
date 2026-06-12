@@ -71,6 +71,12 @@ class VoteReceiver : BroadcastReceiver() {
         /**
          * Unique request code per (message, direction). FLAG_IMMUTABLE PendingIntents
          * with identical request codes would otherwise alias and reuse stale extras.
+         *
+         * Assumes message ids fit in the low 31 bits (`messageId < 2^31`): `toInt() shl 1`
+         * keeps the low bit for direction and discards anything above bit 30. True for our
+         * Room autoincrement ids (the library is capped well under that). If ids ever become
+         * server-assigned 64-bit values, mix in the high bits or two messages sharing low
+         * bits would silently share a PendingIntent and misroute votes.
          */
         fun requestCode(messageId: Long, isUp: Boolean): Int =
             (messageId.toInt() shl 1) or (if (isUp) 1 else 0)

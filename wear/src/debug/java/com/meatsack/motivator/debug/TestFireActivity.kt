@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  *   adb shell am start -n com.meatsack.motivator/.debug.TestFireActivity
  *
  * Picks the top message from the DB so the vote lands on a real row; falls back to a
- * throwaway message (id = -1, vote is a no-op) if the DB is empty.
+ * throwaway message (default id = 0, vote is a no-op) if the DB is empty.
  */
 class TestFireActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

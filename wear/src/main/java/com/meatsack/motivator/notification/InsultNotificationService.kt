@@ -67,6 +67,8 @@ class InsultNotificationService(private val context: Context) {
             return
         }
 
+        // Assumes message.id fits in an Int (Room autoincrement ids stay well under 2^31);
+        // see VoteReceiver.requestCode for the same bounded-id assumption.
         val notifId = message.id.toInt()
 
         val contentIntent = PendingIntent.getActivity(
