@@ -1,46 +1,54 @@
 package com.meatsack.motivator.debug
 
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.util.Log
 import androidx.activity.ComponentActivity
+import com.meatsack.motivator.MeatsackWearApp
 import com.meatsack.motivator.notification.InsultNotificationService
-import com.meatsack.motivator.presentation.InsultActivity
+import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageSource
+import com.meatsack.shared.constants.MessageTone
+import com.meatsack.shared.constants.TriggerType
+import com.meatsack.shared.db.AppDatabase
+import com.meatsack.shared.model.Message
+import kotlinx.coroutines.launch
 
+/**
+ * Debug-only. Fires a REAL insult notification (the production delivery path) so the
+ * notification + 👎/👍 voting + wrist-raise surfacing can be verified on-device:
+ *
+ *   adb shell am start -n com.meatsack.motivator/.debug.TestFireActivity
+ *
+ * Picks the top message from the DB so the vote lands on a real row; falls back to a
+ * throwaway message (default id = 0, vote is a no-op) if the DB is empty.
+ */
 class TestFireActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val text = intent.getStringExtra("text")
-            ?: "GET UP, you cloud-native pile of laundry."
         val stats = intent.getStringExtra("stats") ?: "42 steps. TEST fire."
+        val fallbackText = intent.getStringExtra("text")
+            ?: "GET UP, you cloud-native pile of laundry."
 
-        Log.d("TestFireActivity", "Forwarding to InsultActivity: $text")
+        val app = application as MeatsackWearApp
+        val notifier = InsultNotificationService(applicationContext)
 
-        vibrate()
-
-        startActivity(
-            Intent(this, InsultActivity::class.java).apply {
-                putExtra(InsultNotificationService.EXTRA_MESSAGE_ID, -1L)
-                putExtra(InsultNotificationService.EXTRA_MESSAGE_TEXT, text)
-                putExtra(InsultNotificationService.EXTRA_STATS_TEXT, stats)
-            },
-        )
-        finish()
-    }
-
-    private fun vibrate() {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val manager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            manager.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(VIBRATOR_SERVICE) as Vibrator
+        app.applicationScope.launch {
+            val message = AppDatabase.getDatabase(applicationContext)
+                .messageDao()
+                .getAllMessages()
+                .firstOrNull()
+                ?: Message(
+                    text = fallbackText,
+                    level = EscalationLevel.AGGRESSIVE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.PRE_WRITTEN,
+                )
+            Log.d("TestFireActivity", "Firing test insult notification: ${message.text}")
+            notifier.deliverInsult(message, stats)
         }
-        vibrator.vibrate(VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE))
+
+        finish()
     }
 }

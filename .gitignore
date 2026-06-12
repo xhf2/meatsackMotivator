@@ -4,6 +4,7 @@
 /.idea/
 /.kotlin/
 /.claude/
+/.superpowers/
 .DS_Store
 /build
 /captures
