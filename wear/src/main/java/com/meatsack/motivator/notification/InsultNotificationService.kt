@@ -14,7 +14,9 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.Person
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.IconCompat
 import com.meatsack.motivator.R
 import com.meatsack.motivator.presentation.InsultActivity
 import com.meatsack.shared.model.Message
@@ -91,17 +93,24 @@ class InsultNotificationService(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val coach = Person.Builder()
+            .setName("meatsackMotivator")
+            .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
+            .build()
+
+        val you = Person.Builder().setName("You").build()
+        val messagingStyle = NotificationCompat.MessagingStyle(you)
+        val now = System.currentTimeMillis()
+        insultBubbles(message.text, statsText).forEach { text ->
+            messagingStyle.addMessage(text, now, coach)
+        }
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setContentTitle(message.text)
-            .setContentText(statsText)
-            .setStyle(
-                NotificationCompat.BigTextStyle()
-                    .bigText(message.text)
-                    .setSummaryText(statsText),
-            )
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(ContextCompat.getColor(context, R.color.brand_red))
+            .setStyle(messagingStyle)
             .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .setTimeoutAfter(NOTIFICATION_TIMEOUT_MS)
