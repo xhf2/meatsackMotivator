@@ -1,5 +1,13 @@
 # WhatsApp-style Insult Notifications Implementation Plan
 
+> **⚠️ Partially superseded.** Tasks 1–3 (assets, helper, MessagingStyle rewrite) were
+> implemented, then **on-device testing on the SM-L320 forced a redesign away from
+> MessagingStyle** to a plain branded notification (app-icon large icon, no inline voting,
+> compliant 2-tap flow). The `insultBubbles` helper from Task 2 was removed. See the
+> "Design evolution" section of the spec
+> (`docs/superpowers/specs/2026-06-14-whatsapp-insult-notifications-design.md`) for the
+> final design and why. This plan is kept as the historical execution record.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Render the watch inactivity insult as a branded WhatsApp-style `MessagingStyle` notification card (app-icon avatar, sender "meatsackMotivator", insult + stats as two message bubbles) that the user taps to open the existing full-screen `InsultActivity`.
