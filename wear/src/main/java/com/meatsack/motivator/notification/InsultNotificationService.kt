@@ -100,10 +100,11 @@ class InsultNotificationService(private val context: Context) {
             .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
             .build()
 
-        // MessagingStyle requires a local-user Person, but every message here is from the
-        // coach — `you` is never used as a sender. Blank name so no "You" label leaks into
-        // the card header on OEM skins.
-        val you = Person.Builder().setName("").build()
+        // MessagingStyle requires a NON-EMPTY local-user name — Person.Builder().setName("")
+        // makes the constructor throw IllegalArgumentException("User's name must not be
+        // empty."). Every message here is from the coach, so `you` is never rendered as a
+        // sender; "You" is just the required placeholder and isn't shown on the card.
+        val you = Person.Builder().setName("You").build()
         val messagingStyle = NotificationCompat.MessagingStyle(you)
         val bubbles = insultBubbles(message.text, statsText)
         val now = System.currentTimeMillis()
