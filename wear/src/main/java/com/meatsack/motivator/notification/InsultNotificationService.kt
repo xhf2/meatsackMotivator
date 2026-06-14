@@ -75,11 +75,15 @@ class InsultNotificationService(private val context: Context) {
         // see VoteReceiver.requestCode for the same bounded-id assumption.
         val notifId = message.id.toInt()
 
-        // Tapping the card opens the app directly. The card carries NO inline vote actions
-        // and no expandable style on purpose: a minimal, action-less notification is the
-        // best lever for "first tap launches the activity" instead of expanding in the
-        // Wear notification shade. Voting lives only in InsultActivity. statsText is not
-        // shown on the card but is forwarded so the full-screen view can display it.
+        // Tapping the card leads to InsultActivity (where voting happens) via this
+        // contentIntent. The card carries NO inline vote actions and no rich expandable
+        // content on purpose — a minimal, action-less card is our lever to nudge the tap
+        // toward the activity. NOTE: this is not guaranteed — Samsung One UI Watch was
+        // observed to open the Wear shade detail view on first tap regardless, launching
+        // the activity from its "Open app" affordance. Suppressing that detail step would
+        // require a full-screen intent, which we deliberately avoid for Play compliance.
+        // Voting lives only in InsultActivity. statsText is not shown on the card but is
+        // forwarded so the full-screen view can display it.
         val contentIntent = PendingIntent.getActivity(
             context,
             notifId,
