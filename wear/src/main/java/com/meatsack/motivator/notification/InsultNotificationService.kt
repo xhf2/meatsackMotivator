@@ -33,6 +33,14 @@ class InsultNotificationService(private val context: Context) {
         private const val NOTIFICATION_TIMEOUT_MS = 30L * 60L * 1000L
 
         const val INSULT_TAG = "insult"
+
+        /**
+         * Ordered bubble texts for the MessagingStyle card: insult first, stats second,
+         * dropping any blank entry so we never post an empty bubble. Pure (no Android) so
+         * it's unit-testable.
+         */
+        fun insultBubbles(insultText: String, statsText: String): List<String> =
+            listOf(insultText, statsText).filter { it.isNotBlank() }
     }
 
     init {
