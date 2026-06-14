@@ -95,14 +95,22 @@ class InsultNotificationService(private val context: Context) {
 
         val coach = Person.Builder()
             .setName("meatsackMotivator")
+            // ic_launcher is an adaptive icon; verify the avatar crop on the physical
+            // SM-L320 (MessagingStyle circle-masks it; some OEM skins clip oddly).
             .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
             .build()
 
-        val you = Person.Builder().setName("You").build()
+        // MessagingStyle requires a local-user Person, but every message here is from the
+        // coach — `you` is never used as a sender. Blank name so no "You" label leaks into
+        // the card header on OEM skins.
+        val you = Person.Builder().setName("").build()
         val messagingStyle = NotificationCompat.MessagingStyle(you)
+        val bubbles = insultBubbles(message.text, statsText)
         val now = System.currentTimeMillis()
-        insultBubbles(message.text, statsText).forEach { text ->
-            messagingStyle.addMessage(text, now, coach)
+        bubbles.forEachIndexed { index, text ->
+            // Distinct increasing timestamps (older first, newest == now) so Wear renders
+            // the insult and the stats as two separate, ordered bubbles.
+            messagingStyle.addMessage(text, now - (bubbles.lastIndex - index) * 1_000L, coach)
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
