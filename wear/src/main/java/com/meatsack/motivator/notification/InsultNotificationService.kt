@@ -103,6 +103,9 @@ class InsultNotificationService(private val context: Context) {
             .setLargeIcon(largeIcon)
             .setContentTitle(SENDER)
             .setContentText(message.text)
+            // Full insult (capped at 100 chars upstream) shows un-truncated when the card
+            // is opened into the Wear detail view.
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message.text))
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setContentIntent(contentIntent)
