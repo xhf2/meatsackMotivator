@@ -64,7 +64,7 @@ Model the angry coach as a **message sender**:
 ### New / changed assets (this is the actual fix for the gray triangle)
 
 - **`wear/res/drawable/ic_notification.xml`** — a new monochrome, white-on-transparent
-  vector glyph (flame) used as `setSmallIcon(...)`, replacing
+  vector glyph (dumbbell) used as `setSmallIcon(...)`, replacing
   `android.R.drawable.ic_dialog_alert`. That one line **is** the gray triangle; this
   removes it.
 - **`wear/res/values/colors.xml`** — add `brand_red = #FF3B30` (currently only defined
