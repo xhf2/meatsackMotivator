@@ -14,9 +14,8 @@ import android.os.VibratorManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.Person
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.drawable.IconCompat
+import androidx.core.graphics.drawable.toBitmap
 import com.meatsack.motivator.R
 import com.meatsack.motivator.presentation.InsultActivity
 import com.meatsack.shared.model.Message
@@ -30,19 +29,14 @@ class InsultNotificationService(private val context: Context) {
         const val EXTRA_MESSAGE_TEXT = "message_text"
         const val EXTRA_STATS_TEXT = "stats_text"
 
+        // The card "sender" name shown as the notification title.
+        private const val SENDER = "meatsackMotivator"
+
         // Each insult is its own notification (id = message.id) and auto-expires so
         // the stream can't grow unbounded.
         private const val NOTIFICATION_TIMEOUT_MS = 30L * 60L * 1000L
 
         const val INSULT_TAG = "insult"
-
-        /**
-         * Ordered bubble texts for the MessagingStyle card: insult first, stats second,
-         * dropping any blank entry so we never post an empty bubble. Pure (no Android) so
-         * it's unit-testable.
-         */
-        fun insultBubbles(insultText: String, statsText: String): List<String> =
-            listOf(insultText, statsText).filter { it.isNotBlank() }
     }
 
     init {
@@ -81,6 +75,11 @@ class InsultNotificationService(private val context: Context) {
         // see VoteReceiver.requestCode for the same bounded-id assumption.
         val notifId = message.id.toInt()
 
+        // Tapping the card opens the app directly. The card carries NO inline vote actions
+        // and no expandable style on purpose: a minimal, action-less notification is the
+        // best lever for "first tap launches the activity" instead of expanding in the
+        // Wear notification shade. Voting lives only in InsultActivity. statsText is not
+        // shown on the card but is forwarded so the full-screen view can display it.
         val contentIntent = PendingIntent.getActivity(
             context,
             notifId,
@@ -93,56 +92,25 @@ class InsultNotificationService(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
-        val coach = Person.Builder()
-            .setName("meatsackMotivator")
-            // ic_launcher is an adaptive icon; verify the avatar crop on the physical
-            // SM-L320 (MessagingStyle circle-masks it; some OEM skins clip oddly).
-            .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
-            .build()
-
-        // MessagingStyle requires a NON-EMPTY local-user name — Person.Builder().setName("")
-        // makes the constructor throw IllegalArgumentException("User's name must not be
-        // empty."). Every message here is from the coach, so `you` is never rendered as a
-        // sender; "You" is just the required placeholder and isn't shown on the card.
-        val you = Person.Builder().setName("You").build()
-        val messagingStyle = NotificationCompat.MessagingStyle(you)
-        val bubbles = insultBubbles(message.text, statsText)
-        val now = System.currentTimeMillis()
-        bubbles.forEachIndexed { index, text ->
-            // Distinct increasing timestamps (older first, newest == now) so Wear renders
-            // the insult and the stats as two separate, ordered bubbles.
-            messagingStyle.addMessage(text, now - (bubbles.lastIndex - index) * 1_000L, coach)
-        }
+        // Large icon = the app launcher icon, so the brand icon shows ON the collapsed
+        // card (a MessagingStyle avatar only renders in the expanded view, which we no
+        // longer use). Rendered to a bitmap so the adaptive launcher icon masks cleanly.
+        val largeIcon = ContextCompat.getDrawable(context, R.mipmap.ic_launcher)?.toBitmap()
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(ContextCompat.getColor(context, R.color.brand_red))
-            .setStyle(messagingStyle)
+            .setLargeIcon(largeIcon)
+            .setContentTitle(SENDER)
+            .setContentText(message.text)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_MESSAGE)
             .setContentIntent(contentIntent)
             .setAutoCancel(true)
             .setTimeoutAfter(NOTIFICATION_TIMEOUT_MS)
-            .addAction(R.drawable.ic_thumb_down, "👎", votePendingIntent(message.id, notifId, isUp = false))
-            .addAction(R.drawable.ic_thumb_up, "👍", votePendingIntent(message.id, notifId, isUp = true))
             .build()
 
         NotificationManagerCompat.from(context).notify(INSULT_TAG, notifId, notification)
-    }
-
-    private fun votePendingIntent(messageId: Long, notifId: Int, isUp: Boolean): PendingIntent {
-        val intent = Intent(context, VoteReceiver::class.java).apply {
-            action = VoteReceiver.ACTION_VOTE
-            putExtra(EXTRA_MESSAGE_ID, messageId)
-            putExtra(VoteReceiver.EXTRA_VOTE_UP, isUp)
-            putExtra(VoteReceiver.EXTRA_NOTIFICATION_ID, notifId)
-        }
-        return PendingIntent.getBroadcast(
-            context,
-            VoteReceiver.requestCode(messageId, isUp),
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
     }
 
     private fun createNotificationChannel() {
