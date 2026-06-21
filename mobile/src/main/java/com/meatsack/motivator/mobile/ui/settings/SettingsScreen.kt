@@ -134,6 +134,46 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
         Spacer(Modifier.height(16.dp))
 
+        val behindPaceEnabled by viewModel.behindPaceEnabled.collectAsState()
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                "Behind-pace messages",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = behindPaceEnabled,
+                onCheckedChange = { viewModel.toggleBehindPaceEnabled(it) },
+            )
+        }
+        Text(
+            "When off, the watch won't nag you for falling behind your step pace during the day.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Spacer(Modifier.height(16.dp))
+
+        val endOfDayEnabled by viewModel.endOfDayEnabled.collectAsState()
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(
+                "End-of-day messages",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Switch(
+                checked = endOfDayEnabled,
+                onCheckedChange = { viewModel.toggleEndOfDayEnabled(it) },
+            )
+        }
+        Text(
+            "When off, the watch won't nag you at the end of the day for missing your step goal.",
+            style = MaterialTheme.typography.bodySmall,
+        )
         Spacer(Modifier.height(24.dp))
         Text("Anthropic API key", style = MaterialTheme.typography.titleMedium)
 

@@ -75,6 +75,16 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SharingStarted.WhileSubscribed(),
         SharedDefaults.BEHIND_PACE_CHECK_HOUR,
     )
+    val behindPaceEnabled = repo.behindPaceEnabled.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SharedDefaults.BEHIND_PACE_ENABLED,
+    )
+    val endOfDayEnabled = repo.endOfDayEnabled.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SharedDefaults.END_OF_DAY_ENABLED,
+    )
 
     fun updateStepGoal(goal: Int) = viewModelScope.launch { repo.setDailyStepGoal(goal) }
     fun updateInactivityThreshold(min: Int) =
@@ -88,6 +98,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun updateEndOfDayHour(hour: Int) = viewModelScope.launch { repo.setEndOfDayHour(hour) }
     fun updateBehindPaceCheckHour(hour: Int) =
         viewModelScope.launch { repo.setBehindPaceCheckHour(hour) }
+    fun toggleBehindPaceEnabled(enabled: Boolean) =
+        viewModelScope.launch { repo.setBehindPaceEnabled(enabled) }
+    fun toggleEndOfDayEnabled(enabled: Boolean) =
+        viewModelScope.launch { repo.setEndOfDayEnabled(enabled) }
 
     fun saveApiKey(key: String) {
         if (key.isBlank()) apiKeyStore.clear() else apiKeyStore.save(key)
