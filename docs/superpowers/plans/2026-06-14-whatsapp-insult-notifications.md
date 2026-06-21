@@ -22,6 +22,10 @@
 
 ### Task 1: Add the branded assets (dumbbell small icon + brand_red color)
 
+> **Outcome — ✅ shipped, survives.** `ic_notification.xml` and the `brand_red` color
+> (`colors.xml:10`) are in the final design unchanged. The only task that landed exactly as
+> planned.
+
 The current gray triangle is `android.R.drawable.ic_dialog_alert`. We replace it with a
 white dumbbell glyph, and add the brand-red accent color (today only in the Compose theme).
 
@@ -29,7 +33,7 @@ white dumbbell glyph, and add the brand-red accent color (today only in the Comp
 - Create: `wear/src/main/res/drawable/ic_notification.xml`
 - Modify: `wear/src/main/res/values/colors.xml`
 
-- [ ] **Step 1: Create the dumbbell notification glyph**
+- [x] **Step 1: Create the dumbbell notification glyph**
 
 Create `wear/src/main/res/drawable/ic_notification.xml` (Material `fitness_center` dumbbell, flat white for a notification small icon):
 
@@ -46,7 +50,7 @@ Create `wear/src/main/res/drawable/ic_notification.xml` (Material `fitness_cente
 </vector>
 ```
 
-- [ ] **Step 2: Add the brand_red color**
+- [x] **Step 2: Add the brand_red color**
 
 In `wear/src/main/res/values/colors.xml`, add the `brand_red` entry inside `<resources>` (matches `MeatsackColors.primary = 0xFFFF3B30`):
 
@@ -54,12 +58,12 @@ In `wear/src/main/res/values/colors.xml`, add the `brand_red` entry inside `<res
     <color name="brand_red">#FFFF3B30</color>
 ```
 
-- [ ] **Step 3: Verify resources compile**
+- [x] **Step 3: Verify resources compile**
 
 Run: `./gradlew :wear:compileDebugKotlin`
 Expected: BUILD SUCCESSFUL (resources merge without error).
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add wear/src/main/res/drawable/ic_notification.xml wear/src/main/res/values/colors.xml
@@ -70,6 +74,12 @@ git commit -m "feat(wear): add dumbbell notification glyph + brand_red color"
 
 ### Task 2: Extract and test the pure `insultBubbles` helper
 
+> **Outcome — ❌ implemented, then reverted.** The helper and its 3 unit tests were written
+> and passed, but `insultBubbles` only existed to feed MessagingStyle bubbles. When Task 3's
+> MessagingStyle was dropped (see Task 3 outcome), the helper and
+> `InsultNotificationServiceTest.kt` were removed as dead code. The final plain-card design
+> has no unit-testable logic. Only a comment referencing MessagingStyle remains in the source.
+
 The only logic worth unit-testing: build the ordered list of bubble texts from the insult
 and stats, dropping blank stats. Pure Kotlin (no Android types), mirrors the
 `VoteReceiver.requestCode` / `VoteAction.from` pattern. Referencing a companion function
@@ -79,7 +89,7 @@ does **not** run the class `init {}` (no Context needed in the test).
 - Modify: `wear/src/main/java/com/meatsack/motivator/notification/InsultNotificationService.kt`
 - Test: `wear/src/test/java/com/meatsack/motivator/notification/InsultNotificationServiceTest.kt`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Create `wear/src/test/java/com/meatsack/motivator/notification/InsultNotificationServiceTest.kt`:
 
@@ -111,12 +121,12 @@ class InsultNotificationServiceTest {
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `./gradlew :wear:testDebugUnitTest --tests "com.meatsack.motivator.notification.InsultNotificationServiceTest"`
 Expected: FAIL — unresolved reference `insultBubbles`.
 
-- [ ] **Step 3: Add the pure function to the companion object**
+- [x] **Step 3: Add the pure function to the companion object**
 
 In `InsultNotificationService.kt`, add to the existing `companion object` (alongside `INSULT_TAG`):
 
@@ -130,12 +140,12 @@ In `InsultNotificationService.kt`, add to the existing `companion object` (along
             listOf(insultText, statsText).filter { it.isNotBlank() }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `./gradlew :wear:testDebugUnitTest --tests "com.meatsack.motivator.notification.InsultNotificationServiceTest"`
 Expected: PASS (3 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add wear/src/main/java/com/meatsack/motivator/notification/InsultNotificationService.kt wear/src/test/java/com/meatsack/motivator/notification/InsultNotificationServiceTest.kt
@@ -146,6 +156,15 @@ git commit -m "feat(wear): pure insultBubbles helper for MessagingStyle card"
 
 ### Task 3: Rewrite `showInsultNotification` to use MessagingStyle
 
+> **Outcome — ⚠️ implemented, then superseded.** The MessagingStyle rewrite below was built
+> and committed (`a4d9a29`), then on-device testing surfaced three blockers (constructor
+> crash on blank local-user name; avatar invisible on the collapsed card; the 2-tap
+> card→detail→app flow is unchanged by removing MessagingStyle — it's a One UI Watch system
+> behavior). It was reverted to a **plain branded `NotificationCompat`**: `setLargeIcon`
+> (launcher icon → `toBitmap()`) for the on-card brand icon, `BigTextStyle` for the full
+> insult, `CATEGORY_MESSAGE`, **no inline 👍/👎 actions** (voting stays in `InsultActivity`).
+> See the spec's "Design evolution" for the full reasoning.
+
 Swap the `BigTextStyle` + `ic_dialog_alert` notification for a `MessagingStyle` card:
 sender = "meatsackMotivator" with the app-icon avatar, bubbles from `insultBubbles`, new
 small icon + brand color + `CATEGORY_MESSAGE`. Everything else (permission guard, notifId,
@@ -154,7 +173,7 @@ contentIntent, vote actions, auto-cancel, timeout) stays.
 **Files:**
 - Modify: `wear/src/main/java/com/meatsack/motivator/notification/InsultNotificationService.kt`
 
-- [ ] **Step 1: Add imports**
+- [x] **Step 1: Add imports**
 
 At the top of `InsultNotificationService.kt`, add (keep existing imports):
 
@@ -163,7 +182,7 @@ import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
 ```
 
-- [ ] **Step 2: Replace the notification builder block**
+- [x] **Step 2: Replace the notification builder block**
 
 Replace the body of `showInsultNotification` from the `val notification = NotificationCompat.Builder(...)` line through the `.build()` line (current lines ~86–102) with:
 
@@ -196,17 +215,17 @@ Replace the body of `showInsultNotification` from the `val notification = Notifi
 
 The `contentIntent` construction above this block and the `NotificationManagerCompat.from(context).notify(INSULT_TAG, notifId, notification)` line below it are unchanged. The `EXTRA_STATS_TEXT` / `setSummaryText` BigTextStyle wiring is fully replaced — confirm no stray `BigTextStyle` reference remains.
 
-- [ ] **Step 3: Verify it compiles and existing tests stay green**
+- [x] **Step 3: Verify it compiles and existing tests stay green**
 
 Run: `./gradlew :wear:compileDebugKotlin :wear:testDebugUnitTest`
 Expected: BUILD SUCCESSFUL; all unit tests pass (including the 3 new `insultBubbles` tests).
 
-- [ ] **Step 4: Verify formatting**
+- [x] **Step 4: Verify formatting**
 
 Run: `./gradlew :wear:spotlessCheck`
 Expected: BUILD SUCCESSFUL. (If it fails: `./gradlew :wear:spotlessApply && git add -u`.)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add wear/src/main/java/com/meatsack/motivator/notification/InsultNotificationService.kt
@@ -217,12 +236,18 @@ git commit -m "feat(wear): deliver insults as a MessagingStyle WhatsApp-style ca
 
 ### Task 4: On-device verification (manual, physical SM-L320)
 
+> **Outcome — ✅ done; this is what forced the redesign.** Verification on the SM-L320 didn't
+> just confirm rendering — it produced findings A/B/C that invalidated MessagingStyle (Task 3
+> outcome) and drove the pivot to the plain card. The adaptive-icon bitmap fallback noted in
+> Step 3 **was applied** (`largeIcon = ...toBitmap()` in the shipped code). Result recorded in
+> the spec's "Design evolution" and on PR #40.
+
 Framework rendering can't be unit-tested; verify on the physical watch per the saved
 watch-verify procedure (wireless adb → `TestFireActivity` → `dumpsys notification`).
 
 **Files:** none (verification only).
 
-- [ ] **Step 1: Build + install on the watch**
+- [x] **Step 1: Build + install on the watch**
 
 Run:
 ```bash
@@ -232,13 +257,13 @@ adb -s <watch-id> shell pm grant com.meatsack.motivator android.permission.POST_
 ```
 Expected: APK installs; permission granted.
 
-- [ ] **Step 2: Fire a test insult and inspect the notification**
+- [x] **Step 2: Fire a test insult and inspect the notification**
 
 Run: `adb -s <watch-id> shell am start -n com.meatsack.motivator/.debug.TestFireActivity`
 Then: `adb -s <watch-id> shell dumpsys notification --noredact | grep -A2 -i "meatsack\|MessagingStyle\|ic_notification"`
 Expected: a posted notification with `MessagingStyle`, sender "meatsackMotivator", two messages (insult + stats), `smallIcon` = `ic_notification`, and **no** full-screen-intent flags.
 
-- [ ] **Step 3: Visual checks on the watch face**
+- [x] **Step 3: Visual checks on the watch face**
 
 Confirm by eye on the SM-L320:
 - Card slides over the watch face with avatar + "meatsackMotivator" + insult bubble + stats bubble + 👎/👍.
@@ -254,7 +279,7 @@ Confirm by eye on the SM-L320:
 - Tap the card → `InsultActivity` opens full-screen with the full insult + two big thumbs.
 - Tap 👍 (or 👎) on either the card or the full screen → notification dismisses; confirm the DAO vote landed (pull the Room DB per the watch-verify note).
 
-- [ ] **Step 4: Record the result**
+- [x] **Step 4: Record the result**
 
 Note the outcome (and whether the adaptive-icon fallback was needed) in the PR description. No commit unless the fallback edit was applied — then:
 ```bash
