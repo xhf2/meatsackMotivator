@@ -30,6 +30,11 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
             return Result.retry()
         }
 
+        if (!settings.endOfDayEnabled) {
+            Log.d(TAG, "End-of-day messages disabled; skipping")
+            return Result.success()
+        }
+
         val db = AppDatabase.getDatabase(ctx)
         val repo = MessageRepository(db.messageDao())
         val notifier = InsultNotificationService(ctx)

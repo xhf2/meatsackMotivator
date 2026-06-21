@@ -25,6 +25,8 @@ class WatchSettingsReceiver : WearableListenerService() {
             sink.setContextAwareEnabled(snap.contextAwareEnabled)
             sink.setEndOfDayHour(snap.endOfDayHour)
             sink.setBehindPaceCheckHour(snap.behindPaceCheckHour)
+            sink.setBehindPaceEnabled(snap.behindPaceEnabled)
+            sink.setEndOfDayEnabled(snap.endOfDayEnabled)
         }
     }
 
@@ -37,6 +39,8 @@ class WatchSettingsReceiver : WearableListenerService() {
         fun setContextAwareEnabled(v: Boolean)
         fun setEndOfDayHour(v: Int)
         fun setBehindPaceCheckHour(v: Int)
+        fun setBehindPaceEnabled(v: Boolean)
+        fun setEndOfDayEnabled(v: Boolean)
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
@@ -77,6 +81,12 @@ class WatchSettingsReceiver : WearableListenerService() {
         }
         override fun setBehindPaceCheckHour(v: Int) {
             cache.behindPaceCheckHour = v
+        }
+        override fun setBehindPaceEnabled(v: Boolean) {
+            cache.behindPaceEnabled = v
+        }
+        override fun setEndOfDayEnabled(v: Boolean) {
+            cache.endOfDayEnabled = v
         }
     }
 }

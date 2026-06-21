@@ -1,7 +1,7 @@
 package com.meatsack.shared.sync
 
 /**
- * Default values for the 7 settings the watch consumes. Mirrored by phone
+ * Default values for the settings the watch consumes. Mirrored by phone
  * (SettingsRepository fallbacks) and watch (WatchSettingsCache fallbacks).
  * Single source of truth — adding a default here is the only place to change it.
  */
@@ -13,4 +13,6 @@ object SettingsDefaults {
     const val CONTEXT_AWARE_ENABLED = false
     const val END_OF_DAY_HOUR = 21 // 9pm
     const val BEHIND_PACE_CHECK_HOUR = 12 // noon
+    const val BEHIND_PACE_ENABLED = true
+    const val END_OF_DAY_ENABLED = true
 }

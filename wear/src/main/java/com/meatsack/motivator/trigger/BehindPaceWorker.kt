@@ -30,6 +30,11 @@ class BehindPaceWorker(context: Context, params: WorkerParameters) : CoroutineWo
             return Result.retry()
         }
 
+        if (!settings.behindPaceEnabled) {
+            Log.d(TAG, "Behind-pace messages disabled; skipping")
+            return Result.success()
+        }
+
         val db = AppDatabase.getDatabase(ctx)
         val repo = MessageRepository(db.messageDao())
         val notifier = InsultNotificationService(ctx)
