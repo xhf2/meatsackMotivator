@@ -98,7 +98,7 @@ class PhoneSettingsSyncer(
 }
 
 /**
- * Production SettingsSource backed by SettingsRepository. Combines the 7
+ * Production SettingsSource backed by SettingsRepository. Combines the 9
  * watch-relevant Flows into a single SettingsSnapshot.
  */
 class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsSource {
