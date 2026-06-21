@@ -23,6 +23,8 @@ class SettingsRepository(private val context: Context) {
         val CONTEXT_AWARE_ENABLED = booleanPreferencesKey("context_aware_enabled")
         val END_OF_DAY_HOUR = intPreferencesKey("end_of_day_hour")
         val BEHIND_PACE_CHECK_HOUR = intPreferencesKey("behind_pace_check_hour")
+        val BEHIND_PACE_ENABLED = booleanPreferencesKey("behind_pace_enabled")
+        val END_OF_DAY_ENABLED = booleanPreferencesKey("end_of_day_enabled")
 
         internal fun validateHour(name: String, hour: Int) {
             require(hour in 0..23) { "$name must be in 0..23; was $hour" }
@@ -59,6 +61,12 @@ class SettingsRepository(private val context: Context) {
     }
     val behindPaceCheckHour: Flow<Int> = context.dataStore.data.map {
         it[BEHIND_PACE_CHECK_HOUR] ?: SharedDefaults.BEHIND_PACE_CHECK_HOUR
+    }
+    val behindPaceEnabled: Flow<Boolean> = context.dataStore.data.map {
+        it[BEHIND_PACE_ENABLED] ?: SharedDefaults.BEHIND_PACE_ENABLED
+    }
+    val endOfDayEnabled: Flow<Boolean> = context.dataStore.data.map {
+        it[END_OF_DAY_ENABLED] ?: SharedDefaults.END_OF_DAY_ENABLED
     }
 
     suspend fun setDailyStepGoal(goal: Int) {
@@ -101,5 +109,13 @@ class SettingsRepository(private val context: Context) {
     suspend fun setBehindPaceCheckHour(hour: Int) {
         validateHour("Behind pace check hour", hour)
         context.dataStore.edit { it[BEHIND_PACE_CHECK_HOUR] = hour }
+    }
+
+    suspend fun setBehindPaceEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[BEHIND_PACE_ENABLED] = enabled }
+    }
+
+    suspend fun setEndOfDayEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[END_OF_DAY_ENABLED] = enabled }
     }
 }

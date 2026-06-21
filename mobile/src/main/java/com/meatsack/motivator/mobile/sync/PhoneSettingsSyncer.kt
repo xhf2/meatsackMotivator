@@ -110,6 +110,8 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
         repo.contextAwareEnabled,
         repo.endOfDayHour,
         repo.behindPaceCheckHour,
+        repo.behindPaceEnabled,
+        repo.endOfDayEnabled,
     ) { values ->
         SettingsSnapshot(
             dailyStepGoal = values[0] as Int,
@@ -119,6 +121,8 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             contextAwareEnabled = values[4] as Boolean,
             endOfDayHour = values[5] as Int,
             behindPaceCheckHour = values[6] as Int,
+            behindPaceEnabled = values[7] as Boolean,
+            endOfDayEnabled = values[8] as Boolean,
         )
     }
 
@@ -131,6 +135,8 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             contextAwareEnabled = repo.contextAwareEnabled.first(),
             endOfDayHour = repo.endOfDayHour.first(),
             behindPaceCheckHour = repo.behindPaceCheckHour.first(),
+            behindPaceEnabled = repo.behindPaceEnabled.first(),
+            endOfDayEnabled = repo.endOfDayEnabled.first(),
         )
 }
 
