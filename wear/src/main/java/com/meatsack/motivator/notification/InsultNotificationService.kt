@@ -97,8 +97,9 @@ class InsultNotificationService(private val context: Context) {
         )
 
         // Large icon = the app launcher icon, so the brand icon shows ON the collapsed
-        // card (a MessagingStyle avatar only renders in the expanded view, which we no
-        // longer use). Rendered to a bitmap so the adaptive launcher icon masks cleanly.
+        // card. (An earlier MessagingStyle avatar was dropped because it only rendered in
+        // the expanded view, never on the collapsed card.) Rendered to a bitmap so the
+        // adaptive launcher icon masks cleanly.
         val largeIcon = ContextCompat.getDrawable(context, R.mipmap.ic_launcher)?.toBitmap()
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
