@@ -1,7 +1,7 @@
 package com.meatsack.shared.sync
 
 /**
- * Default values for the 7 settings the watch consumes. Mirrored by phone
+ * Default values for the settings the watch consumes. Mirrored by phone
  * (SettingsRepository fallbacks) and watch (WatchSettingsCache fallbacks).
  * Single source of truth — adding a default here is the only place to change it.
  */
