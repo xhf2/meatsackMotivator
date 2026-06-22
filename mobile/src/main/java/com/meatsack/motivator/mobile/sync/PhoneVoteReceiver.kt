@@ -19,9 +19,6 @@ class PhoneVoteReceiver : WearableListenerService() {
 
     companion object {
         private const val TAG = "PhoneVoteReceiver"
-
-        // Bound the blast radius of a malformed/hostile payload (matches WatchSyncReceiver).
-        private const val MAX_INCOMING_VOTES = 500
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
@@ -44,7 +41,7 @@ class PhoneVoteReceiver : WearableListenerService() {
                 Log.w(TAG, "Empty or fully-malformed vote payload from node=$sourceNode")
                 return@forEach
             }
-            if (votes.size > MAX_INCOMING_VOTES) {
+            if (votes.size > SyncChannel.MAX_VOTE_ROWS) {
                 Log.w(TAG, "Dropping oversized vote sync from node=$sourceNode size=${votes.size}")
                 return@forEach
             }

@@ -42,6 +42,8 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE votesUp > 0 OR votesDown > 0")
     suspend fun getVotedMessages(): List<Message>
 
+    // Absolute set (back-sync applies the watch's authoritative counts),
+    // unlike voteUp/voteDown which increment.
     @Query("UPDATE messages SET votesUp = :votesUp, votesDown = :votesDown WHERE id = :messageId")
     suspend fun setVotes(messageId: Long, votesUp: Int, votesDown: Int)
 

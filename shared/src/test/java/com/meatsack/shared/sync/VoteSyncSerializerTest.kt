@@ -20,7 +20,8 @@ class VoteSyncSerializerTest {
     }
 
     @Test fun deserialize_dropsMalformedLines_keepsValid() {
-        // line 2 has too few fields; line 3 has a non-numeric id
+        // line 2: too few fields (dropped on the field-count guard);
+        // line 3: 3 fields but a non-numeric id (dropped on parse failure)
         val data = "42|5|2\nbroken|line\nabc|1|1\n7|0|3"
         assertEquals(
             listOf(VoteSnapshot(42, 5, 2), VoteSnapshot(7, 0, 3)),

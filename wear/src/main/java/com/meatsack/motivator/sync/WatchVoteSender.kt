@@ -34,6 +34,7 @@ class WatchVoteSender(private val context: Context) {
 
     suspend fun syncVotesToPhone(): VoteSyncResult {
         val snapshots = AppDatabase.getDatabase(context).messageDao().getVotedMessages()
+            .take(SyncChannel.MAX_VOTE_ROWS)
             .map { VoteSnapshot(it.id, it.votesUp, it.votesDown) }
 
         if (snapshots.isEmpty()) {
