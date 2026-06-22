@@ -24,7 +24,7 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
         // negative delay from clock jump, OEM SecurityException) returns
         // Result.retry() instead of silently zombie-ing the daily reckoning.
         try {
-            TriggerScheduler(ctx).scheduleEndOfDay(settings.endOfDayHour)
+            TriggerScheduler(ctx).scheduleEndOfDay(settings.activeHoursEnd)
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to reschedule EndOfDayWorker; retry queued", t)
             return Result.retry()
@@ -59,8 +59,8 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
         val tone = ToneResolver.resolve(
             settings.contextAwareEnabled,
-            settings.activeHoursStart,
-            settings.activeHoursEnd,
+            settings.contextAwareStart,
+            settings.contextAwareEnd,
         )
         val message = repo.selectMessage(level, TriggerType.END_OF_DAY, tone)
             ?: repo.selectMessage(level, TriggerType.INACTIVITY, tone)

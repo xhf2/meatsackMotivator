@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.meatsack.motivator.mobile.ai.AiMessageGenerator
 import com.meatsack.motivator.mobile.ai.ApiKeyStore
 import com.meatsack.motivator.mobile.ai.GenerationResult
-import com.meatsack.motivator.mobile.data.SettingsDefaults
 import com.meatsack.motivator.mobile.data.SettingsRepository
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
@@ -50,25 +49,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SharingStarted.WhileSubscribed(),
         SharedDefaults.ACTIVE_HOURS_END,
     )
-    val quietHoursStart = repo.quietHoursStart.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(),
-        SettingsDefaults.QUIET_HOURS_START,
-    )
-    val quietHoursEnd = repo.quietHoursEnd.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(),
-        SettingsDefaults.QUIET_HOURS_END,
-    )
     val contextAwareEnabled = repo.contextAwareEnabled.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
         SharedDefaults.CONTEXT_AWARE_ENABLED,
-    )
-    val endOfDayHour = repo.endOfDayHour.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(),
-        SharedDefaults.END_OF_DAY_HOUR,
     )
     val behindPaceCheckHour = repo.behindPaceCheckHour.stateIn(
         viewModelScope,
@@ -85,17 +69,28 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SharingStarted.WhileSubscribed(),
         SharedDefaults.END_OF_DAY_ENABLED,
     )
+    val contextAwareStart = repo.contextAwareStart.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SharedDefaults.CONTEXT_AWARE_START,
+    )
+    val contextAwareEnd = repo.contextAwareEnd.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SharedDefaults.CONTEXT_AWARE_END,
+    )
 
     fun updateStepGoal(goal: Int) = viewModelScope.launch { repo.setDailyStepGoal(goal) }
     fun updateInactivityThreshold(min: Int) =
         viewModelScope.launch { repo.setInactivityThreshold(min) }
     fun updateActiveHours(start: Int, end: Int) =
         viewModelScope.launch { repo.setActiveHours(start, end) }
-    fun updateQuietHours(start: Int, end: Int) =
-        viewModelScope.launch { repo.setQuietHours(start, end) }
     fun toggleContextAware(enabled: Boolean) =
         viewModelScope.launch { repo.setContextAwareEnabled(enabled) }
-    fun updateEndOfDayHour(hour: Int) = viewModelScope.launch { repo.setEndOfDayHour(hour) }
+    fun updateContextAwareStart(hour: Int) =
+        viewModelScope.launch { repo.setContextAwareStart(hour) }
+    fun updateContextAwareEnd(hour: Int) =
+        viewModelScope.launch { repo.setContextAwareEnd(hour) }
     fun updateBehindPaceCheckHour(hour: Int) =
         viewModelScope.launch { repo.setBehindPaceCheckHour(hour) }
     fun toggleBehindPaceEnabled(enabled: Boolean) =

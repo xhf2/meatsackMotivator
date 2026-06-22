@@ -26,10 +26,6 @@ class WatchSettingsCache(context: Context) {
         get() = prefs.getInt(KEY_GOAL, SettingsDefaults.DAILY_STEP_GOAL)
         set(value) = prefs.edit().putInt(KEY_GOAL, value).apply()
 
-    var endOfDayHour: Int
-        get() = prefs.getInt(KEY_END_OF_DAY, SettingsDefaults.END_OF_DAY_HOUR)
-        set(value) = prefs.edit().putInt(KEY_END_OF_DAY, value).apply()
-
     var behindPaceCheckHour: Int
         get() = prefs.getInt(KEY_BEHIND_PACE_HOUR, SettingsDefaults.BEHIND_PACE_CHECK_HOUR)
         set(value) = prefs.edit().putInt(KEY_BEHIND_PACE_HOUR, value).apply()
@@ -46,15 +42,24 @@ class WatchSettingsCache(context: Context) {
         get() = prefs.getBoolean(KEY_END_OF_DAY_ENABLED, SettingsDefaults.END_OF_DAY_ENABLED)
         set(value) = prefs.edit().putBoolean(KEY_END_OF_DAY_ENABLED, value).apply()
 
+    var contextAwareStart: Int
+        get() = prefs.getInt(KEY_CONTEXT_AWARE_START, SettingsDefaults.CONTEXT_AWARE_START)
+        set(value) = prefs.edit().putInt(KEY_CONTEXT_AWARE_START, value).apply()
+
+    var contextAwareEnd: Int
+        get() = prefs.getInt(KEY_CONTEXT_AWARE_END, SettingsDefaults.CONTEXT_AWARE_END)
+        set(value) = prefs.edit().putInt(KEY_CONTEXT_AWARE_END, value).apply()
+
     companion object {
         private const val KEY_CONTEXT_AWARE = "context_aware_enabled"
         private const val KEY_ACTIVE_START = "active_hours_start"
         private const val KEY_ACTIVE_END = "active_hours_end"
         private const val KEY_GOAL = "daily_step_goal"
-        private const val KEY_END_OF_DAY = "end_of_day_hour"
         private const val KEY_BEHIND_PACE_HOUR = "behind_pace_check_hour"
         private const val KEY_INACTIVITY_THRESHOLD = "inactivity_threshold_min"
         private const val KEY_BEHIND_PACE_ENABLED = "behind_pace_enabled"
         private const val KEY_END_OF_DAY_ENABLED = "end_of_day_enabled"
+        private const val KEY_CONTEXT_AWARE_START = "context_aware_start"
+        private const val KEY_CONTEXT_AWARE_END = "context_aware_end"
     }
 }

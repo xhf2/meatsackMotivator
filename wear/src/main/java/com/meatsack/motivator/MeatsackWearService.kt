@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.meatsack.motivator.escalation.EscalationManager
 import com.meatsack.motivator.health.HealthTracker
+import com.meatsack.motivator.messages.ActiveWindow
 import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
@@ -62,7 +63,7 @@ class MeatsackWearService : Service() {
         healthTracker.startTracking()
         val scheduler = TriggerScheduler(this)
         scheduler.scheduleBehindPaceCheck(settings.behindPaceCheckHour)
-        scheduler.scheduleEndOfDay(settings.endOfDayHour)
+        scheduler.scheduleEndOfDay(settings.activeHoursEnd)
         startPolling()
         Log.d(TAG, "meatsackMotivator service started. Watching you.")
         return START_STICKY
@@ -102,6 +103,11 @@ class MeatsackWearService : Service() {
     }
 
     private suspend fun checkInactivity() {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        if (!ActiveWindow.contains(hour, settings.activeHoursStart, settings.activeHoursEnd)) {
+            return // outside active hours — skip delivery; escalation state is left frozen (not advanced, not reset)
+        }
+
         val minutesIdle = healthTracker.getMinutesSinceLastMovement()
 
         if (healthTracker.hasSignificantMovement()) {
@@ -115,14 +121,13 @@ class MeatsackWearService : Service() {
         val level = escalationManager.currentLevel.value
         val tone = ToneResolver.resolve(
             contextAwareEnabled = settings.contextAwareEnabled,
-            activeHoursStart = settings.activeHoursStart,
-            activeHoursEnd = settings.activeHoursEnd,
+            workSafeStart = settings.contextAwareStart,
+            workSafeEnd = settings.contextAwareEnd,
         )
 
         val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone) ?: return
 
         val steps = healthTracker.totalStepsToday.value
-        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val ampm = if (hour < 12) "am" else "pm"
         val displayHour = if (hour == 0) {
             12

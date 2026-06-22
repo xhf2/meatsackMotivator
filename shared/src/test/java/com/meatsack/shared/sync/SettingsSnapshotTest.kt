@@ -14,10 +14,11 @@ class SettingsSnapshotTest {
         assertEquals(SettingsDefaults.ACTIVE_HOURS_START, snap.activeHoursStart)
         assertEquals(SettingsDefaults.ACTIVE_HOURS_END, snap.activeHoursEnd)
         assertEquals(SettingsDefaults.CONTEXT_AWARE_ENABLED, snap.contextAwareEnabled)
-        assertEquals(SettingsDefaults.END_OF_DAY_HOUR, snap.endOfDayHour)
         assertEquals(SettingsDefaults.BEHIND_PACE_CHECK_HOUR, snap.behindPaceCheckHour)
         assertEquals(SettingsDefaults.BEHIND_PACE_ENABLED, snap.behindPaceEnabled)
         assertEquals(SettingsDefaults.END_OF_DAY_ENABLED, snap.endOfDayEnabled)
+        assertEquals(SettingsDefaults.CONTEXT_AWARE_START, snap.contextAwareStart)
+        assertEquals(SettingsDefaults.CONTEXT_AWARE_END, snap.contextAwareEnd)
     }
 
     @Test
@@ -28,10 +29,11 @@ class SettingsSnapshotTest {
             activeHoursStart = 8,
             activeHoursEnd = 21,
             contextAwareEnabled = true,
-            endOfDayHour = 20,
             behindPaceCheckHour = 14,
             behindPaceEnabled = false,
             endOfDayEnabled = false,
+            contextAwareStart = 8,
+            contextAwareEnd = 16,
         )
         val dm = DataMap()
         original.toDataMap(dm)
@@ -53,12 +55,10 @@ class SettingsSnapshotTest {
         // for them, verified separately in fromDataMap_missingKeys_returnsDefaults.
         dm.putInt(SettingsKeys.KEY_ACTIVE_HOURS_START, -5)
         dm.putInt(SettingsKeys.KEY_ACTIVE_HOURS_END, 99)
-        dm.putInt(SettingsKeys.KEY_END_OF_DAY_HOUR, 24)
         dm.putInt(SettingsKeys.KEY_BEHIND_PACE_CHECK_HOUR, -1)
         val parsed = SettingsSnapshot.fromDataMap(dm)
         assertEquals(0, parsed.activeHoursStart)
         assertEquals(23, parsed.activeHoursEnd)
-        assertEquals(23, parsed.endOfDayHour)
         assertEquals(0, parsed.behindPaceCheckHour)
     }
 }
