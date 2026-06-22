@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.meatsack.motivator.mobile.ai.AiMessageGenerator
 import com.meatsack.motivator.mobile.ai.ApiKeyStore
 import com.meatsack.motivator.mobile.ai.GenerationResult
-import com.meatsack.motivator.mobile.data.SettingsDefaults
 import com.meatsack.motivator.mobile.data.SettingsRepository
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
@@ -50,16 +49,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SharingStarted.WhileSubscribed(),
         SharedDefaults.ACTIVE_HOURS_END,
     )
-    val quietHoursStart = repo.quietHoursStart.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(),
-        SettingsDefaults.QUIET_HOURS_START,
-    )
-    val quietHoursEnd = repo.quietHoursEnd.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(),
-        SettingsDefaults.QUIET_HOURS_END,
-    )
     val contextAwareEnabled = repo.contextAwareEnabled.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
@@ -96,8 +85,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repo.setInactivityThreshold(min) }
     fun updateActiveHours(start: Int, end: Int) =
         viewModelScope.launch { repo.setActiveHours(start, end) }
-    fun updateQuietHours(start: Int, end: Int) =
-        viewModelScope.launch { repo.setQuietHours(start, end) }
     fun toggleContextAware(enabled: Boolean) =
         viewModelScope.launch { repo.setContextAwareEnabled(enabled) }
     fun updateContextAwareStart(hour: Int) =

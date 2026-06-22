@@ -18,8 +18,6 @@ class SettingsRepository(private val context: Context) {
         val INACTIVITY_THRESHOLD = intPreferencesKey("inactivity_threshold_min")
         val ACTIVE_HOURS_START = intPreferencesKey("active_hours_start")
         val ACTIVE_HOURS_END = intPreferencesKey("active_hours_end")
-        val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
-        val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
         val CONTEXT_AWARE_ENABLED = booleanPreferencesKey("context_aware_enabled")
         val BEHIND_PACE_CHECK_HOUR = intPreferencesKey("behind_pace_check_hour")
         val BEHIND_PACE_ENABLED = booleanPreferencesKey("behind_pace_enabled")
@@ -47,12 +45,6 @@ class SettingsRepository(private val context: Context) {
     }
     val activeHoursEnd: Flow<Int> = context.dataStore.data.map {
         it[ACTIVE_HOURS_END] ?: SharedDefaults.ACTIVE_HOURS_END
-    }
-    val quietHoursStart: Flow<Int> = context.dataStore.data.map {
-        it[QUIET_HOURS_START] ?: SettingsDefaults.QUIET_HOURS_START
-    }
-    val quietHoursEnd: Flow<Int> = context.dataStore.data.map {
-        it[QUIET_HOURS_END] ?: SettingsDefaults.QUIET_HOURS_END
     }
     val contextAwareEnabled: Flow<Boolean> = context.dataStore.data.map {
         it[CONTEXT_AWARE_ENABLED] ?: SharedDefaults.CONTEXT_AWARE_ENABLED
@@ -89,15 +81,8 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit {
             it[ACTIVE_HOURS_START] = start
             it[ACTIVE_HOURS_END] = end
-        }
-    }
-
-    suspend fun setQuietHours(start: Int, end: Int) {
-        validateHour("Quiet hours start", start)
-        validateHour("Quiet hours end", end)
-        context.dataStore.edit {
-            it[QUIET_HOURS_START] = start
-            it[QUIET_HOURS_END] = end
+            val behindPace = it[BEHIND_PACE_CHECK_HOUR] ?: SharedDefaults.BEHIND_PACE_CHECK_HOUR
+            it[BEHIND_PACE_CHECK_HOUR] = behindPace.coerceIn(start, end)
         }
     }
 

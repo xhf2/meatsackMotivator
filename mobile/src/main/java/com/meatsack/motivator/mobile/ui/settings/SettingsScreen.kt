@@ -9,10 +9,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -25,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -36,8 +39,6 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val inactivityThreshold by viewModel.inactivityThreshold.collectAsState()
     val activeStart by viewModel.activeHoursStart.collectAsState()
     val activeEnd by viewModel.activeHoursEnd.collectAsState()
-    val quietStart by viewModel.quietHoursStart.collectAsState()
-    val quietEnd by viewModel.quietHoursEnd.collectAsState()
     val contextAware by viewModel.contextAwareEnabled.collectAsState()
 
     Column(
@@ -73,46 +74,21 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         Spacer(Modifier.height(16.dp))
 
         Text(
-            "Active Hours: $activeStart:00 - $activeEnd:00",
+            "Active hours: $activeStart:00 - $activeEnd:00",
             style = MaterialTheme.typography.titleMedium,
         )
-        Text("Start", style = MaterialTheme.typography.bodySmall)
-        Slider(
-            value = activeStart.toFloat(),
-            onValueChange = { viewModel.updateActiveHours(it.toInt(), activeEnd) },
+        RangeSlider(
+            value = activeStart.toFloat()..activeEnd.toFloat(),
+            onValueChange = { range ->
+                viewModel.updateActiveHours(range.start.toInt(), range.endInclusive.toInt())
+            },
             valueRange = 0f..23f,
             steps = 22,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text("End", style = MaterialTheme.typography.bodySmall)
-        Slider(
-            value = activeEnd.toFloat(),
-            onValueChange = { viewModel.updateActiveHours(activeStart, it.toInt()) },
-            valueRange = 0f..23f,
-            steps = 22,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(16.dp))
-
         Text(
-            "Quiet Hours: $quietStart:00 - $quietEnd:00",
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Text("Start", style = MaterialTheme.typography.bodySmall)
-        Slider(
-            value = quietStart.toFloat(),
-            onValueChange = { viewModel.updateQuietHours(it.toInt(), quietEnd) },
-            valueRange = 0f..23f,
-            steps = 22,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Text("End", style = MaterialTheme.typography.bodySmall)
-        Slider(
-            value = quietEnd.toFloat(),
-            onValueChange = { viewModel.updateQuietHours(quietStart, it.toInt()) },
-            valueRange = 0f..23f,
-            steps = 22,
-            modifier = Modifier.fillMaxWidth(),
+            "Hours the watch can nag you. Outside this window it stays quiet.",
+            style = MaterialTheme.typography.bodySmall,
         )
         Spacer(Modifier.height(16.dp))
 
@@ -123,9 +99,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
         Slider(
             value = behindPaceHour.toFloat(),
-            onValueChange = { viewModel.updateBehindPaceCheckHour(it.toInt()) },
-            valueRange = 0f..23f,
-            steps = 22,
+            onValueChange = { viewModel.updateBehindPaceCheckHour(it.toInt().coerceIn(0, 23)) },
+            // Guard against a zero-width active window (start == end), which would make an
+            // empty valueRange and crash the Slider; coerceIn on the value keeps the picked
+            // hour valid for setBehindPaceCheckHour's 0..23 validation.
+            valueRange = activeStart.toFloat()..activeEnd.toFloat().coerceAtLeast(activeStart + 1f),
             modifier = Modifier.fillMaxWidth(),
         )
         Text(
@@ -242,5 +220,32 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             "When on, uses cleaner language during work hours. When off, full send all day.",
             style = MaterialTheme.typography.bodySmall,
         )
+        val ctxStart by viewModel.contextAwareStart.collectAsState()
+        val ctxEnd by viewModel.contextAwareEnd.collectAsState()
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = ctxStart.toString(),
+                onValueChange = { v ->
+                    v.toIntOrNull()?.let { viewModel.updateContextAwareStart(it.coerceIn(0, 23)) }
+                },
+                label = { Text("Work-safe start") },
+                enabled = contextAware,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.width(140.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            OutlinedTextField(
+                value = ctxEnd.toString(),
+                onValueChange = { v ->
+                    v.toIntOrNull()?.let { viewModel.updateContextAwareEnd(it.coerceIn(0, 23)) }
+                },
+                label = { Text("Work-safe end") },
+                enabled = contextAware,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.width(140.dp),
+            )
+        }
     }
 }
