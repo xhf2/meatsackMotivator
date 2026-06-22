@@ -47,6 +47,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.play.services.wearable)
+    implementation(libs.kotlinx.coroutines.play.services)
     implementation(libs.androidx.health.services.client)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.guava)
