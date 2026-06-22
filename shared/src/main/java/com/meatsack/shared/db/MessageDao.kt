@@ -39,6 +39,12 @@ interface MessageDao {
     @Query("UPDATE messages SET votesDown = votesDown + 1 WHERE id = :messageId")
     suspend fun voteDown(messageId: Long)
 
+    @Query("SELECT * FROM messages WHERE votesUp > 0 OR votesDown > 0")
+    suspend fun getVotedMessages(): List<Message>
+
+    @Query("UPDATE messages SET votesUp = :votesUp, votesDown = :votesDown WHERE id = :messageId")
+    suspend fun setVotes(messageId: Long, votesUp: Int, votesDown: Int)
+
     @Query("UPDATE messages SET lastShownTimestamp = :timestamp WHERE id = :messageId")
     suspend fun markShown(messageId: Long, timestamp: Long)
 

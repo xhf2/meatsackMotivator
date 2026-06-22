@@ -9,4 +9,6 @@ object SyncChannel {
     const val PATH_MESSAGES = "/messages"
     const val KEY_MESSAGE_DATA = "message_data"
     const val KEY_TIMESTAMP = "timestamp"
+    const val PATH_VOTES = "/votes"
+    const val KEY_VOTE_DATA = "vote_data"
 }
