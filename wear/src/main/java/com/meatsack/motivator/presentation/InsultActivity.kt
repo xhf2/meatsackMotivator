@@ -7,7 +7,10 @@ import androidx.activity.compose.setContent
 import com.meatsack.motivator.MeatsackWearApp
 import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.notification.InsultNotificationService
+import com.meatsack.motivator.sync.VoteSyncResult
+import com.meatsack.motivator.sync.WatchVoteSender
 import com.meatsack.shared.db.AppDatabase
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 class InsultActivity : ComponentActivity() {
@@ -22,17 +25,18 @@ class InsultActivity : ComponentActivity() {
         val appScope = (application as MeatsackWearApp).applicationScope
         val db = AppDatabase.getDatabase(applicationContext)
         val repo = MessageRepository(db.messageDao())
+        val voteSender = WatchVoteSender(applicationContext)
 
         setContent {
             InsultScreen(
                 insultText = messageText,
                 statsText = statsText,
                 onThumbsUp = {
-                    recordVote(appScope, messageId) { repo.voteUp(it) }
+                    recordVote(appScope, voteSender, messageId) { repo.voteUp(it) }
                     finish()
                 },
                 onThumbsDown = {
-                    recordVote(appScope, messageId) { repo.voteDown(it) }
+                    recordVote(appScope, voteSender, messageId) { repo.voteDown(it) }
                     finish()
                 },
             )
@@ -41,15 +45,28 @@ class InsultActivity : ComponentActivity() {
 
     private inline fun recordVote(
         scope: kotlinx.coroutines.CoroutineScope,
+        voteSender: WatchVoteSender,
         messageId: Long,
         crossinline write: suspend (Long) -> Unit,
     ) {
         if (messageId <= 0L) return
         scope.launch {
+            // The local write is authoritative (the watch is the vote authority), so a
+            // failure here is real data loss — keep it on its own failure boundary.
             try {
                 write(messageId)
+            } catch (ce: CancellationException) {
+                throw ce
             } catch (t: Throwable) {
-                Log.e("InsultActivity", "Vote write failed for id=$messageId", t)
+                Log.e("InsultActivity", "Local vote write failed for id=$messageId", t)
+                return@launch
+            }
+            // Best-effort back-sync: the vote is already persisted locally and the next
+            // vote re-sends the full snapshot, so a failure here self-heals.
+            when (val result = voteSender.syncVotesToPhone()) {
+                is VoteSyncResult.Failed ->
+                    Log.w("InsultActivity", "Vote back-sync failed for id=$messageId; retries on next vote", result.error)
+                else -> Unit
             }
         }
     }

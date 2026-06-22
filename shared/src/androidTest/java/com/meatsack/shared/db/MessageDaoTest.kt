@@ -116,4 +116,32 @@ class MessageDaoTest {
         val updated = dao.getAllMessages().first()
         assertEquals(2, updated.votesUp)
     }
+
+    @Test
+    fun getVotedMessagesReturnsOnlyVoted() = runBlocking {
+        dao.insertAll(
+            listOf(
+                testMessage("unvoted"),
+                testMessage("upvoted"),
+                testMessage("downvoted"),
+            ),
+        )
+        val all = dao.getAllMessages()
+        dao.voteUp(all.first { it.text == "upvoted" }.id)
+        dao.voteDown(all.first { it.text == "downvoted" }.id)
+        val voted = dao.getVotedMessages()
+        assertEquals(setOf("upvoted", "downvoted"), voted.map { it.text }.toSet())
+    }
+
+    @Test
+    fun setVotesOverwritesAbsolutely() = runBlocking {
+        dao.insertAll(listOf(testMessage("msg")))
+        val msg = dao.getAllMessages().first()
+        dao.voteUp(msg.id)
+        dao.voteUp(msg.id) // votesUp now 2
+        dao.setVotes(msg.id, votesUp = 5, votesDown = 1) // absolute overwrite, not increment
+        val updated = dao.getAllMessages().first()
+        assertEquals(5, updated.votesUp)
+        assertEquals(1, updated.votesDown)
+    }
 }
