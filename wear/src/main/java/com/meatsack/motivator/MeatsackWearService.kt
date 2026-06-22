@@ -63,7 +63,7 @@ class MeatsackWearService : Service() {
         healthTracker.startTracking()
         val scheduler = TriggerScheduler(this)
         scheduler.scheduleBehindPaceCheck(settings.behindPaceCheckHour)
-        scheduler.scheduleEndOfDay(settings.endOfDayHour)
+        scheduler.scheduleEndOfDay(settings.activeHoursEnd)
         startPolling()
         Log.d(TAG, "meatsackMotivator service started. Watching you.")
         return START_STICKY

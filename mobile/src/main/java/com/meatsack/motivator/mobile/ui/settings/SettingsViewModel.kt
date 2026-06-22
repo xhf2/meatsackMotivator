@@ -65,11 +65,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SharingStarted.WhileSubscribed(),
         SharedDefaults.CONTEXT_AWARE_ENABLED,
     )
-    val endOfDayHour = repo.endOfDayHour.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(),
-        SharedDefaults.END_OF_DAY_HOUR,
-    )
     val behindPaceCheckHour = repo.behindPaceCheckHour.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(),
@@ -109,7 +104,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repo.setContextAwareStart(hour) }
     fun updateContextAwareEnd(hour: Int) =
         viewModelScope.launch { repo.setContextAwareEnd(hour) }
-    fun updateEndOfDayHour(hour: Int) = viewModelScope.launch { repo.setEndOfDayHour(hour) }
     fun updateBehindPaceCheckHour(hour: Int) =
         viewModelScope.launch { repo.setBehindPaceCheckHour(hour) }
     fun toggleBehindPaceEnabled(enabled: Boolean) =

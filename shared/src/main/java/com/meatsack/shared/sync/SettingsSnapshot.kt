@@ -19,7 +19,6 @@ data class SettingsSnapshot(
     val activeHoursStart: Int,
     val activeHoursEnd: Int,
     val contextAwareEnabled: Boolean,
-    val endOfDayHour: Int,
     val behindPaceCheckHour: Int,
     val behindPaceEnabled: Boolean,
     val endOfDayEnabled: Boolean,
@@ -33,7 +32,6 @@ data class SettingsSnapshot(
         dm.putInt(SettingsKeys.KEY_ACTIVE_HOURS_START, activeHoursStart)
         dm.putInt(SettingsKeys.KEY_ACTIVE_HOURS_END, activeHoursEnd)
         dm.putBoolean(SettingsKeys.KEY_CONTEXT_AWARE_ENABLED, contextAwareEnabled)
-        dm.putInt(SettingsKeys.KEY_END_OF_DAY_HOUR, endOfDayHour)
         dm.putInt(SettingsKeys.KEY_BEHIND_PACE_CHECK_HOUR, behindPaceCheckHour)
         dm.putBoolean(SettingsKeys.KEY_BEHIND_PACE_ENABLED, behindPaceEnabled)
         dm.putBoolean(SettingsKeys.KEY_END_OF_DAY_ENABLED, endOfDayEnabled)
@@ -48,7 +46,6 @@ data class SettingsSnapshot(
             activeHoursStart = SettingsDefaults.ACTIVE_HOURS_START,
             activeHoursEnd = SettingsDefaults.ACTIVE_HOURS_END,
             contextAwareEnabled = SettingsDefaults.CONTEXT_AWARE_ENABLED,
-            endOfDayHour = SettingsDefaults.END_OF_DAY_HOUR,
             behindPaceCheckHour = SettingsDefaults.BEHIND_PACE_CHECK_HOUR,
             behindPaceEnabled = SettingsDefaults.BEHIND_PACE_ENABLED,
             endOfDayEnabled = SettingsDefaults.END_OF_DAY_ENABLED,
@@ -62,7 +59,6 @@ data class SettingsSnapshot(
             activeHoursStart = dm.getInt(SettingsKeys.KEY_ACTIVE_HOURS_START, defaults.activeHoursStart).coerceIn(0, 23),
             activeHoursEnd = dm.getInt(SettingsKeys.KEY_ACTIVE_HOURS_END, defaults.activeHoursEnd).coerceIn(0, 23),
             contextAwareEnabled = dm.getBoolean(SettingsKeys.KEY_CONTEXT_AWARE_ENABLED, defaults.contextAwareEnabled),
-            endOfDayHour = dm.getInt(SettingsKeys.KEY_END_OF_DAY_HOUR, defaults.endOfDayHour).coerceIn(0, 23),
             behindPaceCheckHour = dm.getInt(SettingsKeys.KEY_BEHIND_PACE_CHECK_HOUR, defaults.behindPaceCheckHour).coerceIn(0, 23),
             behindPaceEnabled = dm.getBoolean(SettingsKeys.KEY_BEHIND_PACE_ENABLED, defaults.behindPaceEnabled),
             endOfDayEnabled = dm.getBoolean(SettingsKeys.KEY_END_OF_DAY_ENABLED, defaults.endOfDayEnabled),

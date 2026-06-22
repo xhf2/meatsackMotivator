@@ -24,7 +24,7 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
         // negative delay from clock jump, OEM SecurityException) returns
         // Result.retry() instead of silently zombie-ing the daily reckoning.
         try {
-            TriggerScheduler(ctx).scheduleEndOfDay(settings.endOfDayHour)
+            TriggerScheduler(ctx).scheduleEndOfDay(settings.activeHoursEnd)
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to reschedule EndOfDayWorker; retry queued", t)
             return Result.retry()

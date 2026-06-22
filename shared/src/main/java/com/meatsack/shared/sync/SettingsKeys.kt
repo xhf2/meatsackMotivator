@@ -16,7 +16,6 @@ object SettingsKeys {
     const val KEY_ACTIVE_HOURS_START = "active_hours_start"
     const val KEY_ACTIVE_HOURS_END = "active_hours_end"
     const val KEY_CONTEXT_AWARE_ENABLED = "context_aware_enabled"
-    const val KEY_END_OF_DAY_HOUR = "end_of_day_hour"
     const val KEY_BEHIND_PACE_CHECK_HOUR = "behind_pace_check_hour"
     const val KEY_BEHIND_PACE_ENABLED = "behind_pace_enabled"
     const val KEY_END_OF_DAY_ENABLED = "end_of_day_enabled"

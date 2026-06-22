@@ -15,7 +15,6 @@ class WatchSettingsReceiverTest {
         var recordedActiveHoursStart: Int = -1
         var recordedActiveHoursEnd: Int = -1
         var recordedContextAwareEnabled: Boolean = false
-        var recordedEndOfDayHour: Int = -1
         var recordedBehindPaceCheckHour: Int = -1
         var recordedBehindPaceEnabled: Boolean = true
         var recordedEndOfDayEnabled: Boolean = true
@@ -35,9 +34,6 @@ class WatchSettingsReceiverTest {
         }
         override fun setContextAwareEnabled(v: Boolean) {
             recordedContextAwareEnabled = v
-        }
-        override fun setEndOfDayHour(v: Int) {
-            recordedEndOfDayHour = v
         }
         override fun setBehindPaceCheckHour(v: Int) {
             recordedBehindPaceCheckHour = v
@@ -65,7 +61,6 @@ class WatchSettingsReceiverTest {
             activeHoursStart = 8,
             activeHoursEnd = 21,
             contextAwareEnabled = true,
-            endOfDayHour = 20,
             behindPaceCheckHour = 14,
             behindPaceEnabled = false,
             endOfDayEnabled = false,
@@ -78,7 +73,6 @@ class WatchSettingsReceiverTest {
         assertEquals(8, sink.recordedActiveHoursStart)
         assertEquals(21, sink.recordedActiveHoursEnd)
         assertEquals(true, sink.recordedContextAwareEnabled)
-        assertEquals(20, sink.recordedEndOfDayHour)
         assertEquals(14, sink.recordedBehindPaceCheckHour)
         assertEquals(false, sink.recordedBehindPaceEnabled)
         assertEquals(false, sink.recordedEndOfDayEnabled)

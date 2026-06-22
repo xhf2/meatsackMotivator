@@ -98,7 +98,7 @@ class PhoneSettingsSyncer(
 }
 
 /**
- * Production SettingsSource backed by SettingsRepository. Combines the 11
+ * Production SettingsSource backed by SettingsRepository. Combines the 10
  * watch-relevant Flows into a single SettingsSnapshot.
  */
 class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsSource {
@@ -108,7 +108,6 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
         repo.activeHoursStart,
         repo.activeHoursEnd,
         repo.contextAwareEnabled,
-        repo.endOfDayHour,
         repo.behindPaceCheckHour,
         repo.behindPaceEnabled,
         repo.endOfDayEnabled,
@@ -121,12 +120,11 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             activeHoursStart = values[2] as Int,
             activeHoursEnd = values[3] as Int,
             contextAwareEnabled = values[4] as Boolean,
-            endOfDayHour = values[5] as Int,
-            behindPaceCheckHour = values[6] as Int,
-            behindPaceEnabled = values[7] as Boolean,
-            endOfDayEnabled = values[8] as Boolean,
-            contextAwareStart = values[9] as Int,
-            contextAwareEnd = values[10] as Int,
+            behindPaceCheckHour = values[5] as Int,
+            behindPaceEnabled = values[6] as Boolean,
+            endOfDayEnabled = values[7] as Boolean,
+            contextAwareStart = values[8] as Int,
+            contextAwareEnd = values[9] as Int,
         )
     }
 
@@ -137,7 +135,6 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             activeHoursStart = repo.activeHoursStart.first(),
             activeHoursEnd = repo.activeHoursEnd.first(),
             contextAwareEnabled = repo.contextAwareEnabled.first(),
-            endOfDayHour = repo.endOfDayHour.first(),
             behindPaceCheckHour = repo.behindPaceCheckHour.first(),
             behindPaceEnabled = repo.behindPaceEnabled.first(),
             endOfDayEnabled = repo.endOfDayEnabled.first(),

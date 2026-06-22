@@ -21,7 +21,6 @@ class SettingsRepository(private val context: Context) {
         val QUIET_HOURS_START = intPreferencesKey("quiet_hours_start")
         val QUIET_HOURS_END = intPreferencesKey("quiet_hours_end")
         val CONTEXT_AWARE_ENABLED = booleanPreferencesKey("context_aware_enabled")
-        val END_OF_DAY_HOUR = intPreferencesKey("end_of_day_hour")
         val BEHIND_PACE_CHECK_HOUR = intPreferencesKey("behind_pace_check_hour")
         val BEHIND_PACE_ENABLED = booleanPreferencesKey("behind_pace_enabled")
         val END_OF_DAY_ENABLED = booleanPreferencesKey("end_of_day_enabled")
@@ -57,9 +56,6 @@ class SettingsRepository(private val context: Context) {
     }
     val contextAwareEnabled: Flow<Boolean> = context.dataStore.data.map {
         it[CONTEXT_AWARE_ENABLED] ?: SharedDefaults.CONTEXT_AWARE_ENABLED
-    }
-    val endOfDayHour: Flow<Int> = context.dataStore.data.map {
-        it[END_OF_DAY_HOUR] ?: SharedDefaults.END_OF_DAY_HOUR
     }
     val behindPaceCheckHour: Flow<Int> = context.dataStore.data.map {
         it[BEHIND_PACE_CHECK_HOUR] ?: SharedDefaults.BEHIND_PACE_CHECK_HOUR
@@ -107,11 +103,6 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setContextAwareEnabled(enabled: Boolean) {
         context.dataStore.edit { it[CONTEXT_AWARE_ENABLED] = enabled }
-    }
-
-    suspend fun setEndOfDayHour(hour: Int) {
-        validateHour("End of day hour", hour)
-        context.dataStore.edit { it[END_OF_DAY_HOUR] = hour }
     }
 
     suspend fun setBehindPaceCheckHour(hour: Int) {

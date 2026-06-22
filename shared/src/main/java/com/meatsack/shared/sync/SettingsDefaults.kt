@@ -11,7 +11,6 @@ object SettingsDefaults {
     const val ACTIVE_HOURS_START = 7
     const val ACTIVE_HOURS_END = 22
     const val CONTEXT_AWARE_ENABLED = false
-    const val END_OF_DAY_HOUR = 21 // 9pm
     const val BEHIND_PACE_CHECK_HOUR = 12 // noon
     const val BEHIND_PACE_ENABLED = true
     const val END_OF_DAY_ENABLED = true
