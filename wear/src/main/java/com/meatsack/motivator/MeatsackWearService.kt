@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.meatsack.motivator.escalation.EscalationManager
 import com.meatsack.motivator.health.HealthTracker
+import com.meatsack.motivator.messages.ActiveWindow
 import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
@@ -102,6 +103,11 @@ class MeatsackWearService : Service() {
     }
 
     private suspend fun checkInactivity() {
+        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        if (!ActiveWindow.contains(hour, settings.activeHoursStart, settings.activeHoursEnd)) {
+            return // outside active hours — stay quiet, don't accrue escalation
+        }
+
         val minutesIdle = healthTracker.getMinutesSinceLastMovement()
 
         if (healthTracker.hasSignificantMovement()) {
@@ -122,7 +128,6 @@ class MeatsackWearService : Service() {
         val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone) ?: return
 
         val steps = healthTracker.totalStepsToday.value
-        val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val ampm = if (hour < 12) "am" else "pm"
         val displayHour = if (hour == 0) {
             12
