@@ -105,7 +105,7 @@ class MeatsackWearService : Service() {
     private suspend fun checkInactivity() {
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         if (!ActiveWindow.contains(hour, settings.activeHoursStart, settings.activeHoursEnd)) {
-            return // outside active hours — stay quiet, don't accrue escalation
+            return // outside active hours — skip delivery; escalation state is left frozen (not advanced, not reset)
         }
 
         val minutesIdle = healthTracker.getMinutesSinceLastMovement()

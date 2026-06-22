@@ -99,11 +99,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
         Slider(
             value = behindPaceHour.toFloat(),
+            // coerceIn keeps the picked hour within setBehindPaceCheckHour's 0..23 validation.
             onValueChange = { viewModel.updateBehindPaceCheckHour(it.toInt().coerceIn(0, 23)) },
-            // Guard against a zero-width active window (start == end), which would make an
-            // empty valueRange and crash the Slider; coerceIn on the value keeps the picked
-            // hour valid for setBehindPaceCheckHour's 0..23 validation.
-            valueRange = activeStart.toFloat()..activeEnd.toFloat().coerceAtLeast(activeStart + 1f),
+            // coerceAtLeast guards a zero-width active window (start == end), which would
+            // otherwise be an empty valueRange and crash the Slider.
+            valueRange = activeStart.toFloat()..(activeEnd.toFloat().coerceAtLeast(activeStart + 1f)),
             modifier = Modifier.fillMaxWidth(),
         )
         Text(

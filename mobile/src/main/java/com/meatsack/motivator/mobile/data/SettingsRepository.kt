@@ -81,8 +81,12 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit {
             it[ACTIVE_HOURS_START] = start
             it[ACTIVE_HOURS_END] = end
-            val behindPace = it[BEHIND_PACE_CHECK_HOUR] ?: SharedDefaults.BEHIND_PACE_CHECK_HOUR
-            it[BEHIND_PACE_CHECK_HOUR] = behindPace.coerceIn(start, end)
+            // Active Hours is always start<=end (the RangeSlider enforces it); the guard
+            // keeps coerceIn safe even if a non-UI caller passed an inverted range.
+            if (end >= start) {
+                val behindPace = it[BEHIND_PACE_CHECK_HOUR] ?: SharedDefaults.BEHIND_PACE_CHECK_HOUR
+                it[BEHIND_PACE_CHECK_HOUR] = behindPace.coerceIn(start, end)
+            }
         }
     }
 

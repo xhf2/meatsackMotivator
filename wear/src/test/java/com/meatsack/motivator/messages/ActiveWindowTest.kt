@@ -15,6 +15,7 @@ class ActiveWindowTest {
     }
 
     @Test fun overnightWindow_wrapsAroundMidnight() {
+        assertTrue(ActiveWindow.contains(22, 22, 6)) // start inclusive on the wrap branch
         assertTrue(ActiveWindow.contains(23, 22, 6))
         assertTrue(ActiveWindow.contains(0, 22, 6))
         assertTrue(ActiveWindow.contains(5, 22, 6))
