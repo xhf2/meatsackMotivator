@@ -46,6 +46,14 @@ class WatchSettingsCache(context: Context) {
         get() = prefs.getBoolean(KEY_END_OF_DAY_ENABLED, SettingsDefaults.END_OF_DAY_ENABLED)
         set(value) = prefs.edit().putBoolean(KEY_END_OF_DAY_ENABLED, value).apply()
 
+    var contextAwareStart: Int
+        get() = prefs.getInt(KEY_CONTEXT_AWARE_START, SettingsDefaults.CONTEXT_AWARE_START)
+        set(value) = prefs.edit().putInt(KEY_CONTEXT_AWARE_START, value).apply()
+
+    var contextAwareEnd: Int
+        get() = prefs.getInt(KEY_CONTEXT_AWARE_END, SettingsDefaults.CONTEXT_AWARE_END)
+        set(value) = prefs.edit().putInt(KEY_CONTEXT_AWARE_END, value).apply()
+
     companion object {
         private const val KEY_CONTEXT_AWARE = "context_aware_enabled"
         private const val KEY_ACTIVE_START = "active_hours_start"
@@ -56,5 +64,7 @@ class WatchSettingsCache(context: Context) {
         private const val KEY_INACTIVITY_THRESHOLD = "inactivity_threshold_min"
         private const val KEY_BEHIND_PACE_ENABLED = "behind_pace_enabled"
         private const val KEY_END_OF_DAY_ENABLED = "end_of_day_enabled"
+        private const val KEY_CONTEXT_AWARE_START = "context_aware_start"
+        private const val KEY_CONTEXT_AWARE_END = "context_aware_end"
     }
 }

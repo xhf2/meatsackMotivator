@@ -18,6 +18,8 @@ class SettingsSnapshotTest {
         assertEquals(SettingsDefaults.BEHIND_PACE_CHECK_HOUR, snap.behindPaceCheckHour)
         assertEquals(SettingsDefaults.BEHIND_PACE_ENABLED, snap.behindPaceEnabled)
         assertEquals(SettingsDefaults.END_OF_DAY_ENABLED, snap.endOfDayEnabled)
+        assertEquals(SettingsDefaults.CONTEXT_AWARE_START, snap.contextAwareStart)
+        assertEquals(SettingsDefaults.CONTEXT_AWARE_END, snap.contextAwareEnd)
     }
 
     @Test
@@ -32,6 +34,8 @@ class SettingsSnapshotTest {
             behindPaceCheckHour = 14,
             behindPaceEnabled = false,
             endOfDayEnabled = false,
+            contextAwareStart = 8,
+            contextAwareEnd = 16,
         )
         val dm = DataMap()
         original.toDataMap(dm)

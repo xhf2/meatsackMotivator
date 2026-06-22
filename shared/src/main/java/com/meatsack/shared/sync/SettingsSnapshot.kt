@@ -23,6 +23,8 @@ data class SettingsSnapshot(
     val behindPaceCheckHour: Int,
     val behindPaceEnabled: Boolean,
     val endOfDayEnabled: Boolean,
+    val contextAwareStart: Int,
+    val contextAwareEnd: Int,
 ) {
 
     fun toDataMap(dm: DataMap) {
@@ -35,6 +37,8 @@ data class SettingsSnapshot(
         dm.putInt(SettingsKeys.KEY_BEHIND_PACE_CHECK_HOUR, behindPaceCheckHour)
         dm.putBoolean(SettingsKeys.KEY_BEHIND_PACE_ENABLED, behindPaceEnabled)
         dm.putBoolean(SettingsKeys.KEY_END_OF_DAY_ENABLED, endOfDayEnabled)
+        dm.putInt(SettingsKeys.KEY_CONTEXT_AWARE_START, contextAwareStart)
+        dm.putInt(SettingsKeys.KEY_CONTEXT_AWARE_END, contextAwareEnd)
     }
 
     companion object {
@@ -48,6 +52,8 @@ data class SettingsSnapshot(
             behindPaceCheckHour = SettingsDefaults.BEHIND_PACE_CHECK_HOUR,
             behindPaceEnabled = SettingsDefaults.BEHIND_PACE_ENABLED,
             endOfDayEnabled = SettingsDefaults.END_OF_DAY_ENABLED,
+            contextAwareStart = SettingsDefaults.CONTEXT_AWARE_START,
+            contextAwareEnd = SettingsDefaults.CONTEXT_AWARE_END,
         )
 
         fun fromDataMap(dm: DataMap): SettingsSnapshot = SettingsSnapshot(
@@ -60,6 +66,8 @@ data class SettingsSnapshot(
             behindPaceCheckHour = dm.getInt(SettingsKeys.KEY_BEHIND_PACE_CHECK_HOUR, defaults.behindPaceCheckHour).coerceIn(0, 23),
             behindPaceEnabled = dm.getBoolean(SettingsKeys.KEY_BEHIND_PACE_ENABLED, defaults.behindPaceEnabled),
             endOfDayEnabled = dm.getBoolean(SettingsKeys.KEY_END_OF_DAY_ENABLED, defaults.endOfDayEnabled),
+            contextAwareStart = dm.getInt(SettingsKeys.KEY_CONTEXT_AWARE_START, defaults.contextAwareStart).coerceIn(0, 23),
+            contextAwareEnd = dm.getInt(SettingsKeys.KEY_CONTEXT_AWARE_END, defaults.contextAwareEnd).coerceIn(0, 23),
         )
     }
 }

@@ -98,7 +98,7 @@ class PhoneSettingsSyncer(
 }
 
 /**
- * Production SettingsSource backed by SettingsRepository. Combines the 9
+ * Production SettingsSource backed by SettingsRepository. Combines the 11
  * watch-relevant Flows into a single SettingsSnapshot.
  */
 class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsSource {
@@ -112,6 +112,8 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
         repo.behindPaceCheckHour,
         repo.behindPaceEnabled,
         repo.endOfDayEnabled,
+        repo.contextAwareStart,
+        repo.contextAwareEnd,
     ) { values ->
         SettingsSnapshot(
             dailyStepGoal = values[0] as Int,
@@ -123,6 +125,8 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             behindPaceCheckHour = values[6] as Int,
             behindPaceEnabled = values[7] as Boolean,
             endOfDayEnabled = values[8] as Boolean,
+            contextAwareStart = values[9] as Int,
+            contextAwareEnd = values[10] as Int,
         )
     }
 
@@ -137,6 +141,8 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             behindPaceCheckHour = repo.behindPaceCheckHour.first(),
             behindPaceEnabled = repo.behindPaceEnabled.first(),
             endOfDayEnabled = repo.endOfDayEnabled.first(),
+            contextAwareStart = repo.contextAwareStart.first(),
+            contextAwareEnd = repo.contextAwareEnd.first(),
         )
 }
 

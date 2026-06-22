@@ -19,6 +19,8 @@ class WatchSettingsReceiverTest {
         var recordedBehindPaceCheckHour: Int = -1
         var recordedBehindPaceEnabled: Boolean = true
         var recordedEndOfDayEnabled: Boolean = true
+        var recordedContextAwareStart: Int = -1
+        var recordedContextAwareEnd: Int = -1
         override fun setDailyStepGoal(v: Int) {
             recordedDailyStepGoal = v
         }
@@ -46,6 +48,12 @@ class WatchSettingsReceiverTest {
         override fun setEndOfDayEnabled(v: Boolean) {
             recordedEndOfDayEnabled = v
         }
+        override fun setContextAwareStart(v: Int) {
+            recordedContextAwareStart = v
+        }
+        override fun setContextAwareEnd(v: Int) {
+            recordedContextAwareEnd = v
+        }
     }
 
     @Test
@@ -61,6 +69,8 @@ class WatchSettingsReceiverTest {
             behindPaceCheckHour = 14,
             behindPaceEnabled = false,
             endOfDayEnabled = false,
+            contextAwareStart = 8,
+            contextAwareEnd = 16,
         )
         WatchSettingsReceiver.applySnapshot(snap, sink)
         assertEquals(12_000, sink.recordedDailyStepGoal)
@@ -72,5 +82,7 @@ class WatchSettingsReceiverTest {
         assertEquals(14, sink.recordedBehindPaceCheckHour)
         assertEquals(false, sink.recordedBehindPaceEnabled)
         assertEquals(false, sink.recordedEndOfDayEnabled)
+        assertEquals(8, sink.recordedContextAwareStart)
+        assertEquals(16, sink.recordedContextAwareEnd)
     }
 }
