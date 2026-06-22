@@ -4,24 +4,23 @@ import com.meatsack.shared.constants.MessageTone
 import java.util.Calendar
 
 /**
- * Picks the right tone given the user's context-aware preference and
- * the current time-of-day. When the toggle is on and we're inside the
- * user's "active hours" window (which v1 treats as a proxy for work
- * hours), we use WORK_SAFE; otherwise FULL_SEND.
+ * Picks the message tone. When context-aware is on and the current hour is
+ * inside the user's work-safe window [workSafeStart, workSafeEnd), we soften
+ * to WORK_SAFE; otherwise FULL_SEND. The window check is shared with the
+ * inactivity active-hours gate via ActiveWindow.
  */
 object ToneResolver {
     fun resolve(
         contextAwareEnabled: Boolean,
-        activeHoursStart: Int,
-        activeHoursEnd: Int,
+        workSafeStart: Int,
+        workSafeEnd: Int,
         hour: Int = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
     ): MessageTone {
         if (!contextAwareEnabled) return MessageTone.FULL_SEND
-        val inActiveWindow = if (activeHoursStart <= activeHoursEnd) {
-            hour in activeHoursStart until activeHoursEnd
+        return if (ActiveWindow.contains(hour, workSafeStart, workSafeEnd)) {
+            MessageTone.WORK_SAFE
         } else {
-            hour >= activeHoursStart || hour < activeHoursEnd
+            MessageTone.FULL_SEND
         }
-        return if (inActiveWindow) MessageTone.WORK_SAFE else MessageTone.FULL_SEND
     }
 }

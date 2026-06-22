@@ -121,8 +121,8 @@ class MeatsackWearService : Service() {
         val level = escalationManager.currentLevel.value
         val tone = ToneResolver.resolve(
             contextAwareEnabled = settings.contextAwareEnabled,
-            activeHoursStart = settings.activeHoursStart,
-            activeHoursEnd = settings.activeHoursEnd,
+            workSafeStart = settings.contextAwareStart,
+            workSafeEnd = settings.contextAwareEnd,
         )
 
         val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone) ?: return

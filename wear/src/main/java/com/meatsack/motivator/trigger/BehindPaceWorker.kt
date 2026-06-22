@@ -68,8 +68,8 @@ class BehindPaceWorker(context: Context, params: WorkerParameters) : CoroutineWo
 
         val tone = ToneResolver.resolve(
             settings.contextAwareEnabled,
-            settings.activeHoursStart,
-            settings.activeHoursEnd,
+            settings.contextAwareStart,
+            settings.contextAwareEnd,
         )
         val message = repo.selectMessage(level, TriggerType.BEHIND_PACE, tone) ?: run {
             Log.w(TAG, "No BEHIND_PACE message for level=$level tone=$tone — falling back to inactivity pool")

@@ -59,8 +59,8 @@ class EndOfDayWorker(context: Context, params: WorkerParameters) : CoroutineWork
 
         val tone = ToneResolver.resolve(
             settings.contextAwareEnabled,
-            settings.activeHoursStart,
-            settings.activeHoursEnd,
+            settings.contextAwareStart,
+            settings.contextAwareEnd,
         )
         val message = repo.selectMessage(level, TriggerType.END_OF_DAY, tone)
             ?: repo.selectMessage(level, TriggerType.INACTIVITY, tone)
