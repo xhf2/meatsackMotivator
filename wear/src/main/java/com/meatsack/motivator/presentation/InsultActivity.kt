@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import com.meatsack.motivator.MeatsackWearApp
 import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.notification.InsultNotificationService
+import com.meatsack.motivator.sync.WatchVoteSender
 import com.meatsack.shared.db.AppDatabase
 import kotlinx.coroutines.launch
 
@@ -22,17 +23,18 @@ class InsultActivity : ComponentActivity() {
         val appScope = (application as MeatsackWearApp).applicationScope
         val db = AppDatabase.getDatabase(applicationContext)
         val repo = MessageRepository(db.messageDao())
+        val voteSender = WatchVoteSender(applicationContext)
 
         setContent {
             InsultScreen(
                 insultText = messageText,
                 statsText = statsText,
                 onThumbsUp = {
-                    recordVote(appScope, messageId) { repo.voteUp(it) }
+                    recordVote(appScope, voteSender, messageId) { repo.voteUp(it) }
                     finish()
                 },
                 onThumbsDown = {
-                    recordVote(appScope, messageId) { repo.voteDown(it) }
+                    recordVote(appScope, voteSender, messageId) { repo.voteDown(it) }
                     finish()
                 },
             )
@@ -41,6 +43,7 @@ class InsultActivity : ComponentActivity() {
 
     private inline fun recordVote(
         scope: kotlinx.coroutines.CoroutineScope,
+        voteSender: WatchVoteSender,
         messageId: Long,
         crossinline write: suspend (Long) -> Unit,
     ) {
@@ -48,6 +51,9 @@ class InsultActivity : ComponentActivity() {
         scope.launch {
             try {
                 write(messageId)
+                // Best-effort back-sync; the vote is already persisted locally and the
+                // next vote re-sends the full snapshot, so a failure here is non-fatal.
+                voteSender.syncVotesToPhone()
             } catch (t: Throwable) {
                 Log.e("InsultActivity", "Vote write failed for id=$messageId", t)
             }
