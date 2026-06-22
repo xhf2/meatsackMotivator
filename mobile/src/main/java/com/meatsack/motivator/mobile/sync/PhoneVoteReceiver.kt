@@ -8,6 +8,7 @@ import com.meatsack.motivator.mobile.MeatsackMobileApp
 import com.meatsack.shared.db.AppDatabase
 import com.meatsack.shared.sync.SyncChannel
 import com.meatsack.shared.sync.VoteSyncSerializer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 /**
@@ -48,13 +49,20 @@ class PhoneVoteReceiver : WearableListenerService() {
 
             val scope = (applicationContext as MeatsackMobileApp).applicationScope
             scope.launch {
-                try {
-                    val dao = AppDatabase.getDatabase(applicationContext).messageDao()
-                    votes.forEach { dao.setVotes(it.id, it.votesUp, it.votesDown) }
-                    Log.d(TAG, "Applied ${votes.size} vote rows from node=$sourceNode")
-                } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to apply ${votes.size} vote rows from $sourceNode", t)
+                val dao = AppDatabase.getDatabase(applicationContext).messageDao()
+                // Per-row boundary so one bad row doesn't abort the rest of the batch.
+                var applied = 0
+                votes.forEach { vote ->
+                    try {
+                        dao.setVotes(vote.id, vote.votesUp, vote.votesDown)
+                        applied++
+                    } catch (ce: CancellationException) {
+                        throw ce
+                    } catch (t: Throwable) {
+                        Log.e(TAG, "Failed to apply vote row id=${vote.id} from node=$sourceNode", t)
+                    }
                 }
+                Log.d(TAG, "Applied $applied/${votes.size} vote rows from node=$sourceNode")
             }
         }
     }

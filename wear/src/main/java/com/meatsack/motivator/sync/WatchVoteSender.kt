@@ -33,24 +33,26 @@ class WatchVoteSender(private val context: Context) {
     }
 
     suspend fun syncVotesToPhone(): VoteSyncResult {
-        val snapshots = AppDatabase.getDatabase(context).messageDao().getVotedMessages()
-            .take(SyncChannel.MAX_VOTE_ROWS)
-            .map { VoteSnapshot(it.id, it.votesUp, it.votesDown) }
-
-        if (snapshots.isEmpty()) {
-            Log.d(TAG, "No votes to sync")
-            return VoteSyncResult.NoVotes
-        }
-
-        val request = PutDataMapRequest.create(SyncChannel.PATH_VOTES).apply {
-            dataMap.putString(SyncChannel.KEY_VOTE_DATA, VoteSyncSerializer.serialize(snapshots))
-            dataMap.putLong(SyncChannel.KEY_TIMESTAMP, System.currentTimeMillis())
-        }.asPutDataRequest().setUrgent()
-
+        // The DB read is inside the failure boundary so every non-cancellation
+        // failure comes back as Failed — callers can rely on the result, not a throw.
         return try {
-            Wearable.getDataClient(context).putDataItem(request).await()
-            Log.d(TAG, "Synced ${snapshots.size} vote rows to phone")
-            VoteSyncResult.Success(snapshots.size)
+            val snapshots = AppDatabase.getDatabase(context).messageDao().getVotedMessages()
+                .take(SyncChannel.MAX_VOTE_ROWS)
+                .map { VoteSnapshot(it.id, it.votesUp, it.votesDown) }
+
+            if (snapshots.isEmpty()) {
+                Log.d(TAG, "No votes to sync")
+                VoteSyncResult.NoVotes
+            } else {
+                val request = PutDataMapRequest.create(SyncChannel.PATH_VOTES).apply {
+                    dataMap.putString(SyncChannel.KEY_VOTE_DATA, VoteSyncSerializer.serialize(snapshots))
+                    dataMap.putLong(SyncChannel.KEY_TIMESTAMP, System.currentTimeMillis())
+                }.asPutDataRequest().setUrgent()
+
+                Wearable.getDataClient(context).putDataItem(request).await()
+                Log.d(TAG, "Synced ${snapshots.size} vote rows to phone")
+                VoteSyncResult.Success(snapshots.size)
+            }
         } catch (ce: CancellationException) {
             // Don't absorb cancellation — propagating it keeps structured concurrency honest.
             throw ce

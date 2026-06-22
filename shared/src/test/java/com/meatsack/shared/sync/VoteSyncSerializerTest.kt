@@ -1,6 +1,7 @@
 package com.meatsack.shared.sync
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class VoteSyncSerializerTest {
@@ -17,6 +18,24 @@ class VoteSyncSerializerTest {
 
     @Test fun deserialize_emptyString_returnsEmptyList() {
         assertEquals(emptyList<VoteSnapshot>(), VoteSyncSerializer.deserialize(""))
+    }
+
+    @Test fun serialize_emptyList_returnsEmptyString() {
+        assertEquals("", VoteSyncSerializer.serialize(emptyList()))
+    }
+
+    @Test fun roundTrip_emptyList() {
+        val empty = emptyList<VoteSnapshot>()
+        assertEquals(empty, VoteSyncSerializer.deserialize(VoteSyncSerializer.serialize(empty)))
+    }
+
+    @Test fun roundTrip_maxVoteRows_allPreservedAndUnderDataItemLimit() {
+        val votes = (1..SyncChannel.MAX_VOTE_ROWS).map { VoteSnapshot(it.toLong(), it % 7, it % 3) }
+        val serialized = VoteSyncSerializer.serialize(votes)
+        assertEquals(votes, VoteSyncSerializer.deserialize(serialized))
+        // Backs the sizing claim in SyncChannel.MAX_VOTE_ROWS's doc: a full payload
+        // stays well under the ~100 KB Data Layer DataItem limit.
+        assertTrue("payload was ${serialized.length} chars", serialized.length < 100_000)
     }
 
     @Test fun deserialize_dropsMalformedLines_keepsValid() {
