@@ -41,4 +41,19 @@ class InsultLoaderParseTest {
         val json = """[ { "text": "x", "trigger": "INACTIVITY", "level": "SAVAGE" } ]"""
         assertThrows(SerializationException::class.java) { InsultLoader.parse(json) }
     }
+
+    @Test
+    fun parse_unknownEnumValue_throws() {
+        // A typo'd enum (here "TYPO" for level) must fail loudly, not coerce to a
+        // default — locks the fail-fast contract InsultLoader's KDoc promises.
+        val json = """[ { "text": "x", "trigger": "INACTIVITY", "level": "TYPO", "tone": "FULL_SEND" } ]"""
+        assertThrows(SerializationException::class.java) { InsultLoader.parse(json) }
+    }
+
+    @Test
+    fun parse_blankText_throws() {
+        // InsultDto.init rejects blank text so a useless empty insult never seeds.
+        val json = """[ { "text": "   ", "trigger": "INACTIVITY", "level": "SAVAGE", "tone": "FULL_SEND" } ]"""
+        assertThrows(IllegalArgumentException::class.java) { InsultLoader.parse(json) }
+    }
 }
