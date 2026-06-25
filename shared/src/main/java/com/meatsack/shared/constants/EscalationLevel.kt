@@ -1,5 +1,8 @@
 package com.meatsack.shared.constants
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class EscalationLevel(val value: Int) {
     AGGRESSIVE(1),
     SAVAGE(2),
@@ -22,6 +25,7 @@ enum class EscalationLevel(val value: Int) {
     }
 }
 
+@Serializable
 enum class TriggerType {
     INACTIVITY,
     BEHIND_PACE,
@@ -29,6 +33,7 @@ enum class TriggerType {
     NO_WORKOUT,
 }
 
+@Serializable
 enum class MessageTone {
     FULL_SEND,
     WORK_SAFE,

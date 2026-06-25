@@ -1,0 +1,40 @@
+package com.meatsack.shared.data
+
+import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageSource
+import com.meatsack.shared.constants.MessageTone
+import com.meatsack.shared.constants.TriggerType
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
+import org.junit.Test
+
+class InsultLoaderParseTest {
+
+    @Test
+    fun parse_mapsAllFields_andForcesPreWrittenSource() {
+        val json = """
+            [
+              { "text": "GET UP.", "trigger": "INACTIVITY", "level": "AGGRESSIVE", "tone": "FULL_SEND" },
+              { "text": "Behind pace.", "trigger": "BEHIND_PACE", "level": "SAVAGE", "tone": "WORK_SAFE" }
+            ]
+        """.trimIndent()
+
+        val messages = InsultLoader.parse(json)
+
+        assertEquals(2, messages.size)
+        val first = messages[0]
+        assertEquals("GET UP.", first.text)
+        assertEquals(TriggerType.INACTIVITY, first.triggerType)
+        assertEquals(EscalationLevel.AGGRESSIVE, first.level)
+        assertEquals(MessageTone.FULL_SEND, first.tone)
+        assertEquals(MessageSource.PRE_WRITTEN, first.source)
+        assertEquals(TriggerType.BEHIND_PACE, messages[1].triggerType)
+        assertEquals(MessageTone.WORK_SAFE, messages[1].tone)
+    }
+
+    @Test
+    fun parse_missingField_throws() {
+        val json = """[ { "text": "x", "trigger": "INACTIVITY", "level": "SAVAGE" } ]"""
+        assertThrows(Exception::class.java) { InsultLoader.parse(json) }
+    }
+}
