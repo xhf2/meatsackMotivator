@@ -41,7 +41,7 @@ class MeatsackMobileApp : Application() {
             try {
                 val db = AppDatabase.getDatabase(this@MeatsackMobileApp)
                 if (db.messageDao().getMessageCount() == 0) {
-                    db.messageDao().insertAll(SeedData.getPreWrittenMessages())
+                    db.messageDao().insertAll(SeedData.getPreWrittenMessages(this@MeatsackMobileApp))
                     Log.d(TAG, "Seeded database with pre-written messages")
                 }
             } catch (t: Throwable) {
