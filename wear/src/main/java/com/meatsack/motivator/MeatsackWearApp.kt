@@ -33,7 +33,7 @@ class MeatsackWearApp : Application() {
             try {
                 val db = AppDatabase.getDatabase(this@MeatsackWearApp)
                 if (db.messageDao().getMessageCount() == 0) {
-                    db.messageDao().insertAll(SeedData.getPreWrittenMessages())
+                    db.messageDao().insertAll(SeedData.getPreWrittenMessages(this@MeatsackWearApp))
                     Log.d(TAG, "Seeded watch database with pre-written messages")
                 }
             } catch (t: Throwable) {
