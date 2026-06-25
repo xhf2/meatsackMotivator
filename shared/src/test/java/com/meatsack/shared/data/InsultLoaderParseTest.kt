@@ -4,6 +4,7 @@ import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageSource
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
+import kotlinx.serialization.SerializationException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -34,7 +35,10 @@ class InsultLoaderParseTest {
 
     @Test
     fun parse_missingField_throws() {
+        // Missing "tone": kotlinx.serialization raises MissingFieldException, a
+        // SerializationException. Asserting the specific type catches a regression
+        // where the record fails to parse for some unrelated reason.
         val json = """[ { "text": "x", "trigger": "INACTIVITY", "level": "SAVAGE" } ]"""
-        assertThrows(Exception::class.java) { InsultLoader.parse(json) }
+        assertThrows(SerializationException::class.java) { InsultLoader.parse(json) }
     }
 }

@@ -10,6 +10,11 @@ import java.io.File
 
 class InsultLoaderFileTest {
 
+    // Reads the asset straight from disk rather than via AssetManager: the
+    // :shared:testDebugUnitTest working dir is the module dir (shared/), so this
+    // relative path resolves without an emulator. Both paths feed the same
+    // InsultLoader.parse, so the only thing this can't catch is the file failing
+    // to bundle into the APK.
     private fun bundledInsults() =
         InsultLoader.parse(File("src/main/assets/${InsultLoader.ASSET_NAME}").readText())
 
