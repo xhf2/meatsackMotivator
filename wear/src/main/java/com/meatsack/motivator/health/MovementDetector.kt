@@ -30,7 +30,11 @@ class MovementDetector(
     @Synchronized
     fun onStepTotal(currentTotal: Int) {
         val nowMs = now()
-        val windowMs = windowMinutesProvider().toLong() * 60_000L
+        // coerceAtLeast(1): a 0/negative window (malformed sync or corrupted prefs —
+        // inactivityThreshold is not floored on the wire) would tumble on every callback
+        // and silently break accumulation. Floor it locally so the invariant holds
+        // regardless of caller.
+        val windowMs = windowMinutesProvider().coerceAtLeast(1).toLong() * 60_000L
 
         val delta = when {
             lastStepTotal < 0 -> 0 // first reading: set baseline, count nothing

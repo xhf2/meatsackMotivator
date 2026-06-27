@@ -66,6 +66,41 @@ class MovementDetectorTest {
     }
 
     @Test
+    fun thresholdCrossing_reArmsWindow_doesNotReFireOnNextSmallDelta() {
+        clock = 0
+        val d = newDetector()
+        d.onStepTotal(1000) // baseline
+        clock = 60_000L
+        d.onStepTotal(1050) // +50 >= 50 => fires; window must reset to 0 (re-arm)
+        assertEquals(0, d.minutesSinceLastMovement())
+        assertFalse(d.hasSignificantMovement())
+        clock = 120_000L
+        d.onStepTotal(1055) // +5 in the re-armed window => below 50, must NOT re-fire
+        assertFalse(d.hasSignificantMovement())
+        // idle clock advanced from the crossing (60s) to now (120s) = 1 min, NOT reset to 0.
+        // If the window weren't re-armed, the banked 50 + 5 would re-fire and this would be 0.
+        assertEquals(1, d.minutesSinceLastMovement())
+    }
+
+    @Test
+    fun windowMinutesProviderIsReadLive() {
+        clock = 0
+        windowMinutes = 30
+        val d = newDetector()
+        d.onStepTotal(1000) // baseline, window opens at t=0
+        clock = 60_000L
+        d.onStepTotal(1040) // +40 in the window
+        assertFalse(d.hasSignificantMovement())
+        windowMinutes = 1 // shrink the window mid-stream
+        clock = 180_000L // 3 min since window start: tumbles under the new 1-min window, not the old 30-min
+        d.onStepTotal(1055) // +15 in a fresh (tumbled) window => 15, below 50
+        assertFalse(d.hasSignificantMovement())
+        // Never crossed => idle clock not reset. If the window value were captured at
+        // construction (30 min, no tumble), 40 + 15 = 55 would have fired and this would be 0.
+        assertEquals(3, d.minutesSinceLastMovement())
+    }
+
+    @Test
     fun stepThresholdProviderIsReadLive() {
         clock = 0
         stepThreshold = 100
