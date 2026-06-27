@@ -19,8 +19,11 @@ class InsultLoaderFileTest {
         InsultLoader.parse(File("src/main/assets/${InsultLoader.ASSET_NAME}").readText())
 
     @Test
-    fun bundledFile_parsesToExpectedCount() {
-        assertEquals(69, bundledInsults().size)
+    fun bundledFile_parsesAndIsNotEmpty() {
+        // No fixed count — insults.json is hand-edited, so any valid non-empty set
+        // passes. The guard is only against the file parsing to zero records
+        // (empty/corrupt). Bucket coverage below still enforces the structure.
+        assertTrue(bundledInsults().isNotEmpty())
     }
 
     @Test

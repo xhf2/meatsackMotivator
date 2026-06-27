@@ -27,9 +27,10 @@ class PhoneSyncSender(private val context: Context) {
 
         /**
          * Maximum messages pushed in a single DataItem. Sized to comfortably hold
-         * the full v2 seed (69 rows: INACTIVITY + BEHIND_PACE + END_OF_DAY) plus
-         * headroom for AI-generated growth, while staying well under Wear's
-         * ~100 KB DataItem limit (200 × ~200 chars × 2 bytes ≈ 80 KB).
+         * the bundled seed (the editable insults.json — a few dozen rows across
+         * INACTIVITY + BEHIND_PACE + END_OF_DAY) plus headroom for AI-generated
+         * growth, while staying well under Wear's ~100 KB DataItem limit
+         * (200 × ~200 chars × 2 bytes ≈ 80 KB).
          *
          * Was 50 in v1 when the seed had only 49 INACTIVITY rows; that ceiling
          * silently truncated v2 seed rows on phones with no voted messages,
