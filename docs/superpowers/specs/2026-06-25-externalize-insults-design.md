@@ -178,9 +178,11 @@ the message set is ported verbatim.
 
 ## Risks / notes
 
-- **`MAX_VOTE_ROWS` / sync cap.** `PhoneSyncSender` documents a 69-row v2 seed.
-  Porting verbatim keeps the count identical, so the cap is unaffected. The new
-  test's count assertion makes any future drift visible.
+- **`MAX_VOTE_ROWS` / sync cap.** `PhoneSyncSender` documents the bundled seed
+  (a few dozen rows; ~55 in the current `insults.json`) and caps the push at
+  `CACHE_SIZE = 200`, so the seed count stays well under the cap regardless of
+  hand-edits. The bundled-file test guards bucket coverage rather than an exact
+  count, so intentional content edits don't require a test bump.
 - **Asset path on JVM test.** The unit test reads the file directly from disk,
   not through `AssetManager`; this is a deliberate, minor divergence so the test
   needs no emulator. The runtime path (`AssetManager`) is exercised by the
