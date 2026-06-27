@@ -19,6 +19,7 @@ class SettingsSnapshotTest {
         assertEquals(SettingsDefaults.END_OF_DAY_ENABLED, snap.endOfDayEnabled)
         assertEquals(SettingsDefaults.CONTEXT_AWARE_START, snap.contextAwareStart)
         assertEquals(SettingsDefaults.CONTEXT_AWARE_END, snap.contextAwareEnd)
+        assertEquals(SettingsDefaults.MOVEMENT_STEP_THRESHOLD, snap.movementStepThreshold)
     }
 
     @Test
@@ -34,6 +35,7 @@ class SettingsSnapshotTest {
             endOfDayEnabled = false,
             contextAwareStart = 8,
             contextAwareEnd = 16,
+            movementStepThreshold = 75,
         )
         val dm = DataMap()
         original.toDataMap(dm)
@@ -60,5 +62,13 @@ class SettingsSnapshotTest {
         assertEquals(0, parsed.activeHoursStart)
         assertEquals(23, parsed.activeHoursEnd)
         assertEquals(0, parsed.behindPaceCheckHour)
+    }
+
+    @Test
+    fun fromDataMap_movementStepThresholdBelowOne_coercedToOne() {
+        val dm = DataMap()
+        dm.putInt(SettingsKeys.KEY_MOVEMENT_STEP_THRESHOLD, 0)
+        val parsed = SettingsSnapshot.fromDataMap(dm)
+        assertEquals(1, parsed.movementStepThreshold)
     }
 }
