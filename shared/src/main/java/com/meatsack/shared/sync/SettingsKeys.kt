@@ -21,4 +21,5 @@ object SettingsKeys {
     const val KEY_END_OF_DAY_ENABLED = "end_of_day_enabled"
     const val KEY_CONTEXT_AWARE_START = "context_aware_start"
     const val KEY_CONTEXT_AWARE_END = "context_aware_end"
+    const val KEY_MOVEMENT_STEP_THRESHOLD = "movement_step_threshold"
 }

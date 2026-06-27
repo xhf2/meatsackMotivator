@@ -28,6 +28,7 @@ class WatchSettingsReceiver : WearableListenerService() {
             sink.setEndOfDayEnabled(snap.endOfDayEnabled)
             sink.setContextAwareStart(snap.contextAwareStart)
             sink.setContextAwareEnd(snap.contextAwareEnd)
+            sink.setMovementStepThreshold(snap.movementStepThreshold)
         }
     }
 
@@ -43,6 +44,7 @@ class WatchSettingsReceiver : WearableListenerService() {
         fun setEndOfDayEnabled(v: Boolean)
         fun setContextAwareStart(v: Int)
         fun setContextAwareEnd(v: Int)
+        fun setMovementStepThreshold(v: Int)
     }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
@@ -92,6 +94,9 @@ class WatchSettingsReceiver : WearableListenerService() {
         }
         override fun setContextAwareEnd(v: Int) {
             cache.contextAwareEnd = v
+        }
+        override fun setMovementStepThreshold(v: Int) {
+            cache.movementStepThreshold = v
         }
     }
 }

@@ -4,7 +4,7 @@
 
 > *"GET UP, you osteopenic jello mold."*
 
-A Wear OS motivator that punishes inactivity with aggressive, Goggins-style insults delivered straight to your wrist. The watch tracks your movement; every 30 minutes you've been stationary, it buzzes, takes over your screen, and tells you exactly what it thinks of you. Get nastier every 30 minutes until you move.
+A Wear OS motivator that punishes inactivity with aggressive, Goggins-style insults delivered straight to your wrist. The watch tracks your movement; every 30 minutes (or x minutes of your choice) you've been stationary, it buzzes, takes over your screen, and tells you exactly what it thinks of you. Gets nastier every 30 minutes until you move.
 
 Tap 👍 or 👎 on each insult. The algorithm learns which ones land.
 
@@ -18,7 +18,7 @@ Tap 👍 or 👎 on each insult. The algorithm learns which ones land.
    - **Full-screen takeover** with the insult text and a stats line (step count, time of day, degree of pathetic)
    - Two circular buttons: 👍 if it hit, 👎 if it whiffed
 3. Every 30 minutes you're still idle, it **escalates**: AGGRESSIVE → SAVAGE → NUCLEAR → EXISTENTIAL.
-4. Move (50+ steps within a 5-minute window) → the idle timer resets and the escalation level drops back to AGGRESSIVE.
+4. Move (enough steps — default **50**, configurable via the Movement threshold slider — within your inactivity window) → the idle timer resets and the escalation level drops back to AGGRESSIVE.
 5. The **phone app** manages the insult library: browse messages, see vote tallies, sync new messages to the watch.
 
 ### v2 intelligence additions
@@ -98,7 +98,7 @@ All settings are persisted with Jetpack DataStore, survive reboots, and sync to 
 | 90–119 | NUCLEAR | "Your ancestors are disappointed." |
 | 120+ | EXISTENTIAL | "The void called. Asked for you back." |
 
-Move 50 steps within any 5-minute window → everything resets.
+Move enough steps (default 50, set via the Movement threshold slider) within your inactivity window → everything resets.
 
 ---
 

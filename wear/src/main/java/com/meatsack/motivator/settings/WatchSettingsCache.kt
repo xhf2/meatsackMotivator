@@ -34,6 +34,10 @@ class WatchSettingsCache(context: Context) {
         get() = prefs.getInt(KEY_INACTIVITY_THRESHOLD, SettingsDefaults.INACTIVITY_THRESHOLD_MIN)
         set(value) = prefs.edit().putInt(KEY_INACTIVITY_THRESHOLD, value).apply()
 
+    var movementStepThreshold: Int
+        get() = prefs.getInt(KEY_MOVEMENT_STEP_THRESHOLD, SettingsDefaults.MOVEMENT_STEP_THRESHOLD)
+        set(value) = prefs.edit().putInt(KEY_MOVEMENT_STEP_THRESHOLD, value).apply()
+
     var behindPaceEnabled: Boolean
         get() = prefs.getBoolean(KEY_BEHIND_PACE_ENABLED, SettingsDefaults.BEHIND_PACE_ENABLED)
         set(value) = prefs.edit().putBoolean(KEY_BEHIND_PACE_ENABLED, value).apply()
@@ -57,6 +61,7 @@ class WatchSettingsCache(context: Context) {
         private const val KEY_GOAL = "daily_step_goal"
         private const val KEY_BEHIND_PACE_HOUR = "behind_pace_check_hour"
         private const val KEY_INACTIVITY_THRESHOLD = "inactivity_threshold_min"
+        private const val KEY_MOVEMENT_STEP_THRESHOLD = "movement_step_threshold"
         private const val KEY_BEHIND_PACE_ENABLED = "behind_pace_enabled"
         private const val KEY_END_OF_DAY_ENABLED = "end_of_day_enabled"
         private const val KEY_CONTEXT_AWARE_START = "context_aware_start"

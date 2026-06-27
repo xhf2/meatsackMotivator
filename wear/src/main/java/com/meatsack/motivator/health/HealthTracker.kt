@@ -7,13 +7,20 @@ import androidx.health.services.client.PassiveListenerCallback
 import androidx.health.services.client.data.DataPointContainer
 import androidx.health.services.client.data.DataType
 import androidx.health.services.client.data.PassiveListenerConfig
-import com.meatsack.shared.constants.EscalationLevel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class HealthTracker(private val context: Context) {
+class HealthTracker(
+    private val context: Context,
+    stepThresholdProvider: () -> Int,
+    windowMinutesProvider: () -> Int,
+) {
     private val client = HealthServices.getClient(context).passiveMonitoringClient
+
+    // Android-free movement/idle logic; fed the user's step threshold and the
+    // (unified) window = inactivity threshold via the provider lambdas above.
+    private val detector = MovementDetector(stepThresholdProvider, windowMinutesProvider)
 
     private val _totalStepsToday = MutableStateFlow(0)
     val totalStepsToday: StateFlow<Int> = _totalStepsToday.asStateFlow()
@@ -30,10 +37,6 @@ class HealthTracker(private val context: Context) {
     // API 33+ turned out to be wrong on real Wear OS 5 emulators). Re-add in v3
     // alongside proper Health Connect integration.
 
-    private var lastMovementTimestamp: Long = System.currentTimeMillis()
-    private var stepsInCurrentWindow: Int = 0
-    private var windowStartTimestamp: Long = System.currentTimeMillis()
-
     companion object {
         private const val TAG = "HealthTracker"
 
@@ -48,9 +51,6 @@ class HealthTracker(private val context: Context) {
          * post-day-rollover before the first datapoint arrives).
          */
         const val STALE_THRESHOLD_MS = 60 * 60 * 1000L // 1 hour
-
-        private val MOVEMENT_WINDOW_MS: Long =
-            EscalationLevel.MOVEMENT_RESET_WINDOW_MINUTES.toLong() * 60 * 1000L
     }
 
     private val callback = object : PassiveListenerCallback {
@@ -59,7 +59,7 @@ class HealthTracker(private val context: Context) {
                 dataPoints.getData(DataType.STEPS_DAILY).lastOrNull()?.let {
                     val count = it.value.toInt()
                     _totalStepsToday.value = count
-                    trackMovement(count)
+                    detector.onStepTotal(count)
                     // Hand-off for WorkManager workers (BehindPaceWorker, EndOfDayWorker)
                     // that don't have direct access to HealthServices. The timestamp
                     // is what lets workers reject stale or never-written values
@@ -126,35 +126,7 @@ class HealthTracker(private val context: Context) {
         )
     }
 
-    fun getMinutesSinceLastMovement(): Int {
-        synchronized(this) {
-            val elapsed = System.currentTimeMillis() - lastMovementTimestamp
-            return (elapsed / 60_000).toInt()
-        }
-    }
+    fun getMinutesSinceLastMovement(): Int = detector.minutesSinceLastMovement()
 
-    fun hasSignificantMovement(): Boolean {
-        synchronized(this) {
-            return stepsInCurrentWindow >= EscalationLevel.MOVEMENT_RESET_STEPS
-        }
-    }
-
-    private fun trackMovement(currentTotal: Int) {
-        synchronized(this) {
-            val now = System.currentTimeMillis()
-
-            if (now - windowStartTimestamp > MOVEMENT_WINDOW_MS) {
-                stepsInCurrentWindow = 0
-                windowStartTimestamp = now
-            }
-
-            stepsInCurrentWindow++
-
-            if (stepsInCurrentWindow >= EscalationLevel.MOVEMENT_RESET_STEPS) {
-                lastMovementTimestamp = now
-                stepsInCurrentWindow = 0
-                windowStartTimestamp = now
-            }
-        }
-    }
+    fun hasSignificantMovement(): Boolean = detector.hasSignificantMovement()
 }

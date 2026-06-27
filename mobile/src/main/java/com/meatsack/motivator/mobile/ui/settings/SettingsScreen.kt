@@ -37,6 +37,7 @@ import com.meatsack.motivator.mobile.ai.GenerationResult
 fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val stepGoal by viewModel.dailyStepGoal.collectAsState()
     val inactivityThreshold by viewModel.inactivityThreshold.collectAsState()
+    val movementSteps by viewModel.movementStepThreshold.collectAsState()
     val activeStart by viewModel.activeHoursStart.collectAsState()
     val activeEnd by viewModel.activeHoursEnd.collectAsState()
     val contextAware by viewModel.contextAwareEnabled.collectAsState()
@@ -70,6 +71,23 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             valueRange = 10f..120f,
             steps = 10,
             modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(16.dp))
+
+        Text(
+            "Movement threshold: $movementSteps steps",
+            style = MaterialTheme.typography.titleMedium,
+        )
+        Slider(
+            value = movementSteps.toFloat(),
+            onValueChange = { viewModel.updateMovementStepThreshold(it.toInt()) },
+            valueRange = 10f..500f,
+            steps = 48, // 10..500 in increments of 10
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            "Steps needed within your inactivity window to count as moving and reset the timer.",
+            style = MaterialTheme.typography.bodySmall,
         )
         Spacer(Modifier.height(16.dp))
 

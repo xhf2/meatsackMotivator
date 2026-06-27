@@ -24,6 +24,7 @@ class SettingsRepository(private val context: Context) {
         val END_OF_DAY_ENABLED = booleanPreferencesKey("end_of_day_enabled")
         val CONTEXT_AWARE_START = intPreferencesKey("context_aware_start")
         val CONTEXT_AWARE_END = intPreferencesKey("context_aware_end")
+        val MOVEMENT_STEP_THRESHOLD = intPreferencesKey("movement_step_threshold")
 
         internal fun validateHour(name: String, hour: Int) {
             require(hour in 0..23) { "$name must be in 0..23; was $hour" }
@@ -63,6 +64,9 @@ class SettingsRepository(private val context: Context) {
     }
     val contextAwareEnd: Flow<Int> = context.dataStore.data.map {
         it[CONTEXT_AWARE_END] ?: SharedDefaults.CONTEXT_AWARE_END
+    }
+    val movementStepThreshold: Flow<Int> = context.dataStore.data.map {
+        it[MOVEMENT_STEP_THRESHOLD] ?: SharedDefaults.MOVEMENT_STEP_THRESHOLD
     }
 
     suspend fun setDailyStepGoal(goal: Int) {
@@ -115,5 +119,10 @@ class SettingsRepository(private val context: Context) {
     suspend fun setContextAwareEnd(hour: Int) {
         validateHour("Context-aware end", hour)
         context.dataStore.edit { it[CONTEXT_AWARE_END] = hour }
+    }
+
+    suspend fun setMovementStepThreshold(steps: Int) {
+        validatePositive("Movement step threshold", steps)
+        context.dataStore.edit { it[MOVEMENT_STEP_THRESHOLD] = steps }
     }
 }

@@ -24,6 +24,7 @@ data class SettingsSnapshot(
     val endOfDayEnabled: Boolean,
     val contextAwareStart: Int,
     val contextAwareEnd: Int,
+    val movementStepThreshold: Int,
 ) {
 
     fun toDataMap(dm: DataMap) {
@@ -37,6 +38,7 @@ data class SettingsSnapshot(
         dm.putBoolean(SettingsKeys.KEY_END_OF_DAY_ENABLED, endOfDayEnabled)
         dm.putInt(SettingsKeys.KEY_CONTEXT_AWARE_START, contextAwareStart)
         dm.putInt(SettingsKeys.KEY_CONTEXT_AWARE_END, contextAwareEnd)
+        dm.putInt(SettingsKeys.KEY_MOVEMENT_STEP_THRESHOLD, movementStepThreshold)
     }
 
     companion object {
@@ -51,6 +53,7 @@ data class SettingsSnapshot(
             endOfDayEnabled = SettingsDefaults.END_OF_DAY_ENABLED,
             contextAwareStart = SettingsDefaults.CONTEXT_AWARE_START,
             contextAwareEnd = SettingsDefaults.CONTEXT_AWARE_END,
+            movementStepThreshold = SettingsDefaults.MOVEMENT_STEP_THRESHOLD,
         )
 
         fun fromDataMap(dm: DataMap): SettingsSnapshot = SettingsSnapshot(
@@ -64,6 +67,10 @@ data class SettingsSnapshot(
             endOfDayEnabled = dm.getBoolean(SettingsKeys.KEY_END_OF_DAY_ENABLED, defaults.endOfDayEnabled),
             contextAwareStart = dm.getInt(SettingsKeys.KEY_CONTEXT_AWARE_START, defaults.contextAwareStart).coerceIn(0, 23),
             contextAwareEnd = dm.getInt(SettingsKeys.KEY_CONTEXT_AWARE_END, defaults.contextAwareEnd).coerceIn(0, 23),
+            movementStepThreshold = dm.getInt(
+                SettingsKeys.KEY_MOVEMENT_STEP_THRESHOLD,
+                defaults.movementStepThreshold,
+            ).coerceAtLeast(1),
         )
     }
 }

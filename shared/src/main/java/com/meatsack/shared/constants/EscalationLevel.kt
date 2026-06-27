@@ -13,8 +13,6 @@ enum class EscalationLevel(val value: Int) {
     companion object {
         const val INACTIVITY_THRESHOLD_MINUTES_DEFAULT = 30
         const val ESCALATION_INTERVAL_MINUTES = 30
-        const val MOVEMENT_RESET_STEPS = 50
-        const val MOVEMENT_RESET_WINDOW_MINUTES = 5
 
         fun fromValueOrNull(value: Int): EscalationLevel? =
             entries.firstOrNull { it.value == value }

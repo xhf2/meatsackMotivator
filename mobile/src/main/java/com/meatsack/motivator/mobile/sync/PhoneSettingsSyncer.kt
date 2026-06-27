@@ -113,6 +113,7 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
         repo.endOfDayEnabled,
         repo.contextAwareStart,
         repo.contextAwareEnd,
+        repo.movementStepThreshold,
     ) { values ->
         SettingsSnapshot(
             dailyStepGoal = values[0] as Int,
@@ -125,6 +126,7 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             endOfDayEnabled = values[7] as Boolean,
             contextAwareStart = values[8] as Int,
             contextAwareEnd = values[9] as Int,
+            movementStepThreshold = values[10] as Int,
         )
     }
 
@@ -140,6 +142,7 @@ class RepositorySettingsSource(private val repo: SettingsRepository) : SettingsS
             endOfDayEnabled = repo.endOfDayEnabled.first(),
             contextAwareStart = repo.contextAwareStart.first(),
             contextAwareEnd = repo.contextAwareEnd.first(),
+            movementStepThreshold = repo.movementStepThreshold.first(),
         )
 }
 
