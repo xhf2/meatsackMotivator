@@ -79,10 +79,17 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SharingStarted.WhileSubscribed(),
         SharedDefaults.CONTEXT_AWARE_END,
     )
+    val movementStepThreshold = repo.movementStepThreshold.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        SharedDefaults.MOVEMENT_STEP_THRESHOLD,
+    )
 
     fun updateStepGoal(goal: Int) = viewModelScope.launch { repo.setDailyStepGoal(goal) }
     fun updateInactivityThreshold(min: Int) =
         viewModelScope.launch { repo.setInactivityThreshold(min) }
+    fun updateMovementStepThreshold(steps: Int) =
+        viewModelScope.launch { repo.setMovementStepThreshold(steps) }
     fun updateActiveHours(start: Int, end: Int) =
         viewModelScope.launch { repo.setActiveHours(start, end) }
     fun toggleContextAware(enabled: Boolean) =
