@@ -56,13 +56,14 @@ val VitalsTypography = Typography(
         letterSpacing = 0.5.sp,
         lineHeight = 16.sp,
     ),
-    // Readout tags (LVL n, trigger type).
+    // Readout tags (LVL n, trigger type) and the brand header.
     labelMedium = TextStyle(
         fontFamily = Mono,
         fontWeight = FontWeight.Medium,
         fontSize = 11.sp,
         letterSpacing = 1.sp,
     ),
+    // Smallest readout: nav labels, header status line, and sub-captions.
     labelSmall = TextStyle(
         fontFamily = Mono,
         fontWeight = FontWeight.Medium,

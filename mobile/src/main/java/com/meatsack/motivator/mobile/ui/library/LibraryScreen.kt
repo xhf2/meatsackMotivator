@@ -13,11 +13,13 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -40,6 +42,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -78,11 +81,7 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                    start = 16.dp,
-                    end = 16.dp,
-                    bottom = 16.dp,
-                ),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 modifier = Modifier.weight(1f),
             ) {
                 items(messages) { message -> InsultPanel(message) }
@@ -112,16 +111,25 @@ private fun VitalsHeader(roundCount: Int) {
         ) == 0f
     }
 
-    val transition = rememberInfiniteTransition(label = "ekg")
-    val progress by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 2600, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "ekg-trace",
-    )
+    // Only spin up the looping animation when motion is allowed. Under reduce-motion
+    // the header draws statically, so we must not start a perpetual frame loop at all.
+    // reduceMotion is remembered (stable for this composition), so the conditional
+    // composable calls below are safe.
+    val progress = if (reduceMotion) {
+        0f
+    } else {
+        val transition = rememberInfiniteTransition(label = "ekg")
+        val animated by transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 2600, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+            label = "ekg-trace",
+        )
+        animated
+    }
 
     val ember = MaterialTheme.colorScheme.primary
     val dim = MaterialTheme.colorScheme.outline
@@ -202,12 +210,13 @@ private fun SyncBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .fillMaxWidth()
+            .heightIn(min = 48.dp)
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.primary,
                 shape = RoundedCornerShape(8.dp),
             )
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick, role = Role.Button, onClickLabel = "Sync to watch")
             .padding(horizontal = 14.dp, vertical = 13.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
