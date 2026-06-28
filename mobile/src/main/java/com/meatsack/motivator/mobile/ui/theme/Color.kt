@@ -17,5 +17,5 @@ val BubblegumSurface = Color(0xFFFFFFFF) // cards
 val BubblegumPrimary = Color(0xFFFF4FA3) // hot-pink primary: actions, fills, on-state
 val BubblegumKiss = Color(0xFFD6336C) // deep lipstick accent: hero, hearts, emphasis
 val BubblegumInk = Color(0xFF5A2A43) // primary text — dark plum (readable on pink)
-val BubblegumMuted = Color(0xFFB06A8C) // secondary/muted text
+val BubblegumMuted = Color(0xFF8A4A68) // secondary/muted text (darkened for AA contrast)
 val BubblegumLine = Color(0xFFFFC2DE) // borders, slider tracks, dividers

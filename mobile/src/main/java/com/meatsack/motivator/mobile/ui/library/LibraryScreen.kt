@@ -341,7 +341,11 @@ private fun BubblegumHeader(roundCount: Int) {
             )
             .padding(top = 16.dp, bottom = 16.dp),
     ) {
-        Text(text = "💋", fontSize = MaterialTheme.typography.headlineMedium.fontSize.times(2f), modifier = Modifier.scale(scale))
+        Text(
+            text = "💋",
+            fontSize = MaterialTheme.typography.headlineMedium.fontSize * 2f,
+            modifier = Modifier.scale(scale),
+        )
         Text(
             text = "Meatsack Motivator",
             style = MaterialTheme.typography.headlineMedium,
@@ -418,7 +422,8 @@ private fun HeartSeverity(level: Int) {
                 color = if (index < level) {
                     MaterialTheme.colorScheme.secondary
                 } else {
-                    MaterialTheme.colorScheme.outline
+                    // outline is too pale on white to read; muted keeps empty hearts visible.
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 },
             )
         }

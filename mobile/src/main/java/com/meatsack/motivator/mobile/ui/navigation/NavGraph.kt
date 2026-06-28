@@ -35,7 +35,7 @@ enum class Screen(
     Settings("settings", "CONFIG", "Settings", Icons.Default.Settings),
     ;
 
-    fun label(theme: ThemeChoice) =
+    fun label(theme: ThemeChoice): String =
         if (theme == ThemeChoice.BUBBLEGUM) bubblegumLabel else vitalsLabel
 }
 
