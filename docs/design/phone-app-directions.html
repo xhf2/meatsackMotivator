@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>meatsackMotivator — phone app design directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --page-bg:#191b1e;
+    --page-fg:#e9eaec;
+    --page-muted:#9aa0a8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, #23262b 0%, var(--page-bg) 60%);
+    color:var(--page-fg);
+    font-family:Inter,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:48px 24px 80px;
+  }
+  .wrap{max-width:1200px;margin:0 auto}
+  header.page{margin-bottom:8px}
+  header.page h1{
+    font-family:Oswald,sans-serif;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;font-size:clamp(26px,4vw,40px);margin:0;
+  }
+  header.page p{color:var(--page-muted);max-width:62ch;line-height:1.55;margin:.5rem 0 0}
+  .legend{color:var(--page-muted);font-size:13px;margin-top:18px}
+  .grid{
+    display:grid;gap:40px;margin-top:40px;
+    grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+    align-items:start;
+  }
+  .col{display:flex;flex-direction:column;align-items:center;gap:18px}
+
+  /* ---- phone frame ---- */
+  .phone{
+    width:320px;height:660px;border-radius:42px;padding:12px;
+    background:#000;box-shadow:0 30px 60px -20px rgba(0,0,0,.7),0 0 0 2px #2c2f34;
+    position:relative;flex:0 0 auto;
+  }
+  .phone::before{ /* speaker/notch */
+    content:"";position:absolute;top:20px;left:50%;transform:translateX(-50%);
+    width:110px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:5;
+  }
+  .screen{
+    width:100%;height:100%;border-radius:32px;overflow:hidden;position:relative;
+    display:flex;flex-direction:column;
+  }
+  .statusbar{
+    height:34px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:12px;font-weight:600;flex:0 0 auto;
+  }
+  .body{flex:1 1 auto;overflow:hidden;display:flex;flex-direction:column}
+  .nav{flex:0 0 auto;display:flex}
+  .nav .item{flex:1;text-align:center;padding:12px 0 16px;font-size:11px;letter-spacing:.12em}
+  .nav .ic{display:block;font-size:16px;margin-bottom:4px}
+
+  .meta{width:320px;display:flex;flex-direction:column;gap:10px}
+  .meta h2{font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.05em;margin:0;font-size:20px}
+  .meta .desc{color:var(--page-muted);font-size:13px;line-height:1.5;margin:0}
+  .sig{font-size:12.5px;line-height:1.5;border-left:2px solid #3a3e44;padding-left:10px;color:#c4c8ce}
+  .swatches{display:flex;gap:8px;margin-top:2px}
+  .sw{width:28px;height:28px;border-radius:7px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+  .swlabel{font-family:"JetBrains Mono",monospace;font-size:10px;color:var(--page-muted);margin-top:6px}
+
+  /* ============================================================= */
+  /* DIRECTION A — BLACKOUT TACTICAL                               */
+  /* ============================================================= */
+  .A .screen{background:#0B0C0E;color:#F2F3F5}
+  .A .statusbar{color:#F2F3F5;background:#0B0C0E}
+  .A .body{padding:14px 16px}
+  .A .scr-title{font-family:Oswald,sans-serif;font-weight:700;text-transform:uppercase;
+    letter-spacing:.06em;font-size:30px;line-height:1;display:flex;justify-content:space-between;align-items:baseline}
+  .A .count{font-family:"JetBrains Mono",monospace;font-size:12px;color:#8A9099;letter-spacing:.05em}
+  .A .rule{height:1px;background:#24272C;margin:12px 0}
+  .A .sync{
+    display:flex;align-items:center;justify-content:space-between;
+    background:#FF4326;color:#0B0C0E;font-family:Oswald,sans-serif;font-weight:600;
+    text-transform:uppercase;letter-spacing:.08em;font-size:15px;
+    padding:14px 16px;border-radius:12px;margin-bottom:16px;
+  }
+  .A .sync .arrow{font-weight:700}
+  .A .card{background:#15171A;border:1px solid #24272C;border-radius:14px;padding:14px;margin-bottom:12px}
+  .A .card .txt{font-size:15px;line-height:1.35;color:#F2F3F5;font-weight:500}
+  .A .readout{display:flex;align-items:center;gap:10px;margin-top:12px;
+    font-family:"JetBrains Mono",monospace;font-size:11px;color:#8A9099;letter-spacing:.04em}
+  .A .lvl{color:#FF4326;font-weight:700}
+  .A .bar{letter-spacing:2px;color:#FF4326}
+  .A .bar .off{color:#33373d}
+  .A .trig{color:#8A9099}
+  .A .votes{margin-left:auto;color:#c4c8ce}
+  .A .nav{background:#0B0C0E;border-top:1px solid #24272C}
+  .A .nav .item{font-family:Oswald,sans-serif;text-transform:uppercase;color:#5d636b}
+  .A .nav .item.active{color:#FF4326}
+
+  /* ============================================================= */
+  /* DIRECTION B — CONCRETE BRUTALIST                              */
+  /* ============================================================= */
+  .B .screen{background:#E4E4E1;color:#111}
+  .B .statusbar{color:#111;background:#E4E4E1}
+  .B .body{padding:0}
+  .B .hd{padding:14px 16px 10px}
+  .B .scr-title{font-family:Anton,sans-serif;text-transform:uppercase;font-size:46px;line-height:.88;letter-spacing:.01em}
+  .B .scr-title .num{float:right;font-size:30px}
+  .B .stripe{height:12px;background:repeating-linear-gradient(45deg,#111 0 12px,#FFD400 12px 24px)}
+  .B .sync{background:#111;color:#FFD400;font-family:Anton,sans-serif;text-transform:uppercase;
+    letter-spacing:.04em;font-size:18px;text-align:center;padding:16px;margin:14px 16px;}
+  .B .card{border-top:2px solid #111;padding:14px 16px}
+  .B .card .rank{font-family:Anton,sans-serif;font-size:34px;line-height:1;float:left;margin-right:12px;color:#111}
+  .B .card .rank em{font-style:normal;background:#FFD400;padding:0 4px}
+  .B .card .txt{font-family:Oswald,sans-serif;font-weight:600;text-transform:uppercase;font-size:17px;line-height:1.1}
+  .B .card .sub{clear:both;font-family:"JetBrains Mono",monospace;font-size:11px;margin-top:10px;color:#444;display:flex;justify-content:space-between}
+  .B .nav{background:#111}
+  .B .nav .item{font-family:Anton,sans-serif;text-transform:uppercase;color:#777;letter-spacing:.06em}
+  .B .nav .item.active{color:#FFD400}
+
+  /* ============================================================= */
+  /* DIRECTION C — VITALS CONSOLE                                  */
+  /* ============================================================= */
+  .C .screen{background:#0A0B0D;color:#E6E8EA;font-family:"JetBrains Mono",monospace}
+  .C .statusbar{color:#E6E8EA;background:#0A0B0D}
+  .C .body{padding:0}
+  .C .ekg{height:84px;background:#0A0B0D;position:relative;border-bottom:1px solid #1c1f24;overflow:hidden}
+  .C .ekg .label{position:absolute;top:10px;left:14px;font-size:11px;letter-spacing:.18em;color:#FF2D2D}
+  .C .ekg .status{position:absolute;bottom:8px;left:14px;font-size:10px;color:#6d737b;letter-spacing:.08em}
+  .C svg{position:absolute;inset:0;width:100%;height:100%}
+  .C .pulse{stroke:#FF2D2D;stroke-width:2;fill:none;
+    stroke-dasharray:600;stroke-dashoffset:600;animation:trace 2.6s linear infinite}
+  @keyframes trace{to{stroke-dashoffset:0}}
+  @media (prefers-reduced-motion:reduce){.C .pulse{animation:none;stroke-dashoffset:0}}
+  .C .sync{display:flex;justify-content:space-between;align-items:center;margin:14px;
+    border:1px solid #FF2D2D;color:#FF2D2D;padding:13px 14px;font-size:13px;letter-spacing:.1em}
+  .C .panel{margin:0 14px 12px;background:#14161A;border-radius:8px;border:1px solid #1c1f24;padding:13px}
+  .C .panel .txt{font-family:Inter,sans-serif;font-size:14px;line-height:1.35;color:#E6E8EA}
+  .C .panel .rd{display:flex;gap:14px;margin-top:11px;font-size:10.5px;color:#6d737b;letter-spacing:.06em;align-items:center}
+  .C .panel .lvl{color:#FF2D2D}
+  .C .gauge{color:#FF2D2D}
+  .C .gauge .off{color:#2a2e34}
+  .C .panel .vt{margin-left:auto;color:#aeb3ba}
+  .C .nav{background:#0A0B0D;border-top:1px solid #1c1f24}
+  .C .nav .item{color:#5d636b;letter-spacing:.14em}
+  .C .nav .item.active{color:#FF2D2D}
+
+  /* ============================================================= */
+  /* SETTINGS — shared form-control structure                      */
+  /* ============================================================= */
+  .set{margin:6px 16px 14px}
+  .set-label{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:9px}
+  .set-label .val{font-family:"JetBrains Mono",monospace;font-size:12px}
+  .slider{position:relative;height:4px;border-radius:2px}
+  .slider .fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
+  .slider .thumb{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;transform:translate(-50%,-50%)}
+  .slider .thumb.t2{}
+  .row{display:flex;justify-content:space-between;align-items:center;margin:16px;gap:12px}
+  .row .set-label{margin-bottom:0;flex:1}
+  .switch{width:44px;height:24px;border-radius:12px;position:relative;flex:0 0 auto}
+  .switch::after{content:"";position:absolute;top:3px;width:18px;height:18px;border-radius:50%;transition:left .15s}
+  .switch.off::after{left:3px}
+  .switch.on::after{left:23px}
+  .field{display:flex;justify-content:space-between;align-items:center;border-radius:8px;
+    padding:12px;font-family:"JetBrains Mono",monospace;font-size:14px;letter-spacing:3px}
+  .field .ok{letter-spacing:.06em;font-size:11px}
+  .hint{font-size:11px;margin:-4px 16px 14px;line-height:1.45}
+  .btn{margin:14px 16px;padding:13px;text-align:center;border-radius:10px;font-size:14px;letter-spacing:.05em}
+
+  /* A — settings */
+  .A .scr-title.cfg{font-size:30px}
+  .A .set-label{color:#F2F3F5}
+  .A .set-label .val{color:#8A9099}
+  .A .slider{background:#24272C}
+  .A .slider .fill{background:#FF4326}
+  .A .slider .thumb{background:#FF4326}
+  .A .switch.off{background:#24272C}
+  .A .switch.off::after{background:#8A9099}
+  .A .switch.on{background:#FF4326}
+  .A .switch.on::after{background:#0B0C0E}
+  .A .field{background:#15171A;border:1px solid #24272C;color:#c4c8ce}
+  .A .field .ok{color:#FF4326}
+  .A .hint{color:#8A9099}
+  .A .btn{background:#FF4326;color:#0B0C0E;font-family:Oswald,sans-serif;font-weight:600;text-transform:uppercase}
+
+  /* B — settings */
+  .B .set-label{font-family:Oswald,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:#111}
+  .B .set-label .val{color:#111}
+  .B .slider{background:#c9c9c4;height:6px;border-radius:0}
+  .B .slider .fill{background:#111;border-radius:0}
+  .B .slider .thumb{background:#FFD400;border:2px solid #111;border-radius:0;width:18px;height:18px}
+  .B .switch{border:2px solid #111;border-radius:0}
+  .B .switch::after{border-radius:0;border:2px solid #111;top:1px;width:18px;height:18px}
+  .B .switch.off{background:#c9c9c4}.B .switch.off::after{background:#fff;left:1px}
+  .B .switch.on{background:#FFD400}.B .switch.on::after{background:#111;left:21px}
+  .B .field{background:#fff;border:2px solid #111;border-radius:0;color:#111}
+  .B .field .ok{color:#111;background:#FFD400;padding:2px 5px;letter-spacing:0}
+  .B .hint{color:#555}
+  .B .btn{background:#111;color:#FFD400;font-family:Anton,sans-serif;text-transform:uppercase;letter-spacing:.04em;border-radius:0}
+
+  /* C — settings */
+  .C .set-label{font-size:11px;letter-spacing:.1em;color:#aeb3ba;text-transform:uppercase}
+  .C .set-label .val{color:#FF2D2D;font-size:12px}
+  .C .slider{background:#1c1f24;border-radius:0;height:3px}
+  .C .slider .fill{background:#FF2D2D;border-radius:0}
+  .C .slider .thumb{background:#FF2D2D;border-radius:0;width:10px;height:18px}
+  .C .switch{background:#1c1f24;border:1px solid #2a2e34}
+  .C .switch.off::after{background:#6d737b}
+  .C .switch.on{background:#FF2D2D;border-color:#FF2D2D}
+  .C .switch.on::after{background:#0A0B0D}
+  .C .field{background:#14161A;border:1px solid #1c1f24;color:#aeb3ba}
+  .C .field .ok{color:#FF2D2D}
+  .C .hint{color:#6d737b}
+  .C .btn{border:1px solid #FF2D2D;color:#FF2D2D;font-family:"JetBrains Mono",monospace;letter-spacing:.1em}
+  .C .cfg-hd{padding:14px 16px 8px;border-bottom:1px solid #1c1f24;margin-bottom:8px}
+  .C .cfg-hd .t{font-size:13px;letter-spacing:.2em;color:#E6E8EA}
+  .C .cfg-hd .s{font-size:10px;color:#6d737b;letter-spacing:.1em;margin-top:4px}
+
+  .pick-badge{display:inline-block;background:#FF2D2D;color:#0A0B0D;font-family:"JetBrains Mono",monospace;
+    font-size:10px;font-weight:700;letter-spacing:.08em;padding:3px 8px;border-radius:5px;margin-left:8px;vertical-align:middle}
+  .section-h{font-family:Oswald,sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    font-size:24px;margin:64px 0 0}
+
+  /* info "i" + tap-to-reveal popup (replaces inline hint text) */
+  .set{position:relative}
+  .info-i{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;
+    border:1px solid currentColor;font:italic 700 9px/1 Georgia,serif;margin-left:6px;opacity:.55;
+    vertical-align:middle;cursor:pointer}
+  .info-i.active{opacity:1;color:#FF2D2D}
+  .popup-box{position:absolute;left:0;top:26px;z-index:10;width:210px;background:#1c1f24;border:1px solid #FF2D2D;
+    border-radius:6px;padding:9px 11px;font-family:Inter,sans-serif;font-size:11px;line-height:1.45;color:#E6E8EA;
+    box-shadow:0 10px 24px rgba(0,0,0,.55)}
+  .popup-box::before{content:"";position:absolute;top:-5px;left:135px;width:8px;height:8px;background:#1c1f24;
+    border-left:1px solid #FF2D2D;border-top:1px solid #FF2D2D;transform:rotate(45deg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1>meatsackMotivator — phone app, three directions</h1>
+    <p>Each phone shows the <strong>Library ("arsenal") screen</strong> rendered with the exact color + type tokens I'd ship in the Compose theme. Hex values under each phone are the spec. Pick one (or mix elements) and I'll build it.</p>
+    <p class="legend">Fonts are web stand-ins for Android system faces: Oswald/Anton ≈ <code>sans-serif-condensed</code>, JetBrains Mono ≈ <code>monospace</code>, Inter ≈ <code>sans-serif</code>.</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- ============ A ============ -->
+    <div class="col A">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮ 100%</span></div>
+        <div class="body">
+          <div class="scr-title">Arsenal<span class="count">42 LOADED</span></div>
+          <div class="rule"></div>
+          <div class="sync"><span>Sync to Watch</span><span class="arrow">→</span></div>
+
+          <div class="card">
+            <div class="txt">"Get up. Nobody's coming to save you."</div>
+            <div class="readout">
+              <span class="lvl">L3</span>
+              <span class="bar">▮▮▮<span class="off">▮▮</span></span>
+              <span class="trig">INACTIVITY</span>
+              <span class="votes">▲12 ▼1</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="txt">"Comfort is the enemy. You chose the couch."</div>
+            <div class="readout">
+              <span class="lvl">L5</span>
+              <span class="bar">▮▮▮▮▮</span>
+              <span class="trig">END_OF_DAY</span>
+              <span class="votes">▲30 ▼0</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="txt">"You're behind pace and pretending you're not."</div>
+            <div class="readout">
+              <span class="lvl">L2</span>
+              <span class="bar">▮▮<span class="off">▮▮▮</span></span>
+              <span class="trig">BEHIND_PACE</span>
+              <span class="votes">▲8 ▼2</span>
+            </div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="item active"><span class="ic">▤</span>ARSENAL</div>
+          <div class="item"><span class="ic">⚙</span>CONFIG</div>
+        </div>
+      </div></div>
+      <div class="meta">
+        <h2>A · Blackout Tactical</h2>
+        <p class="desc">Near-black instrument panel, one molten accent, condensed caps + monospaced readouts. Sleek and menacing — premium-wearable energy.</p>
+        <div class="sig">Signature: every card is a <strong>threat-level readout</strong> — mono tag + a ▮▮▮▮▮ severity bar that fills with escalation level.</div>
+        <div>
+          <div class="swatches">
+            <div class="sw" style="background:#0B0C0E"></div>
+            <div class="sw" style="background:#15171A"></div>
+            <div class="sw" style="background:#24272C"></div>
+            <div class="sw" style="background:#FF4326"></div>
+            <div class="sw" style="background:#F2F3F5"></div>
+          </div>
+          <div class="swlabel">0B0C0E · 15171A · 24272C · FF4326 · F2F3F5</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ B ============ -->
+    <div class="col B">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮ 100%</span></div>
+        <div class="body">
+          <div class="hd">
+            <div class="scr-title">Insult<br>Arsenal<span class="num">/42</span></div>
+          </div>
+          <div class="stripe"></div>
+          <div class="sync">Sync to Watch</div>
+          <div class="card">
+            <div class="rank"><em>3</em></div>
+            <div class="txt">Get up. Nobody's coming to save you.</div>
+            <div class="sub"><span>INACTIVITY</span><span>▲12 ▼1</span></div>
+          </div>
+          <div class="card">
+            <div class="rank"><em>5</em></div>
+            <div class="txt">Comfort is the enemy. You chose the couch.</div>
+            <div class="sub"><span>END OF DAY</span><span>▲30 ▼0</span></div>
+          </div>
+          <div class="card">
+            <div class="rank">2</div>
+            <div class="txt">You're behind pace and pretending you're not.</div>
+            <div class="sub"><span>BEHIND PACE</span><span>▲8 ▼2</span></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="item active">ARSENAL</div>
+          <div class="item">CONFIG</div>
+        </div>
+      </div></div>
+      <div class="meta">
+        <h2>B · Concrete Brutalist</h2>
+        <p class="desc">Concrete-grey field, huge black condensed type, hazard-yellow accent, zero corner radius, warning-stripe rules. Loud gym-poster, not sleek.</p>
+        <div class="sig">Signature: oversized <strong>rank numerals</strong> (top votes get the yellow highlight) + diagonal hazard-stripe dividers.</div>
+        <div>
+          <div class="swatches">
+            <div class="sw" style="background:#E4E4E1"></div>
+            <div class="sw" style="background:#111111"></div>
+            <div class="sw" style="background:#FFD400"></div>
+          </div>
+          <div class="swlabel">E4E4E1 · 111111 · FFD400</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ C ============ -->
+    <div class="col C">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮ 100%</span></div>
+        <div class="body">
+          <div class="ekg">
+            <span class="label">MEATSACK · VITALS</span>
+            <svg viewBox="0 0 320 84" preserveAspectRatio="none">
+              <polyline class="pulse" points="0,42 60,42 75,42 85,12 95,70 110,42 180,42 195,42 205,20 215,64 230,42 320,42"/>
+            </svg>
+            <span class="status">STATUS: 42 ROUNDS CHAMBERED</span>
+          </div>
+          <div class="sync"><span>&gt; SYNC TO WATCH</span><span>[ ▸ ]</span></div>
+          <div class="panel">
+            <div class="txt">"Get up. Nobody's coming to save you."</div>
+            <div class="rd"><span class="lvl">LVL 3</span><span class="gauge">▰▰▰<span class="off">▰▰</span></span><span>INACTIVITY</span><span class="vt">▲12 ▼1</span></div>
+          </div>
+          <div class="panel">
+            <div class="txt">"Comfort is the enemy. You chose the couch."</div>
+            <div class="rd"><span class="lvl">LVL 5</span><span class="gauge">▰▰▰▰▰</span><span>END OF DAY</span><span class="vt">▲30 ▼0</span></div>
+          </div>
+          <div class="panel">
+            <div class="txt">"You're behind pace and pretending you're not."</div>
+            <div class="rd"><span class="lvl">LVL 2</span><span class="gauge">▰▰<span class="off">▰▰▰</span></span><span>BEHIND PACE</span><span class="vt">▲8 ▼2</span></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="item active">ARSENAL</div>
+          <div class="item">CONFIG</div>
+        </div>
+      </div></div>
+      <div class="meta">
+        <h2>C · Vitals Console</h2>
+        <p class="desc">Dark like A, but organized as a heart-rate monitor: ember accent, a live EKG pulse line in the header, mono-forward readout panels. Most motion.</p>
+        <div class="sig">Signature: the <strong>animated pulse line</strong> up top (pauses for reduced-motion); cards read like monitor panels.</div>
+        <div>
+          <div class="swatches">
+            <div class="sw" style="background:#0A0B0D"></div>
+            <div class="sw" style="background:#14161A"></div>
+            <div class="sw" style="background:#1c1f24"></div>
+            <div class="sw" style="background:#FF2D2D"></div>
+          </div>
+          <div class="swlabel">0A0B0D · 14161A · 1C1F24 · FF2D2D</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 class="section-h">Settings screen — same three themes</h2>
+  <div class="grid">
+
+    <!-- ===== A · Settings ===== -->
+    <div class="col A">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮ 100%</span></div>
+        <div class="body" style="overflow-y:auto">
+          <div style="padding:14px 16px 0">
+            <div class="scr-title cfg">Config</div>
+            <div class="rule"></div>
+          </div>
+          <div class="set">
+            <div class="set-label">Daily step goal <span class="val">10,000</span></div>
+            <div class="slider"><span class="fill" style="width:35%"></span><span class="thumb" style="left:35%"></span></div>
+          </div>
+          <div class="set">
+            <div class="set-label">Inactivity threshold <span class="val">30 MIN</span></div>
+            <div class="slider"><span class="fill" style="width:20%"></span><span class="thumb" style="left:20%"></span></div>
+          </div>
+          <div class="set">
+            <div class="set-label">Active hours <span class="val">08:00–22:00</span></div>
+            <div class="slider"><span class="fill" style="left:33%;width:42%"></span>
+              <span class="thumb" style="left:33%"></span><span class="thumb t2" style="left:75%"></span></div>
+          </div>
+          <div class="row"><span class="set-label">Behind-pace messages</span><span class="switch on"></span></div>
+          <div class="row"><span class="set-label">End-of-day messages</span><span class="switch off"></span></div>
+          <div class="set"><div class="set-label">Anthropic API key</div>
+            <div class="field"><span>••••••••••••</span><span class="ok">✓ SAVED</span></div></div>
+          <div class="btn">Generate 10 new insults</div>
+          <div class="row"><span class="set-label">Context-aware language</span><span class="switch on"></span></div>
+          <div class="hint">Cleaner language during work hours. Off = full send all day.</div>
+        </div>
+        <div class="nav">
+          <div class="item"><span class="ic">▤</span>ARSENAL</div>
+          <div class="item active"><span class="ic">⚙</span>CONFIG</div>
+        </div>
+      </div></div>
+      <div class="meta"><h2>A · Blackout Tactical</h2></div>
+    </div>
+
+    <!-- ===== B · Settings ===== -->
+    <div class="col B">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮ 100%</span></div>
+        <div class="body" style="overflow-y:auto">
+          <div class="hd"><div class="scr-title" style="font-size:40px">Config</div></div>
+          <div class="stripe"></div>
+          <div style="height:8px"></div>
+          <div class="set">
+            <div class="set-label">Daily step goal <span class="val">10,000</span></div>
+            <div class="slider"><span class="fill" style="width:35%"></span><span class="thumb" style="left:35%"></span></div>
+          </div>
+          <div class="set">
+            <div class="set-label">Inactivity <span class="val">30 MIN</span></div>
+            <div class="slider"><span class="fill" style="width:20%"></span><span class="thumb" style="left:20%"></span></div>
+          </div>
+          <div class="set">
+            <div class="set-label">Active hours <span class="val">08–22</span></div>
+            <div class="slider"><span class="fill" style="left:33%;width:42%"></span>
+              <span class="thumb" style="left:33%"></span><span class="thumb t2" style="left:75%"></span></div>
+          </div>
+          <div class="row"><span class="set-label">Behind-pace</span><span class="switch on"></span></div>
+          <div class="row"><span class="set-label">End-of-day</span><span class="switch off"></span></div>
+          <div class="set"><div class="set-label">API key</div>
+            <div class="field"><span>••••••••••</span><span class="ok">✓ SAVED</span></div></div>
+          <div class="btn">Generate 10 Insults</div>
+          <div class="row"><span class="set-label">Context-aware</span><span class="switch on"></span></div>
+        </div>
+        <div class="nav">
+          <div class="item">ARSENAL</div>
+          <div class="item active">CONFIG</div>
+        </div>
+      </div></div>
+      <div class="meta"><h2>B · Concrete Brutalist</h2></div>
+    </div>
+
+    <!-- ===== C · Settings (your pick) ===== -->
+    <div class="col C">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>▮▮▮ 100%</span></div>
+        <div class="body" style="overflow-y:auto">
+          <div class="cfg-hd"><div class="t">CONFIG // SYSTEM</div><div class="s">CALIBRATE THE MACHINE</div></div>
+          <div class="set">
+            <div class="set-label"><span>Daily step goal <span class="info-i">i</span></span><span class="val">10,000</span></div>
+            <div class="slider"><span class="fill" style="width:35%"></span><span class="thumb" style="left:35%"></span></div>
+          </div>
+          <div class="set">
+            <div class="set-label"><span>Inactivity threshold <span class="info-i">i</span></span><span class="val">30 MIN</span></div>
+            <div class="slider"><span class="fill" style="width:20%"></span><span class="thumb" style="left:20%"></span></div>
+          </div>
+          <div class="set">
+            <div class="set-label"><span>Movement threshold <span class="info-i active">i</span></span><span class="val">100 STEPS</span></div>
+            <div class="slider"><span class="fill" style="width:18%"></span><span class="thumb" style="left:18%"></span></div>
+            <div class="popup-box">Steps needed within your inactivity window to count as moving and reset the timer.</div>
+          </div>
+          <div class="set">
+            <div class="set-label"><span>Active hours <span class="info-i">i</span></span><span class="val">08:00–22:00</span></div>
+            <div class="slider"><span class="fill" style="left:33%;width:42%"></span>
+              <span class="thumb" style="left:33%"></span><span class="thumb t2" style="left:75%"></span></div>
+          </div>
+          <div class="set">
+            <div class="set-label"><span>Behind-pace check hour <span class="info-i">i</span></span><span class="val">12:00</span></div>
+            <div class="slider"><span class="fill" style="width:52%"></span><span class="thumb" style="left:52%"></span></div>
+          </div>
+          <div class="row"><span class="set-label">Behind-pace alerts <span class="info-i">i</span></span><span class="switch on"></span></div>
+          <div class="row"><span class="set-label">End-of-day alerts <span class="info-i">i</span></span><span class="switch off"></span></div>
+          <div class="set"><div class="set-label"><span>Anthropic API key</span></div>
+            <div class="field"><span>••••••••••••</span><span class="ok">✓ ARMED</span></div></div>
+          <div class="btn">&gt; GENERATE 10 ROUNDS</div>
+          <div class="row"><span class="set-label">Context-aware language <span class="info-i">i</span></span><span class="switch on"></span></div>
+          <div style="display:flex;gap:10px;margin:4px 16px 14px">
+            <div style="flex:1"><div class="set-label" style="font-size:9px;margin-bottom:5px">WORK-SAFE START</div><div class="field">08</div></div>
+            <div style="flex:1"><div class="set-label" style="font-size:9px;margin-bottom:5px">WORK-SAFE END</div><div class="field">17</div></div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="item">ARSENAL</div>
+          <div class="item active">CONFIG</div>
+        </div>
+      </div></div>
+      <div class="meta">
+        <h2>C · Vitals Console <span class="pick-badge">★ YOUR PICK</span></h2>
+        <p class="desc">All controls now present. Each explanation moved into a tap-to-reveal <span class="info-i" style="color:#aeb3ba">i</span> popup beside the header (Movement threshold shown open) to save vertical space.</p>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</body>
+</html>

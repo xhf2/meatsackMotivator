@@ -62,7 +62,9 @@ APKs land at `mobile/build/outputs/apk/debug/mobile-debug.apk` and `wear/build/o
 
 ## Using the phone app
 
-![companion app](#)
+<img src="docs/screenshots/config.png" width="300" alt="meatsackMotivator phone app — Settings / Config screen" />
+
+*The Settings ("Config") tab in the dark "Vitals Console" theme. Tap any ⓘ for an inline explanation of that control.*
 
 Two tabs:
 

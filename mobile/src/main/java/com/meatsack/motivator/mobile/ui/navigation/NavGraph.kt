@@ -5,13 +5,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -21,8 +24,8 @@ import com.meatsack.motivator.mobile.ui.library.LibraryScreen
 import com.meatsack.motivator.mobile.ui.settings.SettingsScreen
 
 enum class Screen(val route: String, val label: String, val icon: ImageVector) {
-    Library("library", "Library", Icons.AutoMirrored.Filled.List),
-    Settings("settings", "Settings", Icons.Default.Settings),
+    Library("library", "ARSENAL", Icons.AutoMirrored.Filled.List),
+    Settings("settings", "CONFIG", Icons.Default.Settings),
 }
 
 @Composable
@@ -33,7 +36,9 @@ fun MeatsackNavGraph() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                containerColor = MaterialTheme.colorScheme.background,
+            ) {
                 Screen.entries.forEach { screen ->
                     NavigationBarItem(
                         selected = currentRoute == screen.route,
@@ -47,11 +52,21 @@ fun MeatsackNavGraph() {
                             }
                         },
                         icon = { Icon(screen.icon, contentDescription = screen.label) },
-                        label = { Text(screen.label) },
+                        label = {
+                            Text(screen.label, style = MaterialTheme.typography.labelSmall)
+                        },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            indicatorColor = Color.Transparent,
+                        ),
                     )
                 }
             }
         },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         NavHost(
             navController = navController,
