@@ -62,9 +62,13 @@ APKs land at `mobile/build/outputs/apk/debug/mobile-debug.apk` and `wear/build/o
 
 ## Using the phone app
 
-<img src="docs/screenshots/config.png" width="300" alt="meatsackMotivator phone app — Settings / Config screen" />
+<p>
+<img src="docs/screenshots/config.png" width="270" alt="Vitals Console theme — Settings" />
+&nbsp;
+<img src="docs/screenshots/bubblegum-library.png" width="270" alt="Bubblegum theme — Library" />
+</p>
 
-*The Settings ("Config") tab in the dark "Vitals Console" theme. Tap any ⓘ for an inline explanation of that control.*
+*Two built-in themes, switchable in **Settings → App theme**: the dark **Vitals Console** (left, Settings shown) and its cutesy **Bubblegum** alter-ego (right, Library shown). The brutal insults are identical in both — Bubblegum just wraps them in pink. Tap any ⓘ for an inline explanation of a control.*
 
 Two tabs:
 

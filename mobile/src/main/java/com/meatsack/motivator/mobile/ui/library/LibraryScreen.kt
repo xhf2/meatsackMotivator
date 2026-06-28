@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,17 +38,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meatsack.motivator.mobile.sync.PhoneSyncSender
 import com.meatsack.motivator.mobile.sync.SyncResult
+import com.meatsack.motivator.mobile.ui.theme.LocalThemeChoice
+import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 import com.meatsack.shared.model.Message
 import kotlinx.coroutines.launch
 
@@ -59,32 +66,39 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val bubblegum = LocalThemeChoice.current == ThemeChoice.BUBBLEGUM
+
+    val onSync: () -> Unit = {
+        scope.launch {
+            val msg = when (val result = PhoneSyncSender(context).syncMessagesToWatch()) {
+                is SyncResult.Success -> "Synced ${result.count} rounds to watch"
+                SyncResult.NoMessages -> "No rounds to sync"
+                is SyncResult.Failed ->
+                    "Sync failed: ${result.error.message ?: "unknown error"}"
+            }
+            snackbarHostState.showSnackbar(msg)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            VitalsHeader(roundCount = messages.size)
+            if (bubblegum) BubblegumHeader(messages.size) else VitalsHeader(messages.size)
 
-            SyncBar(
-                onClick = {
-                    scope.launch {
-                        val msg = when (val result = PhoneSyncSender(context).syncMessagesToWatch()) {
-                            is SyncResult.Success -> "Synced ${result.count} rounds to watch"
-                            SyncResult.NoMessages -> "No rounds to sync"
-                            is SyncResult.Failed ->
-                                "Sync failed: ${result.error.message ?: "unknown error"}"
-                        }
-                        snackbarHostState.showSnackbar(msg)
-                    }
-                },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            )
+            val barPadding = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
+            if (bubblegum) {
+                BubblegumSyncBar(onClick = onSync, modifier = barPadding)
+            } else {
+                SyncBar(onClick = onSync, modifier = barPadding)
+            }
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 modifier = Modifier.weight(1f),
             ) {
-                items(messages) { message -> InsultPanel(message) }
+                items(messages) { message ->
+                    if (bubblegum) BubblegumPanel(message) else InsultPanel(message)
+                }
             }
         }
 
@@ -95,26 +109,19 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
     }
 }
 
+// ============================ Vitals theme ============================
+
 /**
- * The signature element: a live EKG pulse line. A bright ember segment traces the
+ * The Vitals signature: a live EKG pulse line. A bright ember segment traces the
  * waveform on a loop. Honours the system "remove animations" setting by drawing the
  * full line statically when animator duration scale is 0.
  */
 @Composable
 private fun VitalsHeader(roundCount: Int) {
-    val context = LocalContext.current
-    val reduceMotion = remember {
-        Settings.Global.getFloat(
-            context.contentResolver,
-            Settings.Global.ANIMATOR_DURATION_SCALE,
-            1f,
-        ) == 0f
-    }
+    val reduceMotion = rememberReduceMotion()
 
     // Only spin up the looping animation when motion is allowed. Under reduce-motion
     // the header draws statically, so we must not start a perpetual frame loop at all.
-    // reduceMotion is remembered (stable for this composition), so the conditional
-    // composable calls below are safe.
     val progress = if (reduceMotion) {
         0f
     } else {
@@ -143,7 +150,6 @@ private fun VitalsHeader(roundCount: Int) {
             val w = size.width
             val h = size.height
             val mid = h / 2f
-            // A flat baseline punctuated by two QRS-style spikes.
             val pts = listOf(
                 Offset(0f, mid),
                 Offset(w * 0.18f, mid),
@@ -295,5 +301,156 @@ private fun SeverityBar(level: Int) {
                 modifier = Modifier.size(width = 14.dp, height = 5.dp),
             ) {}
         }
+    }
+}
+
+// ============================ Bubblegum theme ============================
+
+/**
+ * The Bubblegum signature: a lipstick kiss mark that gently pulses, over the app name
+ * in script. Same reduce-motion accommodation as the Vitals EKG — no pulse when the
+ * system disables animations.
+ */
+@Composable
+private fun BubblegumHeader(roundCount: Int) {
+    val reduceMotion = rememberReduceMotion()
+    val scale = if (reduceMotion) {
+        1f
+    } else {
+        val transition = rememberInfiniteTransition(label = "kiss")
+        val animated by transition.animateFloat(
+            initialValue = 1f,
+            targetValue = 1.12f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1200, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "kiss-pulse",
+        )
+        animated
+    }
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFFFFD1E8), MaterialTheme.colorScheme.background),
+                ),
+            )
+            .padding(top = 16.dp, bottom = 16.dp),
+    ) {
+        Text(text = "💋", fontSize = MaterialTheme.typography.headlineMedium.fontSize.times(2f), modifier = Modifier.scale(scale))
+        Text(
+            text = "Meatsack Motivator",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = "$roundCount sweet nothings loaded 💕",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun BubblegumSyncBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(percent = 50),
+            )
+            .clickable(onClick = onClick, role = Role.Button, onClickLabel = "Sync to watch")
+            .padding(horizontal = 16.dp, vertical = 13.dp),
+    ) {
+        Text(
+            text = "Sync to Watch 💋",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onPrimary,
+        )
+    }
+}
+
+@Composable
+private fun BubblegumPanel(message: Message) {
+    Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(22.dp),
+        shadowElevation = 3.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 15.dp)) {
+            Text(
+                text = message.text,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                HeartSeverity(level = message.level.value)
+                Spacer(Modifier.size(10.dp))
+                TriggerChip(message.triggerType.name)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    text = "💕 ${message.votesUp} · 💔 ${message.votesDown}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeartSeverity(level: Int) {
+    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+        repeat(MAX_LEVEL) { index ->
+            Text(
+                text = if (index < level) "♥" else "♡",
+                style = MaterialTheme.typography.labelMedium,
+                color = if (index < level) {
+                    MaterialTheme.colorScheme.secondary
+                } else {
+                    MaterialTheme.colorScheme.outline
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TriggerChip(triggerName: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(percent = 50),
+    ) {
+        Text(
+            text = triggerName.replace('_', ' ').lowercase(),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.secondary,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+        )
+    }
+}
+
+// ============================ shared ============================
+
+/** True when the system "remove animations" setting is on (animator scale == 0). */
+@Composable
+private fun rememberReduceMotion(): Boolean {
+    val context = LocalContext.current
+    return remember {
+        Settings.Global.getFloat(
+            context.contentResolver,
+            Settings.Global.ANIMATOR_DURATION_SCALE,
+            1f,
+        ) == 0f
     }
 }

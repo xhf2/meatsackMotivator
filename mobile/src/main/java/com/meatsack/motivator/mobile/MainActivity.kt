@@ -4,10 +4,15 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
+import com.meatsack.motivator.mobile.data.SettingsRepository
 import com.meatsack.motivator.mobile.sync.SettingsSyncResult
 import com.meatsack.motivator.mobile.ui.navigation.MeatsackNavGraph
 import com.meatsack.motivator.mobile.ui.theme.MeatsackTheme
+import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -19,7 +24,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MeatsackTheme {
+            val settingsRepo = remember { SettingsRepository(applicationContext) }
+            val themeChoice by settingsRepo.themeChoice.collectAsState(initial = ThemeChoice.VITALS)
+            MeatsackTheme(choice = themeChoice) {
                 MeatsackNavGraph()
             }
         }

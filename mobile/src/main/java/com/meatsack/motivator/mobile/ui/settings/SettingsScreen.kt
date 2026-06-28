@@ -1,5 +1,8 @@
 package com.meatsack.motivator.mobile.ui.settings
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -39,11 +43,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meatsack.motivator.mobile.ai.GenerationResult
+import com.meatsack.motivator.mobile.ui.theme.LocalThemeChoice
+import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 import kotlinx.coroutines.launch
 
 @Composable
@@ -54,6 +63,8 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     val activeStart by viewModel.activeHoursStart.collectAsState()
     val activeEnd by viewModel.activeHoursEnd.collectAsState()
     val contextAware by viewModel.contextAwareEnabled.collectAsState()
+    val theme by viewModel.themeChoice.collectAsState()
+    val vitals = theme == ThemeChoice.VITALS
 
     Column(
         modifier = Modifier
@@ -62,13 +73,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             .verticalScroll(rememberScrollState()),
     ) {
         Text(
-            "CONFIG // SYSTEM",
+            if (vitals) "CONFIG // SYSTEM" else "Settings 🎀",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground,
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            "CALIBRATE THE MACHINE",
+            if (vitals) "CALIBRATE THE MACHINE" else "make it yours, girlypop",
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -76,8 +87,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Spacer(Modifier.height(16.dp))
 
+        ThemePicker(current = theme, onSelect = { viewModel.updateThemeChoice(it) })
+        Spacer(Modifier.height(16.dp))
+
         SettingHeader(
-            title = "DAILY STEP GOAL: $stepGoal",
+            title = "Daily step goal: $stepGoal",
             info = "Your daily step target. Behind-pace and end-of-day checks " +
                 "measure your progress against this number.",
         )
@@ -91,7 +105,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         Spacer(Modifier.height(16.dp))
 
         SettingHeader(
-            title = "INACTIVITY THRESHOLD: $inactivityThreshold MIN",
+            title = "Inactivity threshold: $inactivityThreshold min",
             info = "How long with too little movement before the watch fires an " +
                 "inactivity insult.",
         )
@@ -105,7 +119,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         Spacer(Modifier.height(16.dp))
 
         SettingHeader(
-            title = "MOVEMENT THRESHOLD: $movementSteps STEPS",
+            title = "Movement threshold: $movementSteps steps",
             info = "Steps needed within your inactivity window to count as moving " +
                 "and reset the timer.",
         )
@@ -119,7 +133,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         Spacer(Modifier.height(16.dp))
 
         SettingHeader(
-            title = "ACTIVE HOURS: $activeStart:00 - $activeEnd:00",
+            title = "Active hours: $activeStart:00 - $activeEnd:00",
             info = "Hours the watch can nag you. Outside this window it stays quiet.",
         )
         RangeSlider(
@@ -135,7 +149,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
         val behindPaceHour by viewModel.behindPaceCheckHour.collectAsState()
         SettingHeader(
-            title = "BEHIND-PACE CHECK HOUR: $behindPaceHour:00",
+            title = "Behind-pace check hour: $behindPaceHour:00",
             info = "Time of day to check whether you're behind your step goal.",
         )
         Slider(
@@ -151,7 +165,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
         val behindPaceEnabled by viewModel.behindPaceEnabled.collectAsState()
         SettingHeader(
-            title = "BEHIND-PACE ALERTS",
+            title = "Behind-pace alerts",
             info = "When off, the watch won't nag you for falling behind your step " +
                 "pace during the day.",
         ) {
@@ -164,7 +178,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
         val endOfDayEnabled by viewModel.endOfDayEnabled.collectAsState()
         SettingHeader(
-            title = "END-OF-DAY ALERTS",
+            title = "End-of-day alerts",
             info = "When off, the watch won't nag you at the end of the day for " +
                 "missing your step goal.",
         ) {
@@ -174,7 +188,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             )
         }
         Spacer(Modifier.height(24.dp))
-        Text("ANTHROPIC API KEY", style = MaterialTheme.typography.titleMedium)
+        SettingHeader(title = "Anthropic API key")
 
         val apiKeyPresent by viewModel.apiKeyPresent.collectAsState()
         var draftKey by remember { mutableStateOf("") }
@@ -197,8 +211,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             Spacer(Modifier.width(8.dp))
             TextButton(onClick = { viewModel.saveApiKey("") }) { Text("Clear") }
             Spacer(Modifier.weight(1f))
+            val savedLabel = if (vitals) "✓ ARMED" else "✓ Saved 💕"
+            val unsetLabel = if (vitals) "NOT SET" else "Not set"
             Text(
-                if (apiKeyPresent) "✓ ARMED" else "NOT SET",
+                if (apiKeyPresent) savedLabel else unsetLabel,
                 style = MaterialTheme.typography.bodySmall,
                 color = if (apiKeyPresent) {
                     MaterialTheme.colorScheme.primary
@@ -215,7 +231,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             enabled = apiKeyPresent,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("> GENERATE 10 ROUNDS")
+            Text(if (vitals) "> GENERATE 10 ROUNDS" else "Generate 10 new insults 💌")
         }
         genStatus?.let {
             val text = when (it) {
@@ -229,7 +245,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
 
         Spacer(Modifier.height(24.dp))
         SettingHeader(
-            title = "CONTEXT-AWARE LANGUAGE",
+            title = "Context-aware language",
             info = "When on, uses cleaner language during work hours. When off, " +
                 "full send all day. Set the work-safe window below.",
         ) {
@@ -269,10 +285,53 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
     }
 }
 
+/** Segmented control to switch the app's visual theme. */
+@Composable
+private fun ThemePicker(current: ThemeChoice, onSelect: (ThemeChoice) -> Unit) {
+    val vitals = current == ThemeChoice.VITALS
+    Text(
+        if (vitals) "APP THEME" else "App theme",
+        style = MaterialTheme.typography.titleMedium,
+    )
+    Spacer(Modifier.height(8.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(percent = 50))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(4.dp),
+    ) {
+        ThemeChoice.entries.forEach { choice ->
+            val selected = choice == current
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    )
+                    .clickable(role = Role.Button) { onSelect(choice) }
+                    .padding(vertical = 10.dp),
+            ) {
+                Text(
+                    text = choice.label,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (selected) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
+        }
+    }
+}
+
 /**
- * A control header: the label, an optional tap-to-reveal info "ⓘ" whose popup holds
- * the explanation that used to sit beneath the control (saves vertical space), and an
- * optional [trailing] slot (e.g. a Switch) pinned to the end of the row.
+ * A control header: the label (UPPERCASED for the Vitals theme, sentence case for
+ * Bubblegum), an optional tap-to-reveal info "ⓘ" whose popup holds the explanation,
+ * and an optional [trailing] slot (e.g. a Switch) pinned to the end of the row.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -281,11 +340,12 @@ private fun SettingHeader(
     info: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
+    val displayTitle = if (LocalThemeChoice.current == ThemeChoice.VITALS) title.uppercase() else title
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(displayTitle, style = MaterialTheme.typography.titleMedium)
         if (info != null) {
             val tooltipState = rememberTooltipState(isPersistent = true)
             val scope = rememberCoroutineScope()

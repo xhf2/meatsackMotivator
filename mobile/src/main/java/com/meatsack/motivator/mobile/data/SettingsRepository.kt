@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import com.meatsack.shared.sync.SettingsDefaults as SharedDefaults
@@ -25,6 +27,7 @@ class SettingsRepository(private val context: Context) {
         val CONTEXT_AWARE_START = intPreferencesKey("context_aware_start")
         val CONTEXT_AWARE_END = intPreferencesKey("context_aware_end")
         val MOVEMENT_STEP_THRESHOLD = intPreferencesKey("movement_step_threshold")
+        val THEME_CHOICE = stringPreferencesKey("theme_choice")
 
         internal fun validateHour(name: String, hour: Int) {
             require(hour in 0..23) { "$name must be in 0..23; was $hour" }
@@ -67,6 +70,11 @@ class SettingsRepository(private val context: Context) {
     }
     val movementStepThreshold: Flow<Int> = context.dataStore.data.map {
         it[MOVEMENT_STEP_THRESHOLD] ?: SharedDefaults.MOVEMENT_STEP_THRESHOLD
+    }
+    val themeChoice: Flow<ThemeChoice> = context.dataStore.data.map { prefs ->
+        // Unknown/legacy values fall back to the default theme rather than crashing.
+        runCatching { ThemeChoice.valueOf(prefs[THEME_CHOICE] ?: ThemeChoice.VITALS.name) }
+            .getOrDefault(ThemeChoice.VITALS)
     }
 
     suspend fun setDailyStepGoal(goal: Int) {
@@ -124,5 +132,9 @@ class SettingsRepository(private val context: Context) {
     suspend fun setMovementStepThreshold(steps: Int) {
         validatePositive("Movement step threshold", steps)
         context.dataStore.edit { it[MOVEMENT_STEP_THRESHOLD] = steps }
+    }
+
+    suspend fun setThemeChoice(choice: ThemeChoice) {
+        context.dataStore.edit { it[THEME_CHOICE] = choice.name }
     }
 }
