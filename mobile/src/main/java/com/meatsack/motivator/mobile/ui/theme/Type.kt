@@ -1,10 +1,14 @@
 package com.meatsack.motivator.mobile.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.meatsack.motivator.mobile.R
 
 // Vitals Console type system. Two roles, both from Android's built-in families so we
 // ship no font files (offline-clean):
@@ -76,5 +80,88 @@ val VitalsTypography = Typography(
         fontWeight = FontWeight.Medium,
         fontSize = 13.sp,
         letterSpacing = 1.sp,
+    ),
+)
+
+// --- Bubblegum theme type ---------------------------------------------------------
+// Pacifico (script) for the hero/section headers, Baloo 2 (rounded) for everything
+// else. Both are bundled in res/font. Baloo 2 is a variable font, so each weight
+// pairs a FontWeight with an explicit variation axis value.
+private val Pacifico = FontFamily(Font(R.font.pacifico))
+
+@OptIn(ExperimentalTextApi::class)
+private val Baloo = FontFamily(
+    Font(
+        R.font.baloo2,
+        weight = FontWeight.Medium,
+        variationSettings = FontVariation.Settings(FontVariation.weight(500)),
+    ),
+    Font(
+        R.font.baloo2,
+        weight = FontWeight.SemiBold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(600)),
+    ),
+    Font(
+        R.font.baloo2,
+        weight = FontWeight.Bold,
+        variationSettings = FontVariation.Settings(FontVariation.weight(700)),
+    ),
+)
+
+val BubblegumTypography = Typography(
+    // Screen / section headers — the cutesy script.
+    headlineMedium = TextStyle(
+        fontFamily = Pacifico,
+        fontWeight = FontWeight.Normal,
+        fontSize = 26.sp,
+    ),
+    titleLarge = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.Bold,
+        fontSize = 18.sp,
+    ),
+    // Control labels.
+    titleMedium = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 14.sp,
+    ),
+    // Insult body.
+    bodyLarge = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.Medium,
+        fontSize = 15.sp,
+        lineHeight = 21.sp,
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+    ),
+    // Hints, status lines, vote counts.
+    bodySmall = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+    ),
+    // Chips / tags.
+    labelMedium = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+    ),
+    // Nav labels, sub-captions.
+    labelSmall = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 11.sp,
+    ),
+    // Buttons.
+    labelLarge = TextStyle(
+        fontFamily = Baloo,
+        fontWeight = FontWeight.Bold,
+        fontSize = 15.sp,
     ),
 )

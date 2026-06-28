@@ -22,10 +22,21 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.meatsack.motivator.mobile.ui.library.LibraryScreen
 import com.meatsack.motivator.mobile.ui.settings.SettingsScreen
+import com.meatsack.motivator.mobile.ui.theme.LocalThemeChoice
+import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 
-enum class Screen(val route: String, val label: String, val icon: ImageVector) {
-    Library("library", "ARSENAL", Icons.AutoMirrored.Filled.List),
-    Settings("settings", "CONFIG", Icons.Default.Settings),
+enum class Screen(
+    val route: String,
+    val vitalsLabel: String,
+    val bubblegumLabel: String,
+    val icon: ImageVector,
+) {
+    Library("library", "ARSENAL", "Library", Icons.AutoMirrored.Filled.List),
+    Settings("settings", "CONFIG", "Settings", Icons.Default.Settings),
+    ;
+
+    fun label(theme: ThemeChoice): String =
+        if (theme == ThemeChoice.BUBBLEGUM) bubblegumLabel else vitalsLabel
 }
 
 @Composable
@@ -33,6 +44,7 @@ fun MeatsackNavGraph() {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
+    val theme = LocalThemeChoice.current
 
     Scaffold(
         bottomBar = {
@@ -51,9 +63,9 @@ fun MeatsackNavGraph() {
                                 restoreState = true
                             }
                         },
-                        icon = { Icon(screen.icon, contentDescription = screen.label) },
+                        icon = { Icon(screen.icon, contentDescription = screen.label(theme)) },
                         label = {
-                            Text(screen.label, style = MaterialTheme.typography.labelSmall)
+                            Text(screen.label(theme), style = MaterialTheme.typography.labelSmall)
                         },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,

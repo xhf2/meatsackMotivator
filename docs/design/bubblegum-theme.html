@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>meatsackMotivator — Bubblegum theme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Baloo+2:wght@500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFE3F1; --surface:#FFFFFF; --soft:#FFF0F7;
+    --primary:#FF4FA3; --kiss:#D6336C; --ink:#5A2A43; --muted:#C98DAE; --line:#FFC2DE;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1100px 500px at 50% -10%, #FFD1E8 0%, #f7d9e8 55%, #efd0e2 100%);
+    font-family:Quicksand,system-ui,sans-serif;color:#5A2A43;padding:46px 24px 80px}
+  .wrap{max-width:980px;margin:0 auto}
+  h1.page{font-family:Pacifico,cursive;font-weight:400;font-size:clamp(30px,5vw,46px);
+    color:var(--kiss);margin:0 0 6px;text-shadow:0 2px 0 #fff}
+  .page-sub{font-family:Quicksand;font-weight:600;color:#8a4d6a;max-width:62ch;line-height:1.55;margin:0}
+  .concept{margin-top:14px;background:#fff;border:2px dashed var(--line);border-radius:16px;
+    padding:12px 16px;font-weight:600;color:#8a4d6a;max-width:70ch}
+  .concept b{color:var(--kiss)}
+  .legend{color:#9a5d78;font-size:13px;margin-top:14px;font-weight:600}
+  .grid{display:flex;gap:48px;flex-wrap:wrap;justify-content:center;margin-top:36px}
+  .col{display:flex;flex-direction:column;align-items:center;gap:16px}
+
+  /* phone */
+  .phone{width:330px;height:680px;border-radius:46px;padding:13px;background:#3a2230;
+    box-shadow:0 30px 60px -18px rgba(214,51,108,.5),0 0 0 3px #ffb3d6;flex:0 0 auto;position:relative}
+  .phone::before{content:"";position:absolute;top:22px;left:50%;transform:translateX(-50%);
+    width:120px;height:26px;background:#3a2230;border-radius:0 0 16px 16px;z-index:5}
+  .screen{width:100%;height:100%;border-radius:34px;overflow:hidden;display:flex;flex-direction:column;
+    background:var(--bg)}
+  .statusbar{height:34px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 22px;font-size:12px;font-weight:700;color:#7a3f5c}
+  .body{flex:1;overflow:hidden;display:flex;flex-direction:column}
+  .scroll{overflow-y:auto}
+
+  /* header / signature */
+  .hero{background:linear-gradient(180deg,#FFD1E8 0%,var(--bg) 100%);
+    padding:14px 18px 18px;text-align:center;position:relative}
+  .kiss{font-size:58px;line-height:1;filter:drop-shadow(0 4px 6px rgba(214,51,108,.35));
+    animation:pulse 2.4s ease-in-out infinite;display:inline-block}
+  @keyframes pulse{0%,100%{transform:scale(1) rotate(-6deg)}50%{transform:scale(1.12) rotate(-6deg)}}
+  .heart-float{position:absolute;left:50%;top:54px;font-size:18px;opacity:0;
+    animation:floatup 2.4s ease-in infinite}
+  @keyframes floatup{0%{opacity:0;transform:translate(-50%,0) scale(.6)}
+    25%{opacity:.9}100%{opacity:0;transform:translate(-30%,-46px) scale(1)}}
+  @media(prefers-reduced-motion:reduce){.kiss,.heart-float{animation:none}.heart-float{display:none}}
+  .brand{font-family:Pacifico,cursive;font-size:30px;color:var(--kiss);margin-top:2px;text-shadow:0 1px 0 #fff}
+  .hero-sub{font-family:'Baloo 2',cursive;font-weight:600;color:#a85b7e;font-size:13px;margin-top:2px}
+
+  /* sync */
+  .sync{margin:14px 16px;background:var(--primary);color:#fff;font-family:'Baloo 2',cursive;font-weight:700;
+    font-size:16px;text-align:center;padding:14px;border-radius:999px;
+    box-shadow:0 8px 18px rgba(255,79,163,.45)}
+
+  /* cards */
+  .cards{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--surface);border-radius:22px;padding:15px 16px;
+    box-shadow:0 6px 16px rgba(255,79,163,.16)}
+  .card .txt{font-family:Quicksand;font-weight:600;font-size:15px;line-height:1.4;color:var(--ink)}
+  .card .row{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .hearts{font-size:13px;letter-spacing:1px;color:var(--kiss)}
+  .hearts .off{color:#f3c5db}
+  .chip{font-family:'Baloo 2',cursive;font-weight:600;font-size:10px;letter-spacing:.3px;
+    background:var(--bg);color:var(--kiss);padding:3px 10px;border-radius:999px}
+  .votes{margin-left:auto;font-size:12px;font-weight:700;color:#a85b7e}
+
+  /* nav */
+  .nav{display:flex;background:#fff;border-top:2px solid var(--line);padding:6px 0 12px}
+  .nav .item{flex:1;text-align:center;font-family:'Baloo 2',cursive;font-weight:600;font-size:11px;color:#cf9bb6}
+  .nav .item .ic{display:block;font-size:18px;margin-bottom:3px}
+  .nav .item.active{color:var(--primary)}
+
+  /* settings */
+  .cfg-hd{padding:16px 18px 6px}
+  .cfg-hd .t{font-family:Pacifico,cursive;font-size:30px;color:var(--kiss);text-shadow:0 1px 0 #fff}
+  .cfg-hd .s{font-family:'Baloo 2',cursive;font-weight:600;color:#a85b7e;font-size:13px}
+  .theme-pick{margin:8px 16px 4px;background:#fff;border-radius:18px;padding:12px;
+    box-shadow:0 4px 12px rgba(255,79,163,.14)}
+  .theme-pick .lab{font-family:'Baloo 2',cursive;font-weight:700;color:var(--ink);font-size:13px;margin-bottom:9px}
+  .seg{display:flex;background:var(--bg);border-radius:999px;padding:4px}
+  .seg div{flex:1;text-align:center;font-family:'Baloo 2',cursive;font-weight:700;font-size:13px;
+    padding:9px;border-radius:999px;color:#a85b7e}
+  .seg div.on{background:var(--primary);color:#fff;box-shadow:0 3px 8px rgba(255,79,163,.4)}
+  .set{margin:14px 16px}
+  .set .lab{display:flex;justify-content:space-between;align-items:center;font-family:'Baloo 2',cursive;
+    font-weight:600;color:var(--ink);font-size:13px;margin-bottom:9px}
+  .set .lab .val{color:var(--kiss)}
+  .info-i{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+    background:var(--bg);color:var(--kiss);font:italic 700 10px/1 Georgia,serif;margin-left:6px}
+  .slider{position:relative;height:8px;border-radius:999px;background:#FFD1E8}
+  .slider .fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--primary)}
+  .slider .thumb{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;background:#fff;
+    transform:translate(-50%,-50%);box-shadow:0 0 0 3px var(--primary),0 2px 5px rgba(0,0,0,.15)}
+  .swrow{display:flex;align-items:center;margin:16px}
+  .swrow .lab{flex:1;font-family:'Baloo 2',cursive;font-weight:600;color:var(--ink);font-size:13px}
+  .switch{width:48px;height:27px;border-radius:999px;background:var(--primary);position:relative;flex:0 0 auto;
+    box-shadow:0 2px 6px rgba(255,79,163,.4)}
+  .switch::after{content:"";position:absolute;top:3px;left:24px;width:21px;height:21px;border-radius:50%;background:#fff}
+  .switch.off{background:#f0c9dc}.switch.off::after{left:3px}
+  .field{margin:14px 16px;background:#fff;border:2px solid var(--line);border-radius:16px;padding:13px 15px;
+    font-family:Quicksand;font-weight:600;color:#bb86a3}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="page">Bubblegum 💋</h1>
+  <p class="page-sub">A second, selectable theme for the phone app — the cutesy alter-ego of the dark "Vitals Console" look.</p>
+  <div class="concept">The joke is the point: a <b>sweet, kissy wrapper around savage insults</b>. The brutal copy stays exactly as brutal — it just arrives in bubblegum pink with a kiss. Tough love, with lipstick.</div>
+  <p class="legend">Mockup fonts: Pacifico (hero script) · Baloo 2 (rounded labels) · Quicksand (body). Severity shown as ♥ hearts (escalation level 1–4).</p>
+
+  <div class="grid">
+
+    <!-- LIBRARY -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>💗 100%</span></div>
+        <div class="body scroll">
+          <div class="hero">
+            <span class="heart-float">💕</span>
+            <span class="kiss">💋</span>
+            <div class="brand">Meatsack Motivator</div>
+            <div class="hero-sub">69 sweet nothings loaded 💕</div>
+          </div>
+          <div class="sync">Sync to Watch 💋</div>
+          <div class="cards">
+            <div class="card">
+              <div class="txt">"Get up. Nobody's coming to save you."</div>
+              <div class="row">
+                <span class="hearts">♥♥♥<span class="off">♡</span></span>
+                <span class="chip">inactivity</span>
+                <span class="votes">💕 12 · 💔 1</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="txt">"Comfort is the enemy. You chose the couch."</div>
+              <div class="row">
+                <span class="hearts">♥♥♥♥</span>
+                <span class="chip">end of day</span>
+                <span class="votes">💕 30 · 💔 0</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="txt">"You sarcopenic motherfucker. Your legs are filing for divorce."</div>
+              <div class="row">
+                <span class="hearts">♥♥<span class="off">♡♡</span></span>
+                <span class="chip">inactivity</span>
+                <span class="votes">💕 8 · 💔 2</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nav">
+          <div class="item active"><span class="ic">💕</span>Library</div>
+          <div class="item"><span class="ic">🎀</span>Settings</div>
+        </div>
+      </div></div>
+      <div style="font-family:'Baloo 2',cursive;font-weight:700;color:#8a4d6a">Library</div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span>9:41</span><span>💗 100%</span></div>
+        <div class="body scroll">
+          <div class="cfg-hd"><div class="t">Settings 🎀</div><div class="s">make it yours, girlypop</div></div>
+
+          <div class="theme-pick">
+            <div class="lab">App theme</div>
+            <div class="seg"><div>Vitals</div><div class="on">Bubblegum 💋</div></div>
+          </div>
+
+          <div class="set">
+            <div class="lab"><span>Daily step goal <span class="info-i">i</span></span><span class="val">10,000</span></div>
+            <div class="slider"><span class="fill" style="width:35%"></span><span class="thumb" style="left:35%"></span></div>
+          </div>
+          <div class="set">
+            <div class="lab"><span>Inactivity threshold <span class="info-i">i</span></span><span class="val">30 min</span></div>
+            <div class="slider"><span class="fill" style="width:20%"></span><span class="thumb" style="left:20%"></span></div>
+          </div>
+          <div class="set">
+            <div class="lab"><span>Movement threshold <span class="info-i">i</span></span><span class="val">50 steps</span></div>
+            <div class="slider"><span class="fill" style="width:18%"></span><span class="thumb" style="left:18%"></span></div>
+          </div>
+          <div class="swrow"><span class="lab">Behind-pace alerts <span class="info-i">i</span></span><span class="switch"></span></div>
+          <div class="swrow"><span class="lab">End-of-day alerts <span class="info-i">i</span></span><span class="switch off"></span></div>
+          <div class="set"><div class="lab"><span>Anthropic API key</span></div>
+            <div class="field">Paste key 💌</div></div>
+        </div>
+        <div class="nav">
+          <div class="item"><span class="ic">💕</span>Library</div>
+          <div class="item active"><span class="ic">🎀</span>Settings</div>
+        </div>
+      </div></div>
+      <div style="font-family:'Baloo 2',cursive;font-weight:700;color:#8a4d6a">Settings (note the theme picker)</div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -7,6 +7,7 @@ import com.meatsack.motivator.mobile.ai.AiMessageGenerator
 import com.meatsack.motivator.mobile.ai.ApiKeyStore
 import com.meatsack.motivator.mobile.ai.GenerationResult
 import com.meatsack.motivator.mobile.data.SettingsRepository
+import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
@@ -84,6 +85,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         SharingStarted.WhileSubscribed(),
         SharedDefaults.MOVEMENT_STEP_THRESHOLD,
     )
+    val themeChoice = repo.themeChoice.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(),
+        ThemeChoice.VITALS,
+    )
 
     fun updateStepGoal(goal: Int) = viewModelScope.launch { repo.setDailyStepGoal(goal) }
     fun updateInactivityThreshold(min: Int) =
@@ -104,6 +110,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { repo.setBehindPaceEnabled(enabled) }
     fun toggleEndOfDayEnabled(enabled: Boolean) =
         viewModelScope.launch { repo.setEndOfDayEnabled(enabled) }
+    fun updateThemeChoice(choice: ThemeChoice) =
+        viewModelScope.launch { repo.setThemeChoice(choice) }
 
     fun saveApiKey(key: String) {
         if (key.isBlank()) apiKeyStore.clear() else apiKeyStore.save(key)
