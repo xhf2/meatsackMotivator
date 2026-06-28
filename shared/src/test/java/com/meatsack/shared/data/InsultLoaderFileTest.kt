@@ -1,8 +1,10 @@
 package com.meatsack.shared.data
 
 import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageLimits
 import com.meatsack.shared.constants.MessageSource
 import com.meatsack.shared.constants.TriggerType
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -28,6 +30,24 @@ class InsultLoaderFileTest {
     @Test
     fun bundledFile_allRecordsArePreWritten() {
         assertTrue(bundledInsults().all { it.source == MessageSource.PRE_WRITTEN })
+    }
+
+    @Test
+    fun bundledFile_everyTextSerializable() {
+        // Sync serializes every active message via MessageSerializer, which rejects
+        // text over MAX_MESSAGE_TEXT_LENGTH or containing the '|'/newline field/line
+        // separators (a require() that crashes the caller). A bundled insult that
+        // violates these would seed fine but blow up "Sync to Watch" — guard it here
+        // so a bad edit fails CI instead of the app.
+        bundledInsults().forEach { m ->
+            assertTrue(
+                "insult exceeds ${MessageLimits.MAX_MESSAGE_TEXT_LENGTH} chars " +
+                    "(len=${m.text.length}): ${m.text}",
+                m.text.length <= MessageLimits.MAX_MESSAGE_TEXT_LENGTH,
+            )
+            assertFalse("insult contains '|': ${m.text}", m.text.contains("|"))
+            assertFalse("insult contains a newline: ${m.text}", m.text.contains("\n"))
+        }
     }
 
     @Test

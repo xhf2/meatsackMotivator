@@ -33,7 +33,7 @@
   { "text": "You're a weakness-worshipping fraud. Your body is giving up on you because YOU gave up first.(L3)", "trigger": "INACTIVITY", "level": "NUCLEAR", "tone": "FULL_SEND" },
   { "text": "You soft-bellied comfort addict. 90 minutes. Your muscles scream; your excuses drown them out.(L3)", "trigger": "INACTIVITY", "level": "NUCLEAR", "tone": "FULL_SEND" },
   { "text": "GET UP, you osteopenic waste of a skeleton. 90 goddamn minutes.(L3)", "trigger": "INACTIVITY", "level": "NUCLEAR", "tone": "FULL_SEND" },
-  { "text": "Your bones are turning to chalk while you sit there, you pathetic snooze-button-hitting disgrace.(L3)", "trigger": "INACTIVITY", "level": "NUCLEAR", "tone": "FULL_SEND" },
+  { "text": "Your bones are turning to chalk while you sit there, you snooze-button-hitting disgrace.(L3)", "trigger": "INACTIVITY", "level": "NUCLEAR", "tone": "FULL_SEND" },
   { "text": "You potential-wasting coward. 90 minutes of choosing to be weak.(L3)", "trigger": "INACTIVITY", "level": "NUCLEAR", "tone": "FULL_SEND" },
 
   { "text": "Your ancestors survived wars and you can't walk to the kitchen.(L3 WS)", "trigger": "INACTIVITY", "level": "NUCLEAR", "tone": "WORK_SAFE" },

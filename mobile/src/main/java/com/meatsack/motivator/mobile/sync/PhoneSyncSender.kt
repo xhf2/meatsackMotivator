@@ -51,12 +51,15 @@ class PhoneSyncSender(private val context: Context) {
             return SyncResult.NoMessages
         }
 
-        val request = PutDataMapRequest.create(SyncChannel.PATH_MESSAGES).apply {
-            dataMap.putString(SyncChannel.KEY_MESSAGE_DATA, MessageSerializer.serialize(messages))
-            dataMap.putLong(SyncChannel.KEY_TIMESTAMP, System.currentTimeMillis())
-        }.asPutDataRequest().setUrgent()
-
+        // serialize() is inside the try: MessageSerializer.require()s text within limits
+        // and free of the '|'/newline separators, throwing IllegalArgumentException on a
+        // bad message. Building the request here (not before the try) means one malformed
+        // message yields SyncResult.Failed for the UI to report — not an app crash.
         return try {
+            val request = PutDataMapRequest.create(SyncChannel.PATH_MESSAGES).apply {
+                dataMap.putString(SyncChannel.KEY_MESSAGE_DATA, MessageSerializer.serialize(messages))
+                dataMap.putLong(SyncChannel.KEY_TIMESTAMP, System.currentTimeMillis())
+            }.asPutDataRequest().setUrgent()
             Wearable.getDataClient(context).putDataItem(request).await()
             Log.d(TAG, "Synced ${messages.size} messages to watch")
             SyncResult.Success(messages.size)
