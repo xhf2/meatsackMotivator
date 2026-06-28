@@ -7,23 +7,35 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +44,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meatsack.motivator.mobile.ai.GenerationResult
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
@@ -48,10 +61,26 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineMedium)
+        Text(
+            "CONFIG // SYSTEM",
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "CALIBRATE THE MACHINE",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(10.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Spacer(Modifier.height(16.dp))
 
-        Text("Daily Step Goal: $stepGoal", style = MaterialTheme.typography.titleMedium)
+        SettingHeader(
+            title = "DAILY STEP GOAL: $stepGoal",
+            info = "Your daily step target. Behind-pace and end-of-day checks " +
+                "measure your progress against this number.",
+        )
         Slider(
             value = stepGoal.toFloat(),
             onValueChange = { viewModel.updateStepGoal(it.toInt()) },
@@ -61,9 +90,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
         Spacer(Modifier.height(16.dp))
 
-        Text(
-            "Inactivity Threshold: $inactivityThreshold min",
-            style = MaterialTheme.typography.titleMedium,
+        SettingHeader(
+            title = "INACTIVITY THRESHOLD: $inactivityThreshold MIN",
+            info = "How long with too little movement before the watch fires an " +
+                "inactivity insult.",
         )
         Slider(
             value = inactivityThreshold.toFloat(),
@@ -74,9 +104,10 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         )
         Spacer(Modifier.height(16.dp))
 
-        Text(
-            "Movement threshold: $movementSteps steps",
-            style = MaterialTheme.typography.titleMedium,
+        SettingHeader(
+            title = "MOVEMENT THRESHOLD: $movementSteps STEPS",
+            info = "Steps needed within your inactivity window to count as moving " +
+                "and reset the timer.",
         )
         Slider(
             value = movementSteps.toFloat(),
@@ -85,15 +116,11 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             steps = 48, // 10..500 in increments of 10
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(
-            "Steps needed within your inactivity window to count as moving and reset the timer.",
-            style = MaterialTheme.typography.bodySmall,
-        )
         Spacer(Modifier.height(16.dp))
 
-        Text(
-            "Active hours: $activeStart:00 - $activeEnd:00",
-            style = MaterialTheme.typography.titleMedium,
+        SettingHeader(
+            title = "ACTIVE HOURS: $activeStart:00 - $activeEnd:00",
+            info = "Hours the watch can nag you. Outside this window it stays quiet.",
         )
         RangeSlider(
             value = activeStart.toFloat()..activeEnd.toFloat(),
@@ -104,16 +131,12 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             steps = 22,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(
-            "Hours the watch can nag you. Outside this window it stays quiet.",
-            style = MaterialTheme.typography.bodySmall,
-        )
         Spacer(Modifier.height(16.dp))
 
         val behindPaceHour by viewModel.behindPaceCheckHour.collectAsState()
-        Text(
-            "Behind-pace check hour: $behindPaceHour:00",
-            style = MaterialTheme.typography.titleMedium,
+        SettingHeader(
+            title = "BEHIND-PACE CHECK HOUR: $behindPaceHour:00",
+            info = "Time of day to check whether you're behind your step goal.",
         )
         Slider(
             value = behindPaceHour.toFloat(),
@@ -124,54 +147,34 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             valueRange = activeStart.toFloat()..(activeEnd.toFloat().coerceAtLeast(activeStart + 1f)),
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(
-            "Time of day to check whether you're behind your step goal.",
-            style = MaterialTheme.typography.bodySmall,
-        )
         Spacer(Modifier.height(16.dp))
 
         val behindPaceEnabled by viewModel.behindPaceEnabled.collectAsState()
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+        SettingHeader(
+            title = "BEHIND-PACE ALERTS",
+            info = "When off, the watch won't nag you for falling behind your step " +
+                "pace during the day.",
         ) {
-            Text(
-                "Behind-pace messages",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
             Switch(
                 checked = behindPaceEnabled,
                 onCheckedChange = { viewModel.toggleBehindPaceEnabled(it) },
             )
         }
-        Text(
-            "When off, the watch won't nag you for falling behind your step pace during the day.",
-            style = MaterialTheme.typography.bodySmall,
-        )
         Spacer(Modifier.height(16.dp))
 
         val endOfDayEnabled by viewModel.endOfDayEnabled.collectAsState()
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+        SettingHeader(
+            title = "END-OF-DAY ALERTS",
+            info = "When off, the watch won't nag you at the end of the day for " +
+                "missing your step goal.",
         ) {
-            Text(
-                "End-of-day messages",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
             Switch(
                 checked = endOfDayEnabled,
                 onCheckedChange = { viewModel.toggleEndOfDayEnabled(it) },
             )
         }
-        Text(
-            "When off, the watch won't nag you at the end of the day for missing your step goal.",
-            style = MaterialTheme.typography.bodySmall,
-        )
         Spacer(Modifier.height(24.dp))
-        Text("Anthropic API key", style = MaterialTheme.typography.titleMedium)
+        Text("ANTHROPIC API KEY", style = MaterialTheme.typography.titleMedium)
 
         val apiKeyPresent by viewModel.apiKeyPresent.collectAsState()
         var draftKey by remember { mutableStateOf("") }
@@ -195,8 +198,13 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             TextButton(onClick = { viewModel.saveApiKey("") }) { Text("Clear") }
             Spacer(Modifier.weight(1f))
             Text(
-                if (apiKeyPresent) "✓ Saved" else "Not set",
+                if (apiKeyPresent) "✓ ARMED" else "NOT SET",
                 style = MaterialTheme.typography.bodySmall,
+                color = if (apiKeyPresent) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
             )
         }
 
@@ -207,7 +215,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
             enabled = apiKeyPresent,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Generate 10 new insults")
+            Text("> GENERATE 10 ROUNDS")
         }
         genStatus?.let {
             val text = when (it) {
@@ -220,24 +228,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
         }
 
         Spacer(Modifier.height(24.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
+        SettingHeader(
+            title = "CONTEXT-AWARE LANGUAGE",
+            info = "When on, uses cleaner language during work hours. When off, " +
+                "full send all day. Set the work-safe window below.",
         ) {
-            Text(
-                "Context-aware language",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f),
-            )
             Switch(
                 checked = contextAware,
                 onCheckedChange = { viewModel.toggleContextAware(it) },
             )
         }
-        Text(
-            "When on, uses cleaner language during work hours. When off, full send all day.",
-            style = MaterialTheme.typography.bodySmall,
-        )
+        Spacer(Modifier.height(8.dp))
         val ctxStart by viewModel.contextAwareStart.collectAsState()
         val ctxEnd by viewModel.contextAwareEnd.collectAsState()
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -264,6 +265,60 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.width(140.dp),
             )
+        }
+    }
+}
+
+/**
+ * A control header: the label, an optional tap-to-reveal info "ⓘ" whose popup holds
+ * the explanation that used to sit beneath the control (saves vertical space), and an
+ * optional [trailing] slot (e.g. a Switch) pinned to the end of the row.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingHeader(
+    title: String,
+    info: String? = null,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        if (info != null) {
+            val tooltipState = rememberTooltipState(isPersistent = true)
+            val scope = rememberCoroutineScope()
+            TooltipBox(
+                positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+                tooltip = {
+                    RichTooltip(
+                        colors = TooltipDefaults.richTooltipColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    ) {
+                        Text(info, style = MaterialTheme.typography.bodyMedium)
+                    }
+                },
+                state = tooltipState,
+            ) {
+                IconButton(
+                    onClick = { scope.launch { tooltipState.show() } },
+                    modifier = Modifier.size(28.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = "About $title",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+            }
+        }
+        if (trailing != null) {
+            Spacer(Modifier.weight(1f))
+            trailing()
         }
     }
 }
