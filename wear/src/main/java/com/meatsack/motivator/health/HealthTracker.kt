@@ -15,6 +15,9 @@ class HealthTracker(
     private val context: Context,
     stepThresholdProvider: () -> Int,
     windowMinutesProvider: () -> Int,
+    // Temporary triggering diagnostics (docs/debug/triggering-investigation.md); null in
+    // any caller that doesn't want step-level logging.
+    private val diagnostics: com.meatsack.motivator.diagnostics.WatchDiagnostics? = null,
 ) {
     private val client = HealthServices.getClient(context).passiveMonitoringClient
 
@@ -60,6 +63,13 @@ class HealthTracker(
                     val count = it.value.toInt()
                     _totalStepsToday.value = count
                     detector.onStepTotal(count)
+                    diagnostics?.let { d ->
+                        val s = detector.debugSnapshot()
+                        d.log(
+                            "STEP total=$count winSteps=${s.stepsInCurrentWindow} " +
+                                "winAgeMin=${s.windowAgeMs / 60_000L} idleMin=${s.minutesSinceLastMovement}",
+                        )
+                    }
                     // Hand-off for WorkManager workers (BehindPaceWorker, EndOfDayWorker)
                     // that don't have direct access to HealthServices. The timestamp
                     // is what lets workers reject stale or never-written values
@@ -129,4 +139,7 @@ class HealthTracker(
     fun getMinutesSinceLastMovement(): Int = detector.minutesSinceLastMovement()
 
     fun hasSignificantMovement(): Boolean = detector.hasSignificantMovement()
+
+    /** Diagnostics view of the underlying detector state (temporary). */
+    fun debugSnapshot(): MovementSnapshot = detector.debugSnapshot()
 }

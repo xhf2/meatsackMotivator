@@ -20,10 +20,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.meatsack.motivator.mobile.ui.debug.DebugScreen
 import com.meatsack.motivator.mobile.ui.library.LibraryScreen
 import com.meatsack.motivator.mobile.ui.settings.SettingsScreen
 import com.meatsack.motivator.mobile.ui.theme.LocalThemeChoice
 import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
+
+/** Route for the temporary diagnostics screen (not part of the bottom-nav [Screen] set). */
+private const val DEBUG_ROUTE = "debug"
 
 enum class Screen(
     val route: String,
@@ -86,7 +90,12 @@ fun MeatsackNavGraph() {
             modifier = Modifier.padding(padding),
         ) {
             composable(Screen.Library.route) { LibraryScreen() }
-            composable(Screen.Settings.route) { SettingsScreen() }
+            composable(Screen.Settings.route) {
+                SettingsScreen(onOpenDebug = { navController.navigate(DEBUG_ROUTE) })
+            }
+            // Temporary diagnostics screen — not a bottom-nav tab; reached from Settings.
+            // See docs/debug/triggering-investigation.md.
+            composable(DEBUG_ROUTE) { DebugScreen(onBack = { navController.popBackStack() }) }
         }
     }
 }

@@ -63,4 +63,28 @@ class MovementDetector(
     @Synchronized
     fun hasSignificantMovement(): Boolean =
         stepsInCurrentWindow >= stepThresholdProvider()
+
+    /**
+     * Read-only view of the detector's otherwise-private state, for the temporary
+     * triggering diagnostics (docs/debug/triggering-investigation.md). Computed under the
+     * same lock as the rest of the class so the snapshot is internally consistent.
+     */
+    @Synchronized
+    fun debugSnapshot(): MovementSnapshot {
+        val nowMs = now()
+        return MovementSnapshot(
+            minutesSinceLastMovement = ((nowMs - lastMovementTimestamp) / 60_000L).toInt(),
+            stepsInCurrentWindow = stepsInCurrentWindow,
+            windowAgeMs = nowMs - windowStartTimestamp,
+            lastStepTotal = lastStepTotal,
+        )
+    }
 }
+
+/** Snapshot of [MovementDetector] internals for diagnostics logging. */
+data class MovementSnapshot(
+    val minutesSinceLastMovement: Int,
+    val stepsInCurrentWindow: Int,
+    val windowAgeMs: Long,
+    val lastStepTotal: Int,
+)
