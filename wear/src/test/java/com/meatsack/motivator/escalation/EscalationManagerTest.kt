@@ -99,6 +99,21 @@ class EscalationManagerTest {
     }
 
     @Test
+    fun `re-fires when the idle clock resets to a new streak after firing`() {
+        // Repro of the on-device silence (2026-07-02, docs/debug/triggering-investigation.md):
+        // an overnight-inflated fire pinned lastFiredAtIdle high (658). When the user moved,
+        // the idle clock reset to a small value, but shouldTrigger compared the fresh idle
+        // against the stale 658 and returned false for the rest of the day.
+        val em = EscalationManager(thresholdProvider = { 10 })
+        assertTrue(em.shouldTrigger(658))
+        em.onInactivityDetected(658) // fired at the inflated overnight idle
+
+        // User walks -> idle clock resets -> a fresh idle streak climbs back over threshold.
+        // A shrunk idle means movement happened, so this is a new streak and must fire.
+        assertTrue("a new idle streak after movement must fire", em.shouldTrigger(24))
+    }
+
+    @Test
     fun `snooze blocks triggers during window`() {
         manager.snooze(durationMinutes = 60)
         assertFalse(manager.shouldTrigger(30))

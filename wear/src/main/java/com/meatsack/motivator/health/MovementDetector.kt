@@ -65,6 +65,20 @@ class MovementDetector(
         stepsInCurrentWindow >= stepThresholdProvider()
 
     /**
+     * Reset the idle clock and the current step window to "now", leaving the cumulative
+     * [lastStepTotal] baseline intact so later deltas stay correct. Called on active-window
+     * re-entry so the day's inactivity ramp starts fresh instead of inheriting the overnight
+     * accumulation that fired level 4 at 7am (docs/debug/triggering-investigation.md, root cause A).
+     */
+    @Synchronized
+    fun rebaseline() {
+        val nowMs = now()
+        lastMovementTimestamp = nowMs
+        windowStartTimestamp = nowMs
+        stepsInCurrentWindow = 0
+    }
+
+    /**
      * Read-only view of the detector's otherwise-private state, for the temporary
      * triggering diagnostics (docs/debug/triggering-investigation.md). Computed under the
      * same lock as the rest of the class so the snapshot is internally consistent.

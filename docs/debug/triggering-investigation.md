@@ -101,6 +101,58 @@ Service is `START_STICKY`. **Any service/process recreate resets all idle + esca
 
 ---
 
+## FINDINGS (2026-07-02, one night + one day of on-device evidence) — ROOT CAUSE CONFIRMED
+
+The 498-line log settles it. **Both reported symptoms are a single coupled bug; H2(a) "service
+kills/restarts" is refuted.**
+
+**Service was stable:** exactly one `LIFECYCLE onCreate`/`onStartCommand` (2026-07-01 22:04),
+**no restarts** across ~18 h. So the all-day silence is NOT process death. Good thing we gathered
+evidence instead of "fixing" battery optimization.
+
+**Root cause A — H1 confirmed (overnight idle inflation → 7am level-4 nuke):**
+`minutesIdle` is pure wall-clock (`now − lastMovementTimestamp`) and the active-hours gate only
+skips *delivery* (early `return`), never the *measurement*. `lastMovementTimestamp` doesn't advance
+overnight, so idle climbed monotonically all night (02:06 → 241, 03:20 → 315) and the first
+in-window poll fired instantly at max:
+```
+07-02 07:02:50 POLL hour=7 inWindow=true idleMin=537 ... -> FIRE level=4   # (537-10)/30 = 17 escalations → EXISTENTIAL
+07-02 07:32 / 08:03 / 08:33 / 09:03  → FIRE level=4 (every ~30 min, idleMin 567→658)
+```
+
+**Root cause B — the *real* "no insults all day" (stale `lastFiredAtIdle`, movement never resets
+escalation state):**
+- `EscalationManager.onMovementDetected()` was called **0 times all day** (grep `movement-reset` = 0)
+  despite thousands of steps. Reason: `MovementDetector.onStepTotal` resets `stepsInCurrentWindow`
+  to 0 the instant it crosses the threshold, so by the next ~poll `hasSignificantMovement()` is
+  almost always false → the service never tells the EscalationManager the user moved.
+- So after the 09:03 fire pinned `lastFiredAtIdle = 658`, `shouldTrigger` gates every later poll on
+  `idleMin − 658 ≥ 30` (i.e. needs `idleMin ≥ 688`). The idle *clock* kept resetting on real walks
+  (09:35 idleMin=8, 13:39 idleMin=0) but `lastFiredAtIdle` stayed 658, so from 09:03 to 16:20 the
+  app went **silent** — every poll `SKIP(no-trigger)`, even at idleMin=204:
+```
+07-02 09:03 FIRE level=4 idleMin=658          # pins lastFiredAtIdle=658
+07-02 09:51 idleMin=24  -> SKIP(no-trigger)   # new idle streak, but 24-658 < 30
+07-02 12:51 idleMin=204 -> SKIP(no-trigger)   # still < 688
+07-02 16:19 idleMin=160 -> SKIP(no-trigger)   # silent all day
+```
+The two symptoms are the same failure: overnight inflation both fires the 7am nuke **and** corrupts
+`lastFiredAtIdle`, which then suppresses the whole day.
+
+**Contributing factor (not root cause):** background `delay()` is throttled by Doze — poll gaps ran
+13–36 min, not 60 s (e.g. 12:51 → 13:27). Coarsens resolution; note when designing the fix.
+
+**Fix direction (Phase 4 — not yet implemented; evidence-first respected):**
+1. **Rebaseline on active-window re-entry:** on the first in-window poll after being out of window,
+   reset the idle clock + escalation (`onMovementDetected()` / clamp) so the morning ramp starts
+   fresh at AGGRESSIVE instead of EXISTENTIAL. Kills the 7am nuke.
+2. **Reliably reset escalation on movement:** decouple "user moved" from the tumbling-window
+   auto-reset so `lastFiredAtIdle`/`isActive` actually clear when the user walks — OR make
+   `shouldTrigger` robust to a shrinking `idleMin` (treat `idleMin < lastFiredAtIdle` as a new
+   streak). Kills the all-day silence.
+Write a failing unit test in `EscalationManagerTest` / `MovementDetectorTest` reproducing each
+before fixing.
+
 ## Hypotheses
 
 ### H1 — "Level 4 at 7am" — HIGH confidence (from code alone)

@@ -101,6 +101,35 @@ class MovementDetectorTest {
     }
 
     @Test
+    fun rebaseline_resetsIdleClockToNow() {
+        // Used on active-window re-entry so the morning ramp starts fresh instead of
+        // inheriting the overnight idle accumulation that fired level 4 at 7am
+        // (docs/debug/triggering-investigation.md, root cause A).
+        clock = 0
+        val d = newDetector()
+        d.onStepTotal(5000) // baseline
+        clock = 540 * 60_000L // 9 hours later with no movement
+        assertEquals(540, d.minutesSinceLastMovement())
+        d.rebaseline()
+        assertEquals(0, d.minutesSinceLastMovement())
+    }
+
+    @Test
+    fun rebaseline_clearsPartialWindowSteps() {
+        clock = 0
+        val d = newDetector()
+        d.onStepTotal(1000) // baseline
+        clock = 60_000L
+        d.onStepTotal(1040) // +40 banked in the window, below the 50 threshold
+        d.rebaseline() // rebaseline at t=1min: idle clock -> now, partial window -> 0
+        // A stale partial window must not survive and later tip a false movement crossing.
+        clock = 120_000L
+        d.onStepTotal(1055) // +15 => 15 in the fresh window; if the stale 40 survived, 40+15=55 >= 50 would cross
+        // No crossing => idle clock still anchored at the rebaseline (1 min ago), not reset to 0.
+        assertEquals(1, d.minutesSinceLastMovement())
+    }
+
+    @Test
     fun stepThresholdProviderIsReadLive() {
         clock = 0
         stepThreshold = 100

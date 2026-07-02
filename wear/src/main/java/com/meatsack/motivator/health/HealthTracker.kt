@@ -140,6 +140,9 @@ class HealthTracker(
 
     fun hasSignificantMovement(): Boolean = detector.hasSignificantMovement()
 
+    /** Reset the idle baseline + current step window to now (used on active-window re-entry). */
+    fun rebaselineIdle() = detector.rebaseline()
+
     /** Diagnostics view of the underlying detector state (temporary). */
     fun debugSnapshot(): MovementSnapshot = detector.debugSnapshot()
 }
