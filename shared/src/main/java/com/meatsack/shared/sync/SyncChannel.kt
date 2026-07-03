@@ -19,4 +19,19 @@ object SyncChannel {
      * message count.
      */
     const val MAX_VOTE_ROWS = 2000
+
+    // --- On-device diagnostics pipe (watch → phone), a retained dev-debugging tool. See
+    // docs/debug/triggering-investigation.md. Do not strip.
+    const val PATH_DIAGNOSTICS = "/diagnostics"
+    const val KEY_DIAG_DATA = "diag_data"
+
+    /**
+     * Max diagnostic lines in one /diagnostics payload. The watch holds the full
+     * record on disk and only pushes the most recent [MAX_DIAG_ROWS] lines each poll;
+     * the phone overlap-merges successive windows into its full history. Sized so a
+     * worst-case payload (400 rows x ~180 chars ≈ 72 KB) stays under the ~100 KB
+     * DataItem limit while still overlapping consecutive 60 s polls by hundreds of
+     * lines (polls add only 1–3 lines), keeping the merge unambiguous.
+     */
+    const val MAX_DIAG_ROWS = 400
 }

@@ -24,6 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.RichTooltip
@@ -56,7 +57,10 @@ import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 import kotlinx.coroutines.launch
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
+fun SettingsScreen(
+    viewModel: SettingsViewModel = viewModel(),
+    onOpenDebug: () -> Unit = {},
+) {
     val stepGoal by viewModel.dailyStepGoal.collectAsState()
     val inactivityThreshold by viewModel.inactivityThreshold.collectAsState()
     val movementSteps by viewModel.movementStepThreshold.collectAsState()
@@ -282,6 +286,16 @@ fun SettingsScreen(viewModel: SettingsViewModel = viewModel()) {
                 modifier = Modifier.width(140.dp),
             )
         }
+
+        // Entry point to the on-device diagnostics log (retained dev tool). See
+        // docs/debug/triggering-investigation.md.
+        Spacer(Modifier.height(24.dp))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(onClick = onOpenDebug, modifier = Modifier.fillMaxWidth()) {
+            Text("🐛 Trigger debug log")
+        }
+        Spacer(Modifier.height(16.dp))
     }
 }
 

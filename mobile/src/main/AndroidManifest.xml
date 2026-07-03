@@ -35,6 +35,20 @@
             </intent-filter>
         </service>
 
+        <!-- On-device diagnostics receiver (retained dev-debugging tool). See
+             docs/debug/triggering-investigation.md. -->
+        <service
+            android:name=".sync.PhoneDiagnosticsReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.DATA_CHANGED" />
+                <data
+                    android:scheme="wear"
+                    android:host="*"
+                    android:pathPrefix="/diagnostics" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

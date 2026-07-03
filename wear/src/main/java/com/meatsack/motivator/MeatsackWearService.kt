@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.meatsack.motivator.diagnostics.WatchDiagnostics
 import com.meatsack.motivator.escalation.EscalationManager
 import com.meatsack.motivator.health.HealthTracker
 import com.meatsack.motivator.messages.ActiveWindow
@@ -16,6 +17,7 @@ import com.meatsack.motivator.messages.MessageRepository
 import com.meatsack.motivator.messages.ToneResolver
 import com.meatsack.motivator.notification.InsultNotificationService
 import com.meatsack.motivator.settings.WatchSettingsCache
+import com.meatsack.motivator.sync.WatchDiagnosticsSender
 import com.meatsack.motivator.trigger.TriggerScheduler
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.db.AppDatabase
@@ -36,6 +38,10 @@ class MeatsackWearService : Service() {
     private lateinit var notificationService: InsultNotificationService
     private lateinit var settings: WatchSettingsCache
 
+    // Temporary triggering diagnostics (docs/debug/triggering-investigation.md).
+    private lateinit var diagnostics: WatchDiagnostics
+    private lateinit var diagnosticsSender: WatchDiagnosticsSender
+
     private var pollingJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
@@ -52,14 +58,25 @@ class MeatsackWearService : Service() {
         super.onCreate()
         val db = AppDatabase.getDatabase(applicationContext)
         settings = WatchSettingsCache(applicationContext)
+        diagnostics = WatchDiagnostics.create(applicationContext)
+        diagnosticsSender = WatchDiagnosticsSender(applicationContext, diagnostics)
         healthTracker = HealthTracker(
             applicationContext,
             stepThresholdProvider = { settings.movementStepThreshold },
             windowMinutesProvider = { settings.inactivityThreshold },
+            diagnostics = diagnostics,
         )
         escalationManager = EscalationManager(thresholdProvider = { settings.inactivityThreshold })
         messageRepo = MessageRepository(db.messageDao())
         notificationService = InsultNotificationService(applicationContext)
+        // The most important line for hypothesis H2: an onCreate with no preceding onDestroy
+        // (or a burst of them) is the fingerprint of the OS killing and restarting the service,
+        // which resets all in-memory idle/escalation state.
+        diagnostics.log(
+            "LIFECYCLE onCreate thr=${settings.inactivityThreshold}min " +
+                "moveSteps=${settings.movementStepThreshold} " +
+                "active=${settings.activeHoursStart}-${settings.activeHoursEnd}",
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -69,11 +86,14 @@ class MeatsackWearService : Service() {
         scheduler.scheduleBehindPaceCheck(settings.behindPaceCheckHour)
         scheduler.scheduleEndOfDay(settings.activeHoursEnd)
         startPolling()
+        diagnostics.log("LIFECYCLE onStartCommand flags=$flags startId=$startId")
         Log.d(TAG, "meatsackMotivator service started. Watching you.")
         return START_STICKY
     }
 
     override fun onDestroy() {
+        // Log before tearing down the scope so the kill is recorded even on a clean shutdown.
+        diagnostics.log("LIFECYCLE onDestroy")
         pollingJob?.cancel()
         scope.cancel()
         healthTracker.stopTracking()
@@ -112,20 +132,36 @@ class MeatsackWearService : Service() {
     }
 
     private suspend fun checkInactivity() {
+        // NOTE: this method's *triggering behavior* is deliberately unchanged — the diagnostics
+        // build is evidence-first. The only additions are reads for logging and the per-poll
+        // record + push. The branch order and side effects match the original exactly.
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-        if (!ActiveWindow.contains(hour, settings.activeHoursStart, settings.activeHoursEnd)) {
-            return // outside active hours — skip delivery; escalation state is left frozen (not advanced, not reset)
-        }
-
+        val inWindow = ActiveWindow.contains(hour, settings.activeHoursStart, settings.activeHoursEnd)
         val minutesIdle = healthTracker.getMinutesSinceLastMovement()
+        val snap = healthTracker.debugSnapshot()
+        val total = healthTracker.totalStepsToday.value
+        val hasMove = healthTracker.hasSignificantMovement()
+        val prefix = "POLL hour=$hour inWindow=$inWindow idleMin=$minutesIdle " +
+            "winSteps=${snap.stepsInCurrentWindow} total=$total move=$hasMove"
 
-        if (healthTracker.hasSignificantMovement()) {
-            escalationManager.onMovementDetected()
-            return
+        val outcome = when {
+            // outside active hours — skip delivery; escalation state is left frozen (not advanced, not reset)
+            !inWindow -> "SKIP(outside-active-hours)"
+            hasMove -> {
+                escalationManager.onMovementDetected()
+                "SKIP(movement-reset)"
+            }
+            !escalationManager.shouldTrigger(minutesIdle) ->
+                "SKIP(no-trigger thr=${settings.inactivityThreshold})"
+            else -> fireInsult(minutesIdle, hour)
         }
 
-        if (!escalationManager.shouldTrigger(minutesIdle)) return
+        diagnostics.log("$prefix -> $outcome")
+        diagnosticsSender.syncToPhone()
+    }
 
+    /** Runs the original fire path and returns a one-line diagnostics outcome. */
+    private suspend fun fireInsult(minutesIdle: Int, hour: Int): String {
         escalationManager.onInactivityDetected(minutesIdle)
         val level = escalationManager.currentLevel.value
         val tone = ToneResolver.resolve(
@@ -134,21 +170,21 @@ class MeatsackWearService : Service() {
             workSafeEnd = settings.contextAwareEnd,
         )
 
-        val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone) ?: return
+        val message = messageRepo.selectMessage(level, TriggerType.INACTIVITY, tone)
+            ?: return "SKIP(no-message level=${level.value})"
 
         val steps = healthTracker.totalStepsToday.value
         val ampm = if (hour < 12) "am" else "pm"
-        val displayHour = if (hour == 0) {
-            12
-        } else if (hour > 12) {
-            hour - 12
-        } else {
-            hour
+        val displayHour = when {
+            hour == 0 -> 12
+            hour > 12 -> hour - 12
+            else -> hour
         }
         val statsText = "$steps steps. It's $displayHour$ampm. Pathetic."
 
         Log.d(TAG, "Firing insult: Level ${level.value}, idle ${minutesIdle}min")
         notificationService.deliverInsult(message, statsText)
+        return "FIRE level=${level.value}"
     }
 
     private fun createForegroundNotification(): Notification {
