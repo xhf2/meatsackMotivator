@@ -89,6 +89,11 @@ class MeatsackWearService : Service() {
     }
 
     private fun startPolling() {
+        // Idempotent restart: cancel any existing loop first. onStartCommand runs on every
+        // launcher-icon tap (the OS routes it to the already-alive service, no fresh onCreate),
+        // so without this each reopen would spawn an additional concurrent poll loop — all
+        // sharing one EscalationManager/HealthTracker — and fire duplicate insults per interval.
+        pollingJob?.cancel()
         pollingJob = scope.launch {
             while (true) {
                 delay(POLL_INTERVAL_MS)
