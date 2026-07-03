@@ -144,4 +144,111 @@ class MessageDaoTest {
         assertEquals(5, updated.votesUp)
         assertEquals(1, updated.votesDown)
     }
+
+    @Test
+    fun getLovedTexts_returnsOnlyNetPositive_orderedByNetDesc() = runBlocking {
+        dao.insertAll(
+            listOf(
+                Message(
+                    text = "loved-big",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                    votesUp = 5,
+                    votesDown = 0,
+                ),
+                Message(
+                    text = "loved-small",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                    votesUp = 2,
+                    votesDown = 1,
+                ),
+                Message(
+                    text = "neutral",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                    votesUp = 0,
+                    votesDown = 0,
+                ),
+                Message(
+                    text = "hated",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                    votesUp = 0,
+                    votesDown = 2,
+                ),
+            ),
+        )
+        assertEquals(listOf("loved-big", "loved-small"), dao.getLovedTexts(5))
+    }
+
+    @Test
+    fun getHatedTexts_returnsOnlyNetNegative_mostNegativeFirst() = runBlocking {
+        dao.insertAll(
+            listOf(
+                Message(
+                    text = "hated-worst",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                    votesUp = 0,
+                    votesDown = 5,
+                ),
+                Message(
+                    text = "hated-mild",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                    votesUp = 1,
+                    votesDown = 2,
+                ),
+                Message(
+                    text = "neutral",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                    votesUp = 0,
+                    votesDown = 0,
+                ),
+            ),
+        )
+        assertEquals(listOf("hated-worst", "hated-mild"), dao.getHatedTexts(5))
+    }
+
+    @Test
+    fun deleteByIds_removesExactlyThoseRows() = runBlocking {
+        dao.insertAll(
+            listOf(
+                Message(
+                    id = 1,
+                    text = "keep",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                ),
+                Message(
+                    id = 2,
+                    text = "drop",
+                    level = EscalationLevel.SAVAGE,
+                    triggerType = TriggerType.INACTIVITY,
+                    tone = MessageTone.FULL_SEND,
+                    source = MessageSource.AI_GENERATED,
+                ),
+            ),
+        )
+        dao.deleteByIds(listOf(2L))
+        assertEquals(listOf("keep"), dao.getAllMessages().map { it.text })
+    }
 }
