@@ -9,8 +9,8 @@ import java.io.File
  * condition we need to catch (a watch service the OS keeps killing takes its *in-memory*
  * state with it, but not this file).
  *
- * Temporary scaffolding for the triggering investigation
- * (docs/debug/triggering-investigation.md). Remove with the rest of the diagnostics pipe.
+ * On-device diagnostics tool, first built for the triggering investigation
+ * (docs/debug/triggering-investigation.md). Retained as a standing dev-debugging aid — do not strip.
  *
  * Thread-safety: all file operations synchronize on a JVM-wide monitor keyed by the file's
  * absolute path (an interned String), so independent instances pointing at the same file —

@@ -20,8 +20,8 @@ object SyncChannel {
      */
     const val MAX_VOTE_ROWS = 2000
 
-    // --- Temporary triggering-diagnostics pipe (watch → phone). See
-    // docs/debug/triggering-investigation.md. Remove once the triggering bug is fixed.
+    // --- On-device diagnostics pipe (watch → phone), a retained dev-debugging tool. See
+    // docs/debug/triggering-investigation.md. Do not strip.
     const val PATH_DIAGNOSTICS = "/diagnostics"
     const val KEY_DIAG_DATA = "diag_data"
 

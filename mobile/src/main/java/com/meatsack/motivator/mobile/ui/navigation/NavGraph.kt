@@ -26,7 +26,7 @@ import com.meatsack.motivator.mobile.ui.settings.SettingsScreen
 import com.meatsack.motivator.mobile.ui.theme.LocalThemeChoice
 import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 
-/** Route for the temporary diagnostics screen (not part of the bottom-nav [Screen] set). */
+/** Route for the on-device diagnostics screen (not part of the bottom-nav [Screen] set). */
 private const val DEBUG_ROUTE = "debug"
 
 enum class Screen(
@@ -93,7 +93,7 @@ fun MeatsackNavGraph() {
             composable(Screen.Settings.route) {
                 SettingsScreen(onOpenDebug = { navController.navigate(DEBUG_ROUTE) })
             }
-            // Temporary diagnostics screen — not a bottom-nav tab; reached from Settings.
+            // On-device diagnostics screen — not a bottom-nav tab; reached from Settings.
             // See docs/debug/triggering-investigation.md.
             composable(DEBUG_ROUTE) { DebugScreen(onBack = { navController.popBackStack() }) }
         }

@@ -287,8 +287,8 @@ fun SettingsScreen(
             )
         }
 
-        // Temporary entry point to the triggering-diagnostics log. See
-        // docs/debug/triggering-investigation.md. Remove with the rest of the pipe.
+        // Entry point to the on-device diagnostics log (retained dev tool). See
+        // docs/debug/triggering-investigation.md.
         Spacer(Modifier.height(24.dp))
         HorizontalDivider(color = MaterialTheme.colorScheme.outline)
         Spacer(Modifier.height(16.dp))

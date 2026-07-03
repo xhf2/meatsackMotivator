@@ -14,7 +14,7 @@ import java.util.Locale
  * trying to catch (hypothesis H2). The full record lives here; [WatchDiagnosticsSender]
  * pushes a recent window to the phone each poll.
  *
- * Temporary — delete with the rest of the diagnostics pipe once the bug is fixed.
+ * Retained on-device dev/diagnostics tool (see docs/debug/triggering-investigation.md).
  */
 class WatchDiagnostics(private val store: DiagnosticsLineStore) {
 

@@ -10,7 +10,7 @@ import java.io.File
  * file and the Debug screen reads it back. A larger cap than the wire window so the phone
  * accumulates several days of the watch's history even though each push is bounded.
  *
- * Temporary — delete with the rest of the diagnostics pipe.
+ * Retained on-device dev/diagnostics tool (see docs/debug/triggering-investigation.md).
  */
 object PhoneDiagnostics {
     const val FILE_NAME = "phone_diagnostics.log"

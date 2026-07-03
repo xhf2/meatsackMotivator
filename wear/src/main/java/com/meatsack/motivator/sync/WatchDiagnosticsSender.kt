@@ -18,12 +18,12 @@ sealed class DiagnosticsSyncResult {
 }
 
 /**
- * Pushes a recent window of the watch's diagnostic log to the phone over the temporary
+ * Pushes a recent window of the watch's diagnostic log to the phone over the
  * `/diagnostics` Data Layer channel. Modelled on [WatchVoteSender]. A fresh timestamp on
  * every send guarantees the DataItem changes (so onDataChanged fires) even if the tail
  * lines happen to repeat.
  *
- * Temporary — delete with the rest of the diagnostics pipe.
+ * Retained on-device dev/diagnostics tool (see docs/debug/triggering-investigation.md).
  */
 class WatchDiagnosticsSender(
     private val context: Context,

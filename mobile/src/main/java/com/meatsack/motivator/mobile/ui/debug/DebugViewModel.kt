@@ -11,11 +11,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Backs the temporary Debug screen: exposes the watch's diagnostic log (received over
+ * Backs the on-device diagnostics Debug screen: exposes the watch's diagnostic log (received over
  * `/diagnostics`) newest-first, with refresh and clear. Read on the IO dispatcher so file
  * access never blocks the main thread.
  *
- * Temporary — delete with the rest of the diagnostics pipe
+ * Retained on-device dev/diagnostics tool
  * (docs/debug/triggering-investigation.md).
  */
 class DebugViewModel(application: Application) : AndroidViewModel(application) {

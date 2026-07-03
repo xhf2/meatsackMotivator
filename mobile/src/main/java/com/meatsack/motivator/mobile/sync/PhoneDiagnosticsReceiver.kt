@@ -10,10 +10,10 @@ import com.meatsack.shared.sync.SyncChannel
 import kotlinx.coroutines.launch
 
 /**
- * Receives the watch's temporary `/diagnostics` pushes and overlap-merges each window into
+ * Receives the watch's `/diagnostics` pushes and overlap-merges each window into
  * the phone's persistent log (read by the Debug screen). Mirrors [PhoneVoteReceiver].
  *
- * Temporary — delete with the rest of the diagnostics pipe
+ * Retained on-device dev/diagnostics tool
  * (docs/debug/triggering-investigation.md).
  */
 class PhoneDiagnosticsReceiver : WearableListenerService() {

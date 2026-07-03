@@ -1,13 +1,13 @@
 package com.meatsack.shared.sync
 
 /**
- * Wire (de)serializer for the temporary `/diagnostics` Data Layer channel (watch → phone).
+ * Wire (de)serializer for the `/diagnostics` Data Layer channel (watch → phone).
  * Each diagnostic line is already a single preformatted string (timestamp + text); the
  * payload is just those lines joined by `\n`. Blank lines are dropped on the way back so a
  * trailing separator never materialises as an empty entry.
  *
- * Temporary — paired with the triggering investigation in
- * docs/debug/triggering-investigation.md. Remove with the rest of the diagnostics pipe.
+ * Part of the on-device diagnostics tool (see docs/debug/triggering-investigation.md).
+ * Retained as a standing dev-debugging aid — do not strip.
  */
 object DiagnosticsSerializer {
     private const val LINE_SEPARATOR = "\n"

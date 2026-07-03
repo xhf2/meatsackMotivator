@@ -27,11 +27,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 /**
- * Temporary Debug screen for the triggering investigation
- * (docs/debug/triggering-investigation.md). Shows the watch's diagnostic log newest-first in
- * a monospace list, with Refresh / Clear / Share. Reached from the bottom of Settings.
- *
- * Delete with the rest of the diagnostics pipe once the bug is fixed.
+ * On-device diagnostics Debug screen (retained dev tool). Shows the watch's diagnostic log
+ * newest-first in a monospace list, with Refresh / Clear / Share. Reached from the bottom of
+ * Settings. First built for docs/debug/triggering-investigation.md.
  */
 @Composable
 fun DebugScreen(

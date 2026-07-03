@@ -35,8 +35,8 @@
             </intent-filter>
         </service>
 
-        <!-- Temporary triggering-diagnostics receiver. See
-             docs/debug/triggering-investigation.md. Remove with the rest of the pipe. -->
+        <!-- On-device diagnostics receiver (retained dev-debugging tool). See
+             docs/debug/triggering-investigation.md. -->
         <service
             android:name=".sync.PhoneDiagnosticsReceiver"
             android:exported="true">
