@@ -142,7 +142,16 @@ The two symptoms are the same failure: overnight inflation both fires the 7am nu
 **Contributing factor (not root cause):** background `delay()` is throttled by Doze — poll gaps ran
 13–36 min, not 60 s (e.g. 12:51 → 13:27). Coarsens resolution; note when designing the fix.
 
-**Fix direction (Phase 4 — not yet implemented; evidence-first respected):**
+**STATUS 2026-07-02 17:52:** Fix IMPLEMENTED + committed (`fix/triggering-escalation`, db4517a,
+TDD, all unit tests green) and INSTALLED on the watch. Root-cause-A wiring verified live — the
+first in-window poll after install logged `REBASELINE active-window re-entry` and reset `idleMin`
+to 0 instead of inheriting the old build's 250. Diagnostics pipe left in place. **Pending: the 7am
+boundary + a normal day tomorrow (2026-07-03) to confirm no level-4 nuke and no all-day silence,
+then strip diagnostics + open PR.** What to check tomorrow: a `REBASELINE ... hour=7` line at the
+first in-window poll; the 7am poll showing small `idleMin` → NOT `FIRE level=4`; and daytime
+`FIRE`s resuming after idle stretches (no endless `SKIP(no-trigger)`).
+
+**Fix direction (Phase 4 — IMPLEMENTED as above; kept for reference):**
 1. **Rebaseline on active-window re-entry:** on the first in-window poll after being out of window,
    reset the idle clock + escalation (`onMovementDetected()` / clamp) so the morning ramp starts
    fresh at AGGRESSIVE instead of EXISTENTIAL. Kills the 7am nuke.
