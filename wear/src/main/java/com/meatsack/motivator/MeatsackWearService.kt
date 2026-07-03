@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.meatsack.motivator.diagnostics.WatchDiagnostics
 import com.meatsack.motivator.escalation.EscalationManager
+import com.meatsack.motivator.escalation.WindowReentryDetector
 import com.meatsack.motivator.health.HealthTracker
 import com.meatsack.motivator.messages.ActiveWindow
 import com.meatsack.motivator.messages.MessageRepository
@@ -38,12 +39,15 @@ class MeatsackWearService : Service() {
     private lateinit var notificationService: InsultNotificationService
     private lateinit var settings: WatchSettingsCache
 
-    // Temporary triggering diagnostics (docs/debug/triggering-investigation.md).
+    // On-device diagnostics — retained dev tool (docs/debug/triggering-investigation.md).
     private lateinit var diagnostics: WatchDiagnostics
     private lateinit var diagnosticsSender: WatchDiagnosticsSender
 
     private var pollingJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    // Root cause A: detects crossing back into the active window so the day's ramp starts fresh.
+    private val reentryDetector = WindowReentryDetector()
 
     companion object {
         private const val TAG = "MeatsackWearService"
@@ -137,6 +141,16 @@ class MeatsackWearService : Service() {
         // record + push. The branch order and side effects match the original exactly.
         val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
         val inWindow = ActiveWindow.contains(hour, settings.activeHoursStart, settings.activeHoursEnd)
+
+        // Root cause A: on crossing back into the active window, rebaseline the idle clock and
+        // escalation so the morning ramp starts fresh at AGGRESSIVE instead of inheriting the
+        // overnight idle accumulation (which fired straight to level 4 at 7am).
+        if (reentryDetector.onPoll(inWindow)) {
+            healthTracker.rebaselineIdle()
+            escalationManager.onMovementDetected()
+            diagnostics.log("REBASELINE active-window re-entry hour=$hour")
+        }
+
         val minutesIdle = healthTracker.getMinutesSinceLastMovement()
         val snap = healthTracker.debugSnapshot()
         val total = healthTracker.totalStepsToday.value

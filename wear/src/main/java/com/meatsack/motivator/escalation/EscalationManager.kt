@@ -61,6 +61,11 @@ class EscalationManager(
         if (minutesIdle < threshold) return false
         val interval = EscalationLevel.ESCALATION_INTERVAL_MINUTES
         val last = lastFiredAtIdle ?: return true
+        // A shrunk idle means the idle clock was reset by movement since the last fire — i.e. a
+        // fresh inactivity streak. Fire from scratch instead of comparing against the now-stale
+        // (possibly overnight-inflated) baseline, which otherwise pins the interval out of reach
+        // and silences the app all day (docs/debug/triggering-investigation.md, root cause B).
+        if (minutesIdle < last) return true
         return (minutesIdle - last) >= interval
     }
 

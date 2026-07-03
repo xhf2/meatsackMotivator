@@ -99,6 +99,36 @@ class EscalationManagerTest {
     }
 
     @Test
+    fun `re-fires when the idle clock resets to a new streak after firing`() {
+        // Repro of the on-device silence (2026-07-02, docs/debug/triggering-investigation.md):
+        // an overnight-inflated fire pinned lastFiredAtIdle high (658). When the user moved,
+        // the idle clock reset to a small value, but shouldTrigger compared the fresh idle
+        // against the stale 658 and returned false for the rest of the day.
+        val em = EscalationManager(thresholdProvider = { 10 })
+        assertTrue(em.shouldTrigger(658))
+        em.onInactivityDetected(658) // fired at the inflated overnight idle
+
+        // User walks -> idle clock resets -> a fresh idle streak climbs back over threshold.
+        // A shrunk idle means movement happened, so this is a new streak and must fire.
+        assertTrue("a new idle streak after movement must fire", em.shouldTrigger(24))
+    }
+
+    @Test
+    fun `shrunk-idle re-fire re-anchors and then gates the fresh streak by the interval`() {
+        // Guards against a notification storm: the shrunk-idle branch must fire only ONCE per
+        // fresh streak. Firing re-anchors lastFiredAtIdle to the small value (via
+        // onInactivityDetected), so the next poll waits the interval again and the level drops
+        // back to AGGRESSIVE rather than inheriting the inflated one.
+        val em = EscalationManager(thresholdProvider = { 10 })
+        em.onInactivityDetected(658) // inflated overnight fire (EXISTENTIAL)
+        assertTrue(em.shouldTrigger(24))
+        em.onInactivityDetected(24) // fire the fresh streak
+        assertEquals(EscalationLevel.AGGRESSIVE, em.currentLevel.value)
+        assertFalse("must not fire again on the very next poll", em.shouldTrigger(25))
+        assertTrue("fires once the interval elapses from the re-anchored baseline", em.shouldTrigger(54))
+    }
+
+    @Test
     fun `snooze blocks triggers during window`() {
         manager.snooze(durationMinutes = 60)
         assertFalse(manager.shouldTrigger(30))
