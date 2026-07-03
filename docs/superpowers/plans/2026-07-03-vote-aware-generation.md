@@ -148,9 +148,13 @@ class LibraryPrunerTest {
     }
 
     @Test fun deletesSurplusLowestNetDownToCap() {
-        // 4 rows, cap 2, floor 0 => delete the 2 lowest-net non-loved.
+        // 4 NON-loved rows (net <= 0), cap 2, floor 0 => delete the 2 lowest-net.
+        // (Rows must be non-loved: loved rows are permanent and never counted as surplus.)
         val rows = listOf(
-            msg(1, up = 9), msg(2, up = 5), msg(3, up = 1), msg(4, up = 0),
+            msg(1, up = 2, down = 2), // net 0  (kept)
+            msg(2, up = 1, down = 1), // net 0  (kept)
+            msg(3, up = 0, down = 1), // net -1 (deleted)
+            msg(4, up = 0, down = 2), // net -2 (deleted)
         )
         val ids = LibraryPruner.selectForDeletion(rows, cap = 2, floor = 0).sorted()
         assertEquals(listOf(3L, 4L), ids)
@@ -237,7 +241,8 @@ object LibraryPruner {
                 val surplus = remaining - cap
                 bucket.asSequence()
                     .filter { it.id !in loved && it.id !in marked }
-                    .sortedBy { it.votesUp - it.votesDown } // lowest net first
+                    // lowest net first; among net ties, delete the newest (highest id) first
+                    .sortedWith(compareBy({ it.votesUp - it.votesDown }, { -it.id }))
                     .take(surplus)
                     .forEach { marked += it.id }
             }
