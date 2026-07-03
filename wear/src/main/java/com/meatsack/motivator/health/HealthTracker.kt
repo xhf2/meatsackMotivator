@@ -15,7 +15,7 @@ class HealthTracker(
     private val context: Context,
     stepThresholdProvider: () -> Int,
     windowMinutesProvider: () -> Int,
-    // Temporary triggering diagnostics (docs/debug/triggering-investigation.md); null in
+    // On-device diagnostics — retained dev tool (docs/debug/triggering-investigation.md); null in
     // any caller that doesn't want step-level logging.
     private val diagnostics: com.meatsack.motivator.diagnostics.WatchDiagnostics? = null,
 ) {
@@ -143,6 +143,6 @@ class HealthTracker(
     /** Reset the idle baseline + current step window to now (used on active-window re-entry). */
     fun rebaselineIdle() = detector.rebaseline()
 
-    /** Diagnostics view of the underlying detector state (temporary). */
+    /** Diagnostics view of the underlying detector state. */
     fun debugSnapshot(): MovementSnapshot = detector.debugSnapshot()
 }

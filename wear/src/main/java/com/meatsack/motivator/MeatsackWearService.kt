@@ -39,7 +39,7 @@ class MeatsackWearService : Service() {
     private lateinit var notificationService: InsultNotificationService
     private lateinit var settings: WatchSettingsCache
 
-    // Temporary triggering diagnostics (docs/debug/triggering-investigation.md).
+    // On-device diagnostics — retained dev tool (docs/debug/triggering-investigation.md).
     private lateinit var diagnostics: WatchDiagnostics
     private lateinit var diagnosticsSender: WatchDiagnosticsSender
 

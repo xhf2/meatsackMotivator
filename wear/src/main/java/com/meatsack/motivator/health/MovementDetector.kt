@@ -79,8 +79,8 @@ class MovementDetector(
     }
 
     /**
-     * Read-only view of the detector's otherwise-private state, for the temporary
-     * triggering diagnostics (docs/debug/triggering-investigation.md). Computed under the
+     * Read-only view of the detector's otherwise-private state, for the on-device
+     * diagnostics dev tool (docs/debug/triggering-investigation.md). Computed under the
      * same lock as the rest of the class so the snapshot is internally consistent.
      */
     @Synchronized

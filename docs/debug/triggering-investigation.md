@@ -1,15 +1,27 @@
 # Triggering / escalation bug — investigation + debug-page plan
 
-**Status:** Phase 1 (root-cause investigation) done from code reading. **Debug instrumentation
-built** (2026-07-01, branch `fix/triggering-diagnostics`) — option A (full phone Debug screen),
-evidence-first (no behavior fix yet). Builds + unit tests green; **awaiting install on the
-physical devices, then a day of on-device evidence before fixing.**
+**Status: RESOLVED & VERIFIED ON-DEVICE (2026-07-03).** Both bugs fixed on
+`fix/triggering-escalation`; confirmed on the physical watch (see "Verification" below). The
+diagnostics pipe that found the bug is **retained as a standing on-device dev tool** (per the
+user), not stripped — see [[project_ondevice_diagnostics_pipe]].
+
+## Verification (2026-07-03, physical SM-L320)
+- **Root cause A fixed:** at the 07:00 active-window boundary the log shows
+  `REBASELINE active-window re-entry hour=7`, then `07:11 idleMin=10 -> FIRE level=1` (was
+  `07:02 idleMin=537 -> FIRE level=4` the day before). Fresh morning ramp 1 → 2, no nuke.
+- **Root cause B fixed:** daytime fires resume after idle stretches instead of the all-day
+  `SKIP(no-trigger)` silence.
+- **Charger note (benign):** putting the watch on the charger (off-wrist) at ~07:42 let the OS
+  hard-kill the service (`onCreate` at 13:33 with no `onDestroy`, ~5.5 h gap). Expected Wear/Samsung
+  battery behavior — and self-correcting: the restart reconstructs fresh state and the first
+  in-window poll `REBASELINE`s, so no post-charge nuke. This is the original H2(a) ("service
+  killed"), seen only while charging/off-wrist, never during normal wear.
 
 ---
 
 ## What was built (the diagnostics pipe)
 
-Temporary, clearly marked "remove with the rest of the diagnostics pipe". Mirrors the existing
+Now a **retained on-device dev tool** (originally built to find this bug). Mirrors the existing
 `/votes` back-sync pipe.
 
 - **shared**
