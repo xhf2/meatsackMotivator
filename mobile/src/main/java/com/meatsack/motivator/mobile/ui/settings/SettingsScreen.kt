@@ -235,7 +235,7 @@ fun SettingsScreen(
             enabled = apiKeyPresent,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(if (vitals) "> GENERATE 10 ROUNDS" else "Generate 10 new insults 💌")
+            Text(if (vitals) "> GENERATE 20 // 5 PER LEVEL" else "Generate 20 new insults (5 per level) 💌")
         }
         genStatus?.let {
             val text = when (it) {
