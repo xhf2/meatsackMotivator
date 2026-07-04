@@ -8,7 +8,6 @@ import com.meatsack.motivator.mobile.ai.ApiKeyStore
 import com.meatsack.motivator.mobile.ai.GenerationResult
 import com.meatsack.motivator.mobile.data.SettingsRepository
 import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
-import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -120,16 +119,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun generateNow() = viewModelScope.launch {
         _generationStatus.value = null
-        // v2 scope: generate at SAVAGE/INACTIVITY/FULL_SEND. Users who want
-        // other axes can run multiple generations.
-        // try/catch guards against MessageSerializer.serialize's `require {}`
-        // throwing through generateBatch — without this the UI gets stuck in
-        // "generating…" forever on an unhandled exception.
+        // Generates across all four escalation levels (5 each) at INACTIVITY/FULL_SEND.
+        // try/catch guards against any unexpected throw out of generateAcrossLevels —
+        // without this the UI gets stuck in "generating…" forever on an unhandled exception.
         _generationStatus.value = try {
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            val generator = AiMessageGenerator(getApplication())
-            generator.generateBatch(
-                level = EscalationLevel.SAVAGE,
+            AiMessageGenerator.create(getApplication()).generateAcrossLevels(
                 trigger = TriggerType.INACTIVITY,
                 tone = MessageTone.FULL_SEND,
                 hourOfDay = hour,

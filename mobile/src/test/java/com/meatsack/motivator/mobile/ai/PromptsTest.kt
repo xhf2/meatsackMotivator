@@ -3,57 +3,59 @@ package com.meatsack.motivator.mobile.ai
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PromptsTest {
 
-    @Test fun includesTopVotedExamples() {
-        val prompt = Prompts.buildUserPrompt(
-            currentSteps = 500,
-            hourOfDay = 14,
-            level = EscalationLevel.SAVAGE,
-            trigger = TriggerType.INACTIVITY,
-            tone = MessageTone.FULL_SEND,
-            topVoted = listOf("GET UP.", "Your chair knows you."),
-        )
-        assertTrue(prompt.contains("GET UP."))
-        assertTrue(prompt.contains("Your chair knows you."))
+    private fun prompt(
+        loved: List<String> = emptyList(),
+        hated: List<String> = emptyList(),
+        level: EscalationLevel = EscalationLevel.SAVAGE,
+        tone: MessageTone = MessageTone.FULL_SEND,
+        trigger: TriggerType = TriggerType.INACTIVITY,
+    ) = Prompts.buildUserPrompt(
+        currentSteps = 500,
+        hourOfDay = 14,
+        level = level,
+        trigger = trigger,
+        tone = tone,
+        loved = loved,
+        hated = hated,
+    )
+
+    @Test fun includesLovedExamplesUnderMatchThisVoice() {
+        val p = prompt(loved = listOf("GET UP.", "Your chair knows you."))
+        assertTrue(p.contains("match this voice"))
+        assertTrue(p.contains("GET UP."))
+        assertTrue(p.contains("Your chair knows you."))
     }
 
-    @Test fun workSafe_changesLanguageLine() {
-        val prompt = Prompts.buildUserPrompt(
-            0,
-            10,
-            EscalationLevel.AGGRESSIVE,
-            TriggerType.INACTIVITY,
-            MessageTone.WORK_SAFE,
-            emptyList(),
-        )
-        assertTrue(prompt.contains("Keep it clean"))
+    @Test fun includesHatedExamplesUnderAvoidBlock() {
+        val p = prompt(loved = listOf("good one"), hated = listOf("weak sauce"))
+        assertTrue(p.contains("do NOT write"))
+        assertTrue(p.contains("weak sauce"))
     }
 
-    @Test fun behindPace_changesTriggerLine() {
-        val prompt = Prompts.buildUserPrompt(
-            500,
-            14,
-            EscalationLevel.SAVAGE,
-            TriggerType.BEHIND_PACE,
-            MessageTone.FULL_SEND,
-            emptyList(),
-        )
-        assertTrue(prompt.contains("behind their step pace"))
+    @Test fun omitsAvoidBlockWhenNoHated() {
+        val p = prompt(loved = listOf("good one"), hated = emptyList())
+        assertFalse(p.contains("do NOT write"))
     }
 
-    @Test fun handlesEmptyExamplesGracefully() {
-        val prompt = Prompts.buildUserPrompt(
-            0,
-            10,
-            EscalationLevel.AGGRESSIVE,
-            TriggerType.INACTIVITY,
-            MessageTone.FULL_SEND,
-            emptyList(),
-        )
-        assertTrue(prompt.contains("no examples yet"))
+    @Test fun noLoved_usesHonestFallbackNotFakePraise() {
+        val p = prompt(loved = emptyList(), hated = emptyList())
+        assertTrue(p.contains("hasn't rated any favorites yet"))
+        assertFalse(p.contains("match this voice"))
+    }
+
+    @Test fun levelLineReflectsRequestedLevel() {
+        val p = prompt(level = EscalationLevel.EXISTENTIAL)
+        assertTrue(p.contains("EXISTENTIAL"))
+    }
+
+    @Test fun workSafeToneChangesLanguageLine() {
+        val p = prompt(tone = MessageTone.WORK_SAFE)
+        assertTrue(p.contains("Keep it clean"))
     }
 }

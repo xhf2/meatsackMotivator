@@ -18,7 +18,8 @@ object Prompts {
         level: EscalationLevel,
         trigger: TriggerType,
         tone: MessageTone,
-        topVoted: List<String>,
+        loved: List<String>,
+        hated: List<String>,
         count: Int = 10,
     ): String {
         val toneLine = when (tone) {
@@ -32,8 +33,19 @@ object Prompts {
             TriggerType.NO_WORKOUT -> "They didn't work out today."
         }
         val timeLabel = if (hourOfDay < 12) "${hourOfDay}am" else "${hourOfDay - 12}pm"
-        val examples = topVoted.take(5).ifEmpty { listOf("(no examples yet)") }
-            .joinToString("\n") { "- $it" }
+
+        val lovedBlock = if (loved.isNotEmpty()) {
+            "Here are messages this user loved — match this voice:\n" +
+                loved.take(5).joinToString("\n") { "- $it" }
+        } else {
+            "The user hasn't rated any favorites yet — establish a strong, consistent signature voice."
+        }
+        val avoidBlock = if (hated.isNotEmpty()) {
+            "\n\nThe user disliked these — do NOT write anything in this voice:\n" +
+                hated.take(3).joinToString("\n") { "- $it" }
+        } else {
+            ""
+        }
 
         return """
             Generate $count motivational insults. Each must be 1–2 sentences AND at most 100 characters total — strict limit, never exceed.
@@ -45,8 +57,7 @@ object Prompts {
             'osteopenic jello mold', 'arthritic waste of a skeleton', 'osteoporotic coward'.
             Never use 'fat' as an insult.
 
-            Here are messages this user loved — match this voice:
-            $examples
+            $lovedBlock$avoidBlock
 
             Return ONE message per line. No numbering, no bullets, no quotes.
         """.trimIndent()

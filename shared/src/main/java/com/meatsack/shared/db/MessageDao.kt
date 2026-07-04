@@ -73,10 +73,23 @@ interface MessageDao {
     @Query(
         """
         SELECT text FROM messages
-        WHERE isActive = 1
+        WHERE isActive = 1 AND votesUp > votesDown
         ORDER BY (votesUp - votesDown) DESC
         LIMIT :limit
     """,
     )
-    suspend fun getTopUpvotedTexts(limit: Int): List<String>
+    suspend fun getLovedTexts(limit: Int): List<String>
+
+    @Query(
+        """
+        SELECT text FROM messages
+        WHERE isActive = 1 AND votesDown > votesUp
+        ORDER BY (votesUp - votesDown) ASC
+        LIMIT :limit
+    """,
+    )
+    suspend fun getHatedTexts(limit: Int): List<String>
+
+    @Query("DELETE FROM messages WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<Long>)
 }
