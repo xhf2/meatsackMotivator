@@ -73,16 +73,6 @@ interface MessageDao {
     @Query(
         """
         SELECT text FROM messages
-        WHERE isActive = 1
-        ORDER BY (votesUp - votesDown) DESC
-        LIMIT :limit
-    """,
-    )
-    suspend fun getTopUpvotedTexts(limit: Int): List<String>
-
-    @Query(
-        """
-        SELECT text FROM messages
         WHERE isActive = 1 AND votesUp > votesDown
         ORDER BY (votesUp - votesDown) DESC
         LIMIT :limit

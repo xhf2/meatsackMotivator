@@ -11,7 +11,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class ClaudeApiClient(private val apiKeyStore: ApiKeyStore) {
+/** Seam so the generator can be unit-tested without the Anthropic SDK / a real key. */
+interface InsultClient {
+    suspend fun generate(systemPrompt: String, userPrompt: String): GenerationResult
+}
+
+class ClaudeApiClient(private val apiKeyStore: ApiKeyStore) : InsultClient {
 
     // Anthropic SDK clients hold an OkHttp connection pool, dispatcher, and TLS
     // state — building one per call wastes ~50ms of handshake and leaks sockets
@@ -34,12 +39,12 @@ class ClaudeApiClient(private val apiKeyStore: ApiKeyStore) {
         }
     }
 
-    suspend fun generate(
+    override suspend fun generate(
         systemPrompt: String,
         userPrompt: String,
-        model: String = "claude-haiku-4-5-20251001",
-        maxTokens: Int = 1024,
     ): GenerationResult {
+        val model = "claude-haiku-4-5-20251001"
+        val maxTokens = 1024
         val key = apiKeyStore.read() ?: return GenerationResult.NoApiKey
 
         return withContext(Dispatchers.IO) {

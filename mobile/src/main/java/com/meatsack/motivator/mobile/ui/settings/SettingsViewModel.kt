@@ -8,7 +8,6 @@ import com.meatsack.motivator.mobile.ai.ApiKeyStore
 import com.meatsack.motivator.mobile.ai.GenerationResult
 import com.meatsack.motivator.mobile.data.SettingsRepository
 import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
-import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -127,9 +126,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         // "generating…" forever on an unhandled exception.
         _generationStatus.value = try {
             val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-            val generator = AiMessageGenerator(getApplication())
-            generator.generateBatch(
-                level = EscalationLevel.SAVAGE,
+            AiMessageGenerator.create(getApplication()).generateAcrossLevels(
                 trigger = TriggerType.INACTIVITY,
                 tone = MessageTone.FULL_SEND,
                 hourOfDay = hour,
