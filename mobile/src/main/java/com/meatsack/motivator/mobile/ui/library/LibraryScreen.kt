@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +49,8 @@ import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -148,22 +151,32 @@ private fun VoteControls(
     onVoteDown: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = "$upGlyph $votesUp",
-            style = MaterialTheme.typography.bodySmall,
-            color = color,
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
+                .semantics { contentDescription = "Upvotes: $votesUp" }
                 .clickable(onClick = onVoteUp, role = Role.Button, onClickLabel = "Vote up")
-                .padding(8.dp),
-        )
-        Text(
-            text = "$downGlyph $votesDown",
-            style = MaterialTheme.typography.bodySmall,
-            color = color,
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+        ) {
+            Text(
+                text = "$upGlyph $votesUp",
+                style = MaterialTheme.typography.bodySmall,
+                color = color,
+            )
+        }
+        Box(
+            contentAlignment = Alignment.Center,
             modifier = Modifier
+                .semantics { contentDescription = "Downvotes: $votesDown" }
                 .clickable(onClick = onVoteDown, role = Role.Button, onClickLabel = "Vote down")
-                .padding(8.dp),
-        )
+                .sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+        ) {
+            Text(
+                text = "$downGlyph $votesDown",
+                style = MaterialTheme.typography.bodySmall,
+                color = color,
+            )
+        }
     }
 }
 

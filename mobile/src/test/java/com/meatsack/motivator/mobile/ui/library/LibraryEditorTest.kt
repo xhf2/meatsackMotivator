@@ -195,4 +195,9 @@ class LibraryEditorTest {
         assertEquals(0, sync.calls)
         assertTrue(store.ups.isEmpty())
     }
+
+    @Test
+    fun defaultDebounce_isTwoSeconds() {
+        assertEquals(2_000L, LibraryEditor.DEFAULT_DEBOUNCE_MS)
+    }
 }

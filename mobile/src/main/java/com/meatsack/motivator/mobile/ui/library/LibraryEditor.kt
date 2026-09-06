@@ -21,6 +21,11 @@ import kotlinx.coroutines.launch
  * When it elapses, [sync] runs once. A vote that arrives while a sync is
  * already *in flight* starts a fresh timer rather than cancelling that sync.
  *
+ * Consequently two `sync()` calls can overlap if a fresh timer elapses while
+ * an earlier sync is still in flight (needs a sync slower than [debounceMs];
+ * `putDataItem` resolves on local commit, so this is rare). Both carry the
+ * full table, so the later snapshot wins; no serialisation is attempted here.
+ *
  * Callers must invoke [voteUp]/[voteDown] from a single-threaded [scope]
  * (e.g. `viewModelScope` on Main, or a test dispatcher); [pendingSync] is not
  * synchronised.

@@ -7,27 +7,35 @@ import com.meatsack.motivator.mobile.sync.PhoneSyncSender
 import com.meatsack.motivator.mobile.sync.SyncResult
 import com.meatsack.shared.db.AppDatabase
 import com.meatsack.shared.model.Message
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 class LibraryViewModel(application: Application) : AndroidViewModel(application) {
     private val dao = AppDatabase.getDatabase(application).messageDao()
+    private val order = FrozenOrder()
 
     val messages: StateFlow<List<Message>> = dao.getAllMessagesFlow()
+        .map { order.apply(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**
      * One emission per completed debounced auto-sync after a phone vote. The screen
      * surfaces only [SyncResult.Failed]; successes are silent.
      *
-     * extraBufferCapacity = 1 so tryEmit never drops a result if the collector is
-     * momentarily suspended; a second result overwrites the first, which is fine —
-     * the latest outcome is the one worth showing.
+     * extraBufferCapacity = 1 + DROP_OLDEST so tryEmit never suspends or fails: if
+     * the collector is still showing the previous snackbar when the next result
+     * lands, the newer result replaces the buffered one — the latest outcome is
+     * the one worth showing.
      */
-    private val _autoSyncResults = MutableSharedFlow<SyncResult>(extraBufferCapacity = 1)
+    private val _autoSyncResults = MutableSharedFlow<SyncResult>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     val autoSyncResults: SharedFlow<SyncResult> = _autoSyncResults
 
     private val editor = LibraryEditor(
