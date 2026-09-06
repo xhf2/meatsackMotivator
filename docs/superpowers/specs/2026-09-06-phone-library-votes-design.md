@@ -158,7 +158,9 @@ why rejected rows are now sent (see *Sync filter change*).
   disk-full; no user-facing message beyond the log.)
 - **Auto-sync fails:** the vote is already committed. The screen shows the
   existing `"Sync failed: …"` snackbar. The next manual or automatic sync
-  carries the vote.
+  carries the vote. The result is held in a one-slot replay cache until a
+  collector consumes it, so a failure that lands while the Library tab is
+  off-screen is still shown when the user returns.
 - **Watch not connected:** `putDataItem` still succeeds locally and the Data
   Layer delivers when the watch reconnects; no special handling.
 - **Cancellation:** rethrown, never swallowed.

@@ -73,7 +73,7 @@ APKs land at `mobile/build/outputs/apk/debug/mobile-debug.apk` and `wear/build/o
 
 Two tabs:
 
-- **Library** — every message in the local DB, with vote tallies, level/trigger/source tags, and a **Sync to Watch** button. Vote tallies stay live and tappable: thumbs you tap on the watch sync back here automatically, and ▲/▼ taps here push to the watch automatically. Tap Sync to push the active, low-hate messages (top 50 by net vote score) to the paired watch.
+- **Library** — every message in the local DB, with vote tallies, level/trigger/source tags, and a **Sync to Watch** button. Vote tallies stay live and tappable: thumbs you tap on the watch sync back here automatically, and ▲/▼ taps here push to the watch automatically. Tap Sync to push every active message (up to 200, rejected ones included so the watch can retire them too) to the paired watch.
 - **Settings**:
   - **Daily step goal** and **inactivity threshold** sliders.
   - **Active hours** range slider — the window the watch is allowed to nag you in; outside it, the watch stays quiet. (Replaces the old separate quiet-hours setting.)
