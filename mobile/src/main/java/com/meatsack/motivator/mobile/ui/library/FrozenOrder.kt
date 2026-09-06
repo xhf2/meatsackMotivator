@@ -11,7 +11,10 @@ import com.meatsack.shared.model.Message
  *   emission — fresh DB — must not freeze an empty order).
  * - Ids not in the captured order (e.g. new AI-generated rows) are appended
  *   after all known rows, in their incoming order, and are then remembered.
- * - Ids that disappear (pruned) simply drop out.
+ * - Ids that disappear (pruned) simply drop out. Their rank is retained, so an
+ *   id that reappears resumes its old slot. Room's `autoGenerate` primary keys
+ *   are never reused, so in practice a reappearing id is the same row coming
+ *   back (e.g. re-activated), and keeping its slot is the intended behaviour.
  *
  * Lives for the ViewModel's lifetime: the order re-freezes when the screen is
  * next created (app relaunch), which is when a user expects a re-sort.

@@ -2,7 +2,9 @@ package com.meatsack.motivator.mobile.ui.library
 
 import com.meatsack.motivator.mobile.sync.SyncResult
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -154,6 +156,28 @@ class LibraryEditorTest {
 
         // A CancellationException cancels the launched job; it must never be reported as Failed.
         assertTrue(results.isEmpty())
+    }
+
+    @Test
+    fun storeThrowingCancellation_isNotSwallowed_andSchedulesNoSync() = runTest {
+        val store = FakeStore().apply { failNextWith = CancellationException("cancelled") }
+        val sync = CountingSync()
+        // A dedicated child scope lets us capture the Job that LibraryEditor.vote()
+        // launches internally (its only child) *before* it completes, then inspect
+        // its terminal state: a rethrown CancellationException leaves that job
+        // Cancelled, while a swallow-and-return leaves it Completed normally. Store
+        // writes/sync-call counts alone can't tell these apart (both are 0/none in
+        // either case), so this is the assertion that actually discriminates.
+        val childScope = CoroutineScope(coroutineContext + Job())
+        val editor = LibraryEditor(store, sync.fn, childScope, debounce) {}
+
+        editor.voteUp(1L)
+        val voteJob = childScope.coroutineContext[Job]!!.children.single()
+        advanceUntilIdle()
+
+        assertTrue(store.ups.isEmpty())
+        assertEquals(0, sync.calls)
+        assertTrue(voteJob.isCancelled)
     }
 
     @Test

@@ -7,6 +7,7 @@ import com.meatsack.motivator.mobile.sync.PhoneSyncSender
 import com.meatsack.motivator.mobile.sync.SyncResult
 import com.meatsack.shared.db.AppDatabase
 import com.meatsack.shared.model.Message
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,16 +28,21 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
      * One emission per completed debounced auto-sync after a phone vote. The screen
      * surfaces only [SyncResult.Failed]; successes are silent.
      *
-     * extraBufferCapacity = 1 + DROP_OLDEST so tryEmit never suspends or fails: if
-     * the collector is still showing the previous snackbar when the next result
-     * lands, the newer result replaces the buffered one — the latest outcome is
-     * the one worth showing.
+     * replay = 1 + DROP_OLDEST so the latest result survives until a collector sees
+     * it — including a collector that attaches after the fact when the user returns
+     * to this tab — and a newer result replaces an unseen older one. The screen
+     * calls [consumeAutoSyncResult] after showing a result so it isn't replayed on
+     * re-entry.
      */
     private val _autoSyncResults = MutableSharedFlow<SyncResult>(
-        extraBufferCapacity = 1,
+        replay = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
     val autoSyncResults: SharedFlow<SyncResult> = _autoSyncResults
+
+    /** Called by the screen once it has shown a result, so a re-entering screen doesn't replay it. */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun consumeAutoSyncResult() = _autoSyncResults.resetReplayCache()
 
     private val editor = LibraryEditor(
         store = RoomVoteStore(dao),

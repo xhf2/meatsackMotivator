@@ -49,9 +49,9 @@ class LibraryEditor(
                 write()
             } catch (ce: CancellationException) {
                 throw ce
-            } catch (t: Throwable) {
+            } catch (e: Exception) {
                 // The tap simply doesn't take effect; nothing to sync for it.
-                Log.e(TAG, "Vote $direction failed for id=$messageId", t)
+                Log.e(TAG, "Vote $direction failed for id=$messageId", e)
                 return@launch
             }
             scheduleSync()
@@ -69,9 +69,9 @@ class LibraryEditor(
                 sync()
             } catch (ce: CancellationException) {
                 throw ce
-            } catch (t: Throwable) {
-                Log.e(TAG, "Auto-sync after vote threw", t)
-                SyncResult.Failed(t)
+            } catch (e: Exception) {
+                Log.e(TAG, "Auto-sync after vote threw", e)
+                SyncResult.Failed(e)
             }
             onSyncResult(result)
         }

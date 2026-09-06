@@ -91,6 +91,7 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
                     "Sync failed: ${result.error.message ?: "unknown error"}",
                 )
             }
+            viewModel.consumeAutoSyncResult()
         }
     }
 
@@ -110,6 +111,7 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 modifier = Modifier.weight(1f),
             ) {
+                // Stable identity across inserts and prunes; display order itself is pinned by FrozenOrder.
                 items(messages, key = { it.id }) { message ->
                     if (bubblegum) {
                         BubblegumPanel(
@@ -137,8 +139,9 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
 
 /**
  * Two tappable vote controls. Glyph strings are theme-supplied (▲/▼ for Vitals,
- * 💕/💔 for Bubblegum); labels are fixed so TalkBack reads "Vote up" / "Vote down"
- * in both themes.
+ * 💕/💔 for Bubblegum) and don't reach TalkBack. `contentDescription` reports the
+ * live count ("Upvotes: N" / "Downvotes: N"); the fixed `onClickLabel` ("Vote up" /
+ * "Vote down") supplies the action hint. Both are theme-independent.
  */
 @Composable
 private fun VoteControls(
