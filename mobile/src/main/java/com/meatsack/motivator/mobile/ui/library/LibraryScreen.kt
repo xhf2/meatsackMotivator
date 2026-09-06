@@ -32,6 +32,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -80,6 +81,16 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
         }
     }
 
+    LaunchedEffect(viewModel) {
+        viewModel.autoSyncResults.collect { result ->
+            if (result is SyncResult.Failed) {
+                snackbarHostState.showSnackbar(
+                    "Sync failed: ${result.error.message ?: "unknown error"}",
+                )
+            }
+        }
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (bubblegum) BubblegumHeader(messages.size) else VitalsHeader(messages.size)
@@ -96,8 +107,20 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 modifier = Modifier.weight(1f),
             ) {
-                items(messages) { message ->
-                    if (bubblegum) BubblegumPanel(message) else InsultPanel(message)
+                items(messages, key = { it.id }) { message ->
+                    if (bubblegum) {
+                        BubblegumPanel(
+                            message = message,
+                            onVoteUp = { viewModel.voteUp(message.id) },
+                            onVoteDown = { viewModel.voteDown(message.id) },
+                        )
+                    } else {
+                        InsultPanel(
+                            message = message,
+                            onVoteUp = { viewModel.voteUp(message.id) },
+                            onVoteDown = { viewModel.voteDown(message.id) },
+                        )
+                    }
                 }
             }
         }
@@ -105,6 +128,41 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter),
+        )
+    }
+}
+
+/**
+ * Two tappable vote controls. Glyph strings are theme-supplied (▲/▼ for Vitals,
+ * 💕/💔 for Bubblegum); labels are fixed so TalkBack reads "Vote up" / "Vote down"
+ * in both themes.
+ */
+@Composable
+private fun VoteControls(
+    upGlyph: String,
+    downGlyph: String,
+    votesUp: Int,
+    votesDown: Int,
+    color: Color,
+    onVoteUp: () -> Unit,
+    onVoteDown: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = "$upGlyph $votesUp",
+            style = MaterialTheme.typography.bodySmall,
+            color = color,
+            modifier = Modifier
+                .clickable(onClick = onVoteUp, role = Role.Button, onClickLabel = "Vote up")
+                .padding(8.dp),
+        )
+        Text(
+            text = "$downGlyph $votesDown",
+            style = MaterialTheme.typography.bodySmall,
+            color = color,
+            modifier = Modifier
+                .clickable(onClick = onVoteDown, role = Role.Button, onClickLabel = "Vote down")
+                .padding(8.dp),
         )
     }
 }
@@ -241,7 +299,11 @@ private fun SyncBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun InsultPanel(message: Message) {
+private fun InsultPanel(
+    message: Message,
+    onVoteUp: () -> Unit,
+    onVoteDown: () -> Unit,
+) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(8.dp),
@@ -277,10 +339,14 @@ private fun InsultPanel(message: Message) {
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = "▲${message.votesUp} ▼${message.votesDown}",
-                    style = MaterialTheme.typography.bodySmall,
+                VoteControls(
+                    upGlyph = "▲",
+                    downGlyph = "▼",
+                    votesUp = message.votesUp,
+                    votesDown = message.votesDown,
                     color = MaterialTheme.colorScheme.secondary,
+                    onVoteUp = onVoteUp,
+                    onVoteDown = onVoteDown,
                 )
             }
         }
@@ -383,7 +449,11 @@ private fun BubblegumSyncBar(onClick: () -> Unit, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun BubblegumPanel(message: Message) {
+private fun BubblegumPanel(
+    message: Message,
+    onVoteUp: () -> Unit,
+    onVoteDown: () -> Unit,
+) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(22.dp),
@@ -402,10 +472,14 @@ private fun BubblegumPanel(message: Message) {
                 Spacer(Modifier.size(10.dp))
                 TriggerChip(message.triggerType.name)
                 Spacer(Modifier.weight(1f))
-                Text(
-                    text = "💕 ${message.votesUp} · 💔 ${message.votesDown}",
-                    style = MaterialTheme.typography.bodySmall,
+                VoteControls(
+                    upGlyph = "💕",
+                    downGlyph = "💔",
+                    votesUp = message.votesUp,
+                    votesDown = message.votesDown,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    onVoteUp = onVoteUp,
+                    onVoteDown = onVoteDown,
                 )
             }
         }
