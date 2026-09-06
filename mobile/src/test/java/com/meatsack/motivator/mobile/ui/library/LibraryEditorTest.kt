@@ -3,8 +3,10 @@ package com.meatsack.motivator.mobile.ui.library
 import com.meatsack.motivator.mobile.sync.SyncResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -33,10 +35,14 @@ class LibraryEditorTest {
         }
     }
 
-    private class CountingSync(private val result: () -> SyncResult = { SyncResult.Success(1) }) {
+    private class CountingSync(
+        private val delayMs: Long = 0,
+        private val result: () -> SyncResult = { SyncResult.Success(1) },
+    ) {
         var calls = 0
         val fn: suspend () -> SyncResult = {
             calls++
+            if (delayMs > 0) delay(delayMs)
             result()
         }
     }
@@ -148,6 +154,33 @@ class LibraryEditorTest {
 
         // A CancellationException cancels the launched job; it must never be reported as Failed.
         assertTrue(results.isEmpty())
+    }
+
+    @Test
+    fun voteDuringInFlightSync_doesNotCancelThatSync_andSchedulesAnother() = runTest {
+        val store = FakeStore()
+        val sync = CountingSync(delayMs = 1_000)
+        val results = mutableListOf<SyncResult>()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) { results += it }
+
+        editor.voteUp(1L)
+        // Past the 2s debounce window: the first sync has started and is now
+        // suspended inside its own 1s delay, i.e. genuinely in flight.
+        advanceTimeBy(2_500)
+        runCurrent()
+
+        editor.voteUp(2L) // arrives while the first sync is in flight
+        runCurrent()
+
+        advanceUntilIdle()
+
+        assertEquals(
+            "the in-flight sync must run to completion, not be cancelled by the second vote",
+            2,
+            sync.calls,
+        )
+        assertEquals(listOf(SyncResult.Success(1), SyncResult.Success(1)), results)
+        assertEquals(listOf(1L, 2L), store.ups)
     }
 
     @Test
