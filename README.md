@@ -27,6 +27,7 @@ Tap 👍 or 👎 on each insult. The algorithm learns which ones land.
 - **AI-generated insults.** Paste an Anthropic API key in Settings and tap "Generate 10 new insults" — the app sends your top-upvoted messages as style examples so new content drifts toward what actually lands for you. AI messages are tagged `AI_GENERATED`, persist in your library, and are vote-able like any other.
 - **Context-aware tone.** Toggle "Context-aware language" in Settings. When on: work-safe wording during your configurable work-safe hours, full-send outside.
 - **Two-way vote sync.** Every 👍/👎 you tap on the watch now syncs back to the phone over a dedicated `/votes` channel, so the phone Library's vote tallies always reflect what you actually rated on your wrist — the tallies that then weight which messages sync to the watch.
+- **Vote from the phone.** ▲/▼ on every Library card, so you can rate the whole library in one sitting instead of waiting for each message to fire on your wrist. Phone votes push to the watch automatically (debounced) and feed the AI generator's loved/avoid examples.
 - **Settings sync to watch.** Step goal, inactivity threshold, active hours, trigger toggles, and tone settings written on the phone propagate to the watch over a `/settings` channel — no more hand-editing constants to change watch behavior.
 
 ---
@@ -72,7 +73,7 @@ APKs land at `mobile/build/outputs/apk/debug/mobile-debug.apk` and `wear/build/o
 
 Two tabs:
 
-- **Library** — every message in the local DB, with vote tallies, level/trigger/source tags, and a **Sync to Watch** button. Vote tallies stay live: thumbs you tap on the watch sync back here automatically. Tap Sync to push the active, low-hate messages (top 50 by net vote score) to the paired watch.
+- **Library** — every message in the local DB, with vote tallies, level/trigger/source tags, and a **Sync to Watch** button. Vote tallies stay live and tappable: thumbs you tap on the watch sync back here automatically, and ▲/▼ taps here push to the watch automatically. Tap Sync to push every active message (up to 200, rejected ones included so the watch can retire them too) to the paired watch.
 - **Settings**:
   - **Daily step goal** and **inactivity threshold** sliders.
   - **Active hours** range slider — the window the watch is allowed to nag you in; outside it, the watch stays quiet. (Replaces the old separate quiet-hours setting.)

@@ -94,5 +94,5 @@ adb -s <device-id> uninstall com.meatsack.motivator
 ## Known v1 Limitations
 
 - Message serialization uses a custom `|`-delimited string. Fine for v1 (≤50 messages × ~200 chars). If we ever need nested structure or multi-line text with `|`, switch to JSON (`kotlinx.serialization`) and bump the DataItem path (e.g. `/messages/v2`).
-- Sync is one-way (phone → watch). Votes recorded on the watch don't propagate back. A back-sync path will need a new DataItem path and a phone-side `WearableListenerService`.
+- Message sync is phone → watch (`/messages`, insert-or-replace) and vote sync is watch → phone (`/votes`, absolute counts). Phone-side votes (Library ▲/▼) are pushed to the watch by a debounced auto-sync so the watch's next absolute snapshot can't overwrite them. The watch never *deletes* rows: messages pruned on the phone stay on the watch until independently downvoted there.
 - Service relies on `HealthTracker` daily-step deltas as a movement proxy. Emulators emit a synthetic step stream at ~2/sec, so "inactivity" never triggers naturally during development — drop `INACTIVITY_THRESHOLD_MINUTES_DEFAULT` (in `shared/src/main/java/com/meatsack/shared/constants/EscalationLevel.kt`) to 1 temporarily or pause the emulator's Health Services to test the escalation path.
