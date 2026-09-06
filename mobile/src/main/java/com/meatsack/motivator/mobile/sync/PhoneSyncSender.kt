@@ -42,8 +42,14 @@ class PhoneSyncSender(private val context: Context) {
 
     suspend fun syncMessagesToWatch(): SyncResult {
         val db = AppDatabase.getDatabase(context)
+        // Send every active row, *including* ones with votesDown >= 3. The watch's
+        // getEligibleMessages() already hides rejected rows, so sending them can't
+        // make them fire — but omitting them means a phone-side downvote that
+        // reaches 3 never reaches the watch, whose stale copy would keep firing.
+        // Rejected rows sort last (getAllMessages orders by net score DESC), so
+        // they are the first to fall off CACHE_SIZE.
         val messages = db.messageDao().getAllMessages()
-            .filter { it.isActive && it.votesDown < 3 }
+            .filter { it.isActive }
             .take(CACHE_SIZE)
 
         if (messages.isEmpty()) {
