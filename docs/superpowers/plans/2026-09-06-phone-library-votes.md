@@ -763,13 +763,15 @@ Not three lines: that would mean the debounce isn't collapsing.
 
 - [ ] **Step 4: Confirm the watch's copy carries the phone's count**
 
+The Room database is named `meatsack_database` (see `AppDatabase.getDatabase`). Room runs in WAL mode, so checkpoint before pulling or the newest votes may still be in the `-wal` file:
+
 ```bash
-adb -s emulator-5554 shell "run-as com.meatsack.motivator cat databases/meatsack.db" > /tmp/watch.db 2>/dev/null \
-  || adb -s emulator-5554 exec-out run-as com.meatsack.motivator cat databases/meatsack.db > watch.db
+adb -s emulator-5554 shell run-as com.meatsack.motivator sqlite3 databases/meatsack_database "PRAGMA wal_checkpoint(FULL);" 2>/dev/null
+adb -s emulator-5554 exec-out run-as com.meatsack.motivator cat databases/meatsack_database > watch.db
 sqlite3 watch.db "SELECT id, votesUp, votesDown, text FROM messages ORDER BY votesDown DESC LIMIT 3;"
 ```
 
-(If the DB filename differs, list `databases/` first: `adb -s emulator-5554 shell run-as com.meatsack.motivator ls databases`.) Expected: the message you downvoted shows `votesDown = 3` on the **watch**. This proves the Task 2 filter change: before it, a `votesDown = 3` row was never sent.
+(If the emulator image lacks `sqlite3`, skip the checkpoint line and also pull `databases/meatsack_database-wal` alongside; local `sqlite3` will replay it.) Expected: the message you downvoted shows `votesDown = 3` on the **watch**. This proves the Task 2 filter change: before it, a `votesDown = 3` row was never sent.
 
 - [ ] **Step 5: Confirm the failure snackbar path**
 
@@ -789,7 +791,7 @@ Nothing to commit. Note the outcome of Steps 3–6 in the PR description (Task 6
 
 **Files:**
 - Modify: `CLAUDE.md` — the "Known v1 Limitations" bullet that says sync is one-way and votes don't propagate back is stale (vote back-sync shipped in v2.0.0); replace it with an accurate note that covers this feature.
-- Modify: `README.md` — if it has a feature list mentioning voting on the watch, add one line about voting from the phone Library. (Check with `grep -n -i "vote" README.md`; if there is no such list, skip the README.)
+- Modify: `README.md` — the "Two-way vote sync" feature bullet (line ~29) and the Library screen description (line ~75) both describe voting as watch-only; extend them.
 
 **Interfaces:** none.
 
@@ -807,15 +809,15 @@ with:
 - Message sync is phone → watch (`/messages`, insert-or-replace) and vote sync is watch → phone (`/votes`, absolute counts). Phone-side votes (Library ▲/▼) are pushed to the watch by a debounced auto-sync so the watch's next absolute snapshot can't overwrite them. The watch never *deletes* rows: messages pruned on the phone stay on the watch until independently downvoted there.
 ```
 
-- [ ] **Step 2: README (conditional)**
+- [ ] **Step 2: README**
 
-Run `grep -n -i "vote" README.md`. If a feature bullet describes watch voting, add a sibling bullet:
+Directly after the `- **Two-way vote sync.** …` bullet (around line 29), add a sibling bullet:
 
 ```
-- **Vote from the phone** — ▲/▼ on every Library card; votes sync to the watch automatically and steer the AI generator's loved/avoid examples.
+- **Vote from the phone.** ▲/▼ on every Library card, so you can rate the whole library in one sitting instead of waiting for each message to fire on your wrist. Phone votes push to the watch automatically (debounced) and feed the AI generator's loved/avoid examples.
 ```
 
-If there is no such list, skip this step.
+In the Library screen description (around line 75), replace the sentence `Vote tallies stay live: thumbs you tap on the watch sync back here automatically.` with `Vote tallies stay live and tappable: thumbs you tap on the watch sync back here automatically, and ▲/▼ taps here push to the watch automatically.`
 
 - [ ] **Step 3: Commit docs**
 
