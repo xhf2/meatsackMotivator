@@ -31,8 +31,13 @@ of joke sets (separate feature, separate branch).
 - A tap increments the corresponding counter via the existing
   `MessageDao.voteUp` / `voteDown` queries. No confirmation dialog; votes are
   unbounded, matching the watch.
-- Counts on the card update live: `LibraryViewModel.messages` already
-  observes `getAllMessagesFlow()`.
+- Counts on the card update live (`LibraryViewModel.messages` observes
+  `getAllMessagesFlow()`), but the **display order is frozen** for the
+  ViewModel's lifetime via `FrozenOrder`: the DAO's net-score ordering would
+  otherwise move a card out from under the user's finger after each tap, and
+  with no undo and a permanent retire at three downvotes, a mis-tap is
+  uncorrectable. New rows append at the bottom; the order re-sorts on next
+  screen creation.
 - After a vote, the phone **automatically syncs to the watch** using the same
   `PhoneSyncSender.syncMessagesToWatch()` the Sync button runs, **debounced**
   (~2 s) so a burst of taps across several cards produces one sync.
@@ -45,7 +50,8 @@ unsynced, the next watch vote on that message would overwrite the phone's
 count with the watch's stale one. Pushing the phone's counts to the watch
 promptly (the `/messages` payload carries `votesUp`/`votesDown` and the watch
 inserts with `REPLACE`) keeps the two copies converged; subsequent watch
-votes increment from the phone's value.
+votes increment from the phone's value. This closes the phone-side window
+only; see *Reverse vote clobber* under Known limitations.
 
 ### Sync filter change
 
@@ -101,6 +107,12 @@ result is handed to `onSyncResult`. A new vote during the window cancels the
 pending job and restarts the timer; it never cancels a sync that is already
 in flight. `CancellationException` is rethrown, matching the rest of the sync
 code.
+
+### `FrozenOrder` (new, `mobile/ui/library`)
+
+Pins the Library's display order to the order first observed from a
+non-empty emission, so a vote's re-sort (net score DESC) doesn't move a card
+under the user's finger. New ids append at the end; removed ids drop out.
 
 ### `LibraryViewModel` (modified)
 
@@ -173,7 +185,7 @@ On-device (paired emulators): downvote a message three times on the phone,
 confirm the watch's `WatchSyncReceiver` log shows the replaced batch, then
 pull the watch DB and confirm the row has `votesDown = 3`.
 
-## Known limitation (pre-existing, out of scope)
+## Known limitations (pre-existing or accepted, out of scope)
 
 The watch never deletes rows. `AiMessageGenerator`'s prune (`deleteByIds`)
 removes rows on the phone, but the watch keeps its copy and can keep firing
@@ -181,6 +193,24 @@ it until it is independently downvoted there. This feature does not make it
 worse (nothing is deleted) and does not fix it. A later fix would have the
 watch treat each `/messages` payload as authoritative and delete ids absent
 from it.
+
+- **Every `/messages` push resets the watch's 24 h repeat-suppression.** The
+  payload carries `lastShownTimestamp`, which the phone never sets (only the
+  watch's `MessageRepository.markShown` does), and the watch inserts with
+  `REPLACE`. Manual Sync and post-generation sync already did this;
+  auto-sync after votes makes it happen more often during a rating session,
+  so expect more repeats on the wrist until a watch-side upsert that
+  preserves `lastShownTimestamp` lands.
+- **Reverse vote clobber.** The `/messages` payload also REPLACEs the
+  watch's vote counts. If an auto-sync lands between a watch vote and the
+  delivery of that watch's `/votes` snapshot, the watch's count is reverted
+  and one wrist vote is lost. Needs concurrent phone and wrist voting;
+  self-limiting. Auto-sync narrows the phone-side window but does not make
+  convergence guaranteed in either direction — a versioned merge would.
+- **Exit inside the debounce window.** The sync leg runs in
+  `viewModelScope`; leaving the app within 2 s of a vote cancels the
+  pending push. The vote is committed locally and the next sync (manual or
+  automatic) carries the full table, so nothing is lost permanently.
 
 ## Out of scope (future)
 
