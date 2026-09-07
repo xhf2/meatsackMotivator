@@ -52,7 +52,8 @@ class AiMessageGenerator(
                 is GenerationResult.Success -> {
                     val valid = result.messages.filter {
                         it.length <= MessageLimits.MAX_MESSAGE_TEXT_LENGTH &&
-                            !it.contains('|') && !it.contains('\n')
+                            !it.contains('|') &&
+                            !it.contains('\n')
                     }
                     accumulated += valid.map {
                         Message(
