@@ -18,6 +18,12 @@ subprojects {
             ktlint(rootProject.libs.versions.ktlint.get())
                 .editorConfigOverride(
                     mapOf(
+                        // ktlint 1.3.1 registers the experimental MixedConditionOperatorsRule under the
+                        // same id as the stable ConditionWrappingRule ("standard:condition-wrapping").
+                        // Spotless collects rule providers into a randomly-ordered set, so which one wins
+                        // is a per-JVM coin flip and spotlessCheck flakes. Pinning the id explicitly makes
+                        // it deterministic. Fixed upstream in ktlint 1.8.0 — drop this when bumping.
+                        "ktlint_standard_condition-wrapping" to "disabled",
                         "ktlint_standard_function-naming" to "disabled",
                         "ktlint_standard_property-naming" to "disabled",
                     ),
