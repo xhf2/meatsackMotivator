@@ -17,23 +17,34 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class LibraryEditorTest {
 
-    private class FakeStore : VoteStore {
+    private class FakeStore : LibraryStore {
         val ups = mutableListOf<Long>()
         val downs = mutableListOf<Long>()
+        val actives = mutableListOf<Pair<Long, Boolean>>()
+        val deletes = mutableListOf<List<Long>>()
         var failNextWith: Throwable? = null
-        override suspend fun voteUp(messageId: Long) {
+
+        private fun maybeFail() {
             failNextWith?.let {
                 failNextWith = null
                 throw it
             }
+        }
+        override suspend fun voteUp(messageId: Long) {
+            maybeFail()
             ups += messageId
         }
         override suspend fun voteDown(messageId: Long) {
-            failNextWith?.let {
-                failNextWith = null
-                throw it
-            }
+            maybeFail()
             downs += messageId
+        }
+        override suspend fun setActive(messageId: Long, active: Boolean) {
+            maybeFail()
+            actives += messageId to active
+        }
+        override suspend fun deleteByIds(ids: List<Long>) {
+            maybeFail()
+            deletes += ids
         }
     }
 
@@ -218,6 +229,87 @@ class LibraryEditorTest {
 
         assertEquals(0, sync.calls)
         assertTrue(store.ups.isEmpty())
+    }
+
+    @Test
+    fun archive_writesSetActiveFalse_andSchedulesOneSync() = runTest {
+        val store = FakeStore()
+        val sync = CountingSync()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) {}
+
+        editor.archive(9L)
+        advanceUntilIdle()
+
+        assertEquals(listOf(9L to false), store.actives)
+        assertEquals(1, sync.calls)
+    }
+
+    @Test
+    fun unarchive_writesSetActiveTrue_andSchedulesOneSync() = runTest {
+        val store = FakeStore()
+        val sync = CountingSync()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) {}
+
+        editor.unarchive(9L)
+        advanceUntilIdle()
+
+        assertEquals(listOf(9L to true), store.actives)
+        assertEquals(1, sync.calls)
+    }
+
+    @Test
+    fun delete_writesDeleteByIds_andSchedulesOneSync() = runTest {
+        val store = FakeStore()
+        val sync = CountingSync()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) {}
+
+        editor.delete(listOf(3L, 4L))
+        advanceUntilIdle()
+
+        assertEquals(listOf(listOf(3L, 4L)), store.deletes)
+        assertEquals(1, sync.calls)
+    }
+
+    @Test
+    fun delete_withEmptyList_writesNothing_andSchedulesNoSync() = runTest {
+        val store = FakeStore()
+        val sync = CountingSync()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) {}
+
+        editor.delete(emptyList())
+        advanceUntilIdle()
+
+        assertTrue(store.deletes.isEmpty())
+        assertEquals(0, sync.calls)
+    }
+
+    @Test
+    fun archiveWriteFailure_skipsSync() = runTest {
+        val store = FakeStore().apply { failNextWith = IllegalStateException("disk full") }
+        val sync = CountingSync()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) {}
+
+        editor.archive(1L)
+        advanceUntilIdle()
+
+        assertTrue(store.actives.isEmpty())
+        assertEquals(0, sync.calls)
+    }
+
+    @Test
+    fun voteAndArchiveInsideWindow_collapseToOneSync() = runTest {
+        val store = FakeStore()
+        val sync = CountingSync()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) {}
+
+        editor.voteUp(1L)
+        advanceTimeBy(500)
+        editor.archive(2L)
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L), store.ups)
+        assertEquals(listOf(2L to false), store.actives)
+        assertEquals(1, sync.calls)
     }
 
     @Test

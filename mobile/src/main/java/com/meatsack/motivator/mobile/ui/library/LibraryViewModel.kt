@@ -45,7 +45,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     fun consumeAutoSyncResult() = _autoSyncResults.resetReplayCache()
 
     private val editor = LibraryEditor(
-        store = RoomVoteStore(dao),
+        store = RoomLibraryStore(dao),
         sync = { PhoneSyncSender(application).syncMessagesToWatch() },
         scope = viewModelScope,
         onSyncResult = { _autoSyncResults.tryEmit(it) },

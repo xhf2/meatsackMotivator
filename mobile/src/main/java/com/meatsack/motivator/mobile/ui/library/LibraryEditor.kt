@@ -9,7 +9,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Applies phone-side votes and pushes them to the watch after a debounce.
+ * Applies phone-side Library mutations — votes, archive/unarchive, delete — and
+ * pushes the library to the watch after a debounce.
  *
  * Why auto-sync is mandatory: the watch → phone `/votes` channel sends
  * *absolute* counts, and the phone applies them verbatim. A phone vote left
@@ -33,7 +34,7 @@ import kotlinx.coroutines.launch
  * synchronised.
  */
 class LibraryEditor(
-    private val store: VoteStore,
+    private val store: LibraryStore,
     private val sync: suspend () -> SyncResult,
     private val scope: CoroutineScope,
     private val debounceMs: Long = DEFAULT_DEBOUNCE_MS,
@@ -41,11 +42,25 @@ class LibraryEditor(
 ) {
     private var pendingSync: Job? = null
 
-    fun voteUp(messageId: Long) = vote("up", messageId) { store.voteUp(messageId) }
+    fun voteUp(messageId: Long) = mutate("voteUp", messageId) { store.voteUp(messageId) }
 
-    fun voteDown(messageId: Long) = vote("down", messageId) { store.voteDown(messageId) }
+    fun voteDown(messageId: Long) = mutate("voteDown", messageId) { store.voteDown(messageId) }
 
-    private fun vote(direction: String, messageId: Long, write: suspend () -> Unit) {
+    /** Keep-pile: the row stops firing on the watch after the next sync and is never pruned. */
+    fun archive(messageId: Long) = mutate("archive", messageId) { store.setActive(messageId, false) }
+
+    fun unarchive(messageId: Long) = mutate("unarchive", messageId) { store.setActive(messageId, true) }
+
+    /**
+     * Phone-only hard delete. Still schedules a sync so a pending vote/archive on
+     * the same timer is not delayed by special-casing; the payload simply omits the rows.
+     */
+    fun delete(messageIds: List<Long>) {
+        if (messageIds.isEmpty()) return
+        mutate("delete", messageIds) { store.deleteByIds(messageIds) }
+    }
+
+    private fun mutate(action: String, target: Any, write: suspend () -> Unit) {
         scope.launch {
             try {
                 write()
@@ -53,7 +68,7 @@ class LibraryEditor(
                 throw ce
             } catch (e: Exception) {
                 // The tap simply doesn't take effect; nothing to sync for it.
-                Log.e(TAG, "Vote $direction failed for id=$messageId", e)
+                Log.e(TAG, "$action failed for $target", e)
                 return@launch
             }
             scheduleSync()
