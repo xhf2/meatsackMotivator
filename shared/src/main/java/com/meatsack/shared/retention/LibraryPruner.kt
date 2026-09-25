@@ -8,6 +8,8 @@ import com.meatsack.shared.model.Message
  * docs/superpowers/specs/2026-07-03-vote-aware-generation-design.md (item E).
  *
  * Per (level, tone, trigger) bucket:
+ *  - archived rows (isActive = false) are ignored entirely: never deleted, not counted toward
+ *    the cap, not counted as fireable for the floor (spec 2026-09-25-library-archive).
  *  - loved (votesUp > votesDown) rows are permanent (never returned).
  *  - non-loved rows with votesDown >= 3 (rejected) are always deleted.
  *  - when the bucket exceeds [cap], the lowest-net non-loved rows are deleted down to the cap.
@@ -22,7 +24,8 @@ object LibraryPruner {
     fun selectForDeletion(messages: List<Message>, cap: Int, floor: Int): List<Long> {
         val toDelete = mutableListOf<Long>()
 
-        val byBucket = messages.groupBy { Bucket(it.level, it.tone, it.triggerType) }
+        // Archived rows are the user's keep-pile; they play no part in retention.
+        val byBucket = messages.filter { it.isActive }.groupBy { Bucket(it.level, it.tone, it.triggerType) }
         for ((_, bucket) in byBucket) {
             val loved = bucket.filter { it.votesUp > it.votesDown }.map { it.id }.toSet()
             val marked = LinkedHashSet<Long>()

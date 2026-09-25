@@ -21,9 +21,10 @@ class LibraryPrunerTest {
         level: EscalationLevel = EscalationLevel.SAVAGE,
         tone: MessageTone = MessageTone.FULL_SEND,
         trigger: TriggerType = TriggerType.INACTIVITY,
+        active: Boolean = true,
     ) = Message(
         id = id, text = "m$id", level = level, triggerType = trigger, tone = tone,
-        source = source, votesUp = up, votesDown = down, lastShownTimestamp = 0, isActive = true,
+        source = source, votesUp = up, votesDown = down, lastShownTimestamp = 0, isActive = active,
     )
 
     @Test fun deletesRejectedNonLovedRows() {
@@ -83,5 +84,30 @@ class LibraryPrunerTest {
         val seeds = (1L..3L).map { msg(it, source = MessageSource.PRE_WRITTEN) }
         val ids = LibraryPruner.selectForDeletion(seeds, cap = 1, floor = 0).sorted()
         assertEquals(listOf(2L, 3L), ids) // 2 lowest-net seeds pruned down to cap 1
+    }
+
+    @Test fun archivedRejectedRow_isNeverDeleted() {
+        // isActive=false with 3 downvotes and no upvotes: would be "rejected" if active. Archive exempts it.
+        val padding = (1L..5L).map { msg(it) }
+        val archived = msg(99, up = 0, down = 3, active = false)
+        val ids = LibraryPruner.selectForDeletion(padding + archived, cap = 50, floor = 5)
+        assertTrue(ids.isEmpty())
+    }
+
+    @Test fun archivedRows_doNotCountTowardCap() {
+        // 50 active (exactly at cap) + 10 archived: nothing over cap, nothing deleted.
+        val active = (1L..50L).map { msg(it) }
+        val archived = (101L..110L).map { msg(it, active = false) }
+        val ids = LibraryPruner.selectForDeletion(active + archived, cap = 50, floor = 5)
+        assertTrue(ids.isEmpty())
+    }
+
+    @Test fun archivedRows_doNotSatisfyFloor() {
+        // 5 archived cannot hold the floor; the 3 rejected active rows are not fireable so
+        // the floor guard cannot restore them either — they are deleted.
+        val archived = (1L..5L).map { msg(it, active = false) }
+        val rejected = (11L..13L).map { msg(it, down = 3) }
+        val ids = LibraryPruner.selectForDeletion(archived + rejected, cap = 50, floor = 5)
+        assertEquals(setOf(11L, 12L, 13L), ids.toSet())
     }
 }
