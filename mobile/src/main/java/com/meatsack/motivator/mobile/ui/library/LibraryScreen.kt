@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -67,6 +68,9 @@ private const val MAX_LEVEL = 4 // EscalationLevel: AGGRESSIVE(1)..EXISTENTIAL(4
 @Composable
 fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
     val messages by viewModel.messages.collectAsState()
+    val filter by viewModel.filter.collectAsState()
+    val counts by viewModel.counts.collectAsState()
+    val shownCount = counts[filter] ?: 0
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -97,13 +101,31 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (bubblegum) BubblegumHeader(messages.size) else VitalsHeader(messages.size)
+            if (bubblegum) BubblegumHeader(shownCount) else VitalsHeader(shownCount)
 
             val barPadding = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)
             if (bubblegum) {
                 BubblegumSyncBar(onClick = onSync, modifier = barPadding)
             } else {
                 SyncBar(onClick = onSync, modifier = barPadding)
+            }
+
+            LibraryFilterChips(
+                selected = filter,
+                counts = counts,
+                bubblegum = bubblegum,
+                onSelect = viewModel::setFilter,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            Spacer(Modifier.height(12.dp))
+            if (filter == LibraryFilter.RETIRED && shownCount > 0) {
+                DeleteAllRetiredBar(
+                    count = shownCount,
+                    bubblegum = bubblegum,
+                    onConfirmed = viewModel::deleteAllRetired,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+                Spacer(Modifier.height(12.dp))
             }
 
             LazyColumn(
@@ -113,19 +135,15 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
             ) {
                 // Stable identity across inserts and prunes; display order itself is pinned by FrozenOrder.
                 items(messages, key = { it.id }) { message ->
-                    if (bubblegum) {
-                        BubblegumPanel(
-                            message = message,
-                            onVoteUp = { viewModel.voteUp(message.id) },
-                            onVoteDown = { viewModel.voteDown(message.id) },
-                        )
-                    } else {
-                        InsultPanel(
-                            message = message,
-                            onVoteUp = { viewModel.voteUp(message.id) },
-                            onVoteDown = { viewModel.voteDown(message.id) },
-                        )
-                    }
+                    val actions = CardActions(
+                        state = LibraryFilters.stateOf(message),
+                        onVoteUp = { viewModel.voteUp(message.id) },
+                        onVoteDown = { viewModel.voteDown(message.id) },
+                        onArchive = { viewModel.archive(message.id) },
+                        onUnarchive = { viewModel.unarchive(message.id) },
+                        onDelete = { viewModel.delete(message.id) },
+                    )
+                    if (bubblegum) BubblegumPanel(message, actions) else InsultPanel(message, actions)
                 }
             }
         }
@@ -137,8 +155,75 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
     }
 }
 
+/** Everything a card can do; which controls render depends on [state] (spec §Filter chips). */
+internal class CardActions(
+    val state: LibraryFilter,
+    val onVoteUp: () -> Unit,
+    val onVoteDown: () -> Unit,
+    val onArchive: () -> Unit,
+    val onUnarchive: () -> Unit,
+    val onDelete: () -> Unit,
+)
+
+/** A tappable text action (Archive / Restore / Delete) with a 48 dp touch target. */
+@Composable
+private fun SecondaryAction(text: String, onClickLabel: String, color: Color, onClick: () -> Unit) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .clickable(onClick = onClick, role = Role.Button, onClickLabel = onClickLabel)
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+            .padding(horizontal = 4.dp),
+    ) {
+        Text(text = text, style = MaterialTheme.typography.labelMedium, color = color)
+    }
+}
+
 /**
- * Two tappable vote controls. Glyph strings are theme-supplied (▲/▼ for Vitals,
+ * Per-state action row appended to a card's meta line:
+ *  ACTIVE   → votes + Archive
+ *  RETIRED  → Archive + Delete (votes shown read-only: the third 👎 already retired it)
+ *  ARCHIVED → Restore (votes shown read-only)
+ */
+@Composable
+private fun CardActionRow(
+    message: Message,
+    actions: CardActions,
+    upGlyph: String,
+    downGlyph: String,
+    voteColor: Color,
+    archiveLabel: String,
+    restoreLabel: String,
+    deleteLabel: String,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        VoteControls(
+            upGlyph = upGlyph,
+            downGlyph = downGlyph,
+            votesUp = message.votesUp,
+            votesDown = message.votesDown,
+            color = voteColor,
+            enabled = actions.state == LibraryFilter.ACTIVE,
+            onVoteUp = actions.onVoteUp,
+            onVoteDown = actions.onVoteDown,
+        )
+        Spacer(Modifier.width(4.dp))
+        when (actions.state) {
+            LibraryFilter.ACTIVE ->
+                SecondaryAction(archiveLabel, "Archive", MaterialTheme.colorScheme.onSurfaceVariant, actions.onArchive)
+            LibraryFilter.RETIRED -> {
+                SecondaryAction(archiveLabel, "Archive", MaterialTheme.colorScheme.onSurfaceVariant, actions.onArchive)
+                SecondaryAction(deleteLabel, "Delete", MaterialTheme.colorScheme.error, actions.onDelete)
+            }
+            LibraryFilter.ARCHIVED ->
+                SecondaryAction(restoreLabel, "Unarchive", MaterialTheme.colorScheme.primary, actions.onUnarchive)
+        }
+    }
+}
+
+/**
+ * Two vote controls, tappable only when `enabled` (Active cards); archived and retired cards
+ * show the counts read-only. Glyph strings are theme-supplied (▲/▼ for Vitals,
  * 💕/💔 for Bubblegum) and don't reach TalkBack. `contentDescription` reports the
  * live count ("Upvotes: N" / "Downvotes: N"); the fixed `onClickLabel` ("Vote up" /
  * "Vote down") supplies the action hint. Both are theme-independent.
@@ -150,36 +235,36 @@ private fun VoteControls(
     votesUp: Int,
     votesDown: Int,
     color: Color,
+    enabled: Boolean,
     onVoteUp: () -> Unit,
     onVoteDown: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .semantics { contentDescription = "Upvotes: $votesUp" }
-                .clickable(onClick = onVoteUp, role = Role.Button, onClickLabel = "Vote up")
-                .sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-        ) {
-            Text(
-                text = "$upGlyph $votesUp",
-                style = MaterialTheme.typography.bodySmall,
-                color = color,
-            )
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .semantics { contentDescription = "Downvotes: $votesDown" }
-                .clickable(onClick = onVoteDown, role = Role.Button, onClickLabel = "Vote down")
-                .sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-        ) {
-            Text(
-                text = "$downGlyph $votesDown",
-                style = MaterialTheme.typography.bodySmall,
-                color = color,
-            )
-        }
+        VoteCell("$upGlyph $votesUp", "Upvotes: $votesUp", "Vote up", color, enabled, onVoteUp)
+        VoteCell("$downGlyph $votesDown", "Downvotes: $votesDown", "Vote down", color, enabled, onVoteDown)
+    }
+}
+
+@Composable
+private fun VoteCell(
+    text: String,
+    description: String,
+    clickLabel: String,
+    color: Color,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val base = Modifier.semantics { contentDescription = description }
+    val modifier = if (enabled) {
+        base.clickable(onClick = onClick, role = Role.Button, onClickLabel = clickLabel)
+    } else {
+        base
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+    ) {
+        Text(text = text, style = MaterialTheme.typography.bodySmall, color = color)
     }
 }
 
@@ -315,11 +400,7 @@ private fun SyncBar(onClick: () -> Unit, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun InsultPanel(
-    message: Message,
-    onVoteUp: () -> Unit,
-    onVoteDown: () -> Unit,
-) {
+private fun InsultPanel(message: Message, actions: CardActions) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(8.dp),
@@ -355,14 +436,15 @@ private fun InsultPanel(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                VoteControls(
+                CardActionRow(
+                    message = message,
+                    actions = actions,
                     upGlyph = "▲",
                     downGlyph = "▼",
-                    votesUp = message.votesUp,
-                    votesDown = message.votesDown,
-                    color = MaterialTheme.colorScheme.secondary,
-                    onVoteUp = onVoteUp,
-                    onVoteDown = onVoteDown,
+                    voteColor = MaterialTheme.colorScheme.secondary,
+                    archiveLabel = "[ ARCHIVE ]",
+                    restoreLabel = "[ RESTORE ]",
+                    deleteLabel = "[ DELETE ]",
                 )
             }
         }
@@ -465,11 +547,7 @@ private fun BubblegumSyncBar(onClick: () -> Unit, modifier: Modifier = Modifier)
 }
 
 @Composable
-private fun BubblegumPanel(
-    message: Message,
-    onVoteUp: () -> Unit,
-    onVoteDown: () -> Unit,
-) {
+private fun BubblegumPanel(message: Message, actions: CardActions) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(22.dp),
@@ -488,14 +566,15 @@ private fun BubblegumPanel(
                 Spacer(Modifier.size(10.dp))
                 TriggerChip(message.triggerType.name)
                 Spacer(Modifier.weight(1f))
-                VoteControls(
+                CardActionRow(
+                    message = message,
+                    actions = actions,
                     upGlyph = "💕",
                     downGlyph = "💔",
-                    votesUp = message.votesUp,
-                    votesDown = message.votesDown,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    onVoteUp = onVoteUp,
-                    onVoteDown = onVoteDown,
+                    voteColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    archiveLabel = "Keep 🗂",
+                    restoreLabel = "Restore 💫",
+                    deleteLabel = "Bye 🗑",
                 )
             }
         }
