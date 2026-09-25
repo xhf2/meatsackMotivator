@@ -15,7 +15,9 @@ import kotlinx.coroutines.launch
  * *absolute* counts, and the phone applies them verbatim. A phone vote left
  * unsynced would be overwritten by the next watch vote on the same message.
  * Pushing the phone's counts promptly (the `/messages` payload carries votes
- * and the watch inserts with REPLACE) keeps both copies converged.
+ * and the watch applies them via `MessageDao.upsertPreservingShown`, which
+ * overwrites every phone-owned field including votes) keeps both copies
+ * converged.
  *
  * Debounce semantics: every successful store write (re)starts a single timer.
  * When it elapses, [sync] runs once. A vote that arrives while a sync is

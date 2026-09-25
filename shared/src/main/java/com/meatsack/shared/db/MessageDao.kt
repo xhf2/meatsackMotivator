@@ -66,7 +66,10 @@ interface MessageDao {
      * for every phone-owned field, but keeps this device's `lastShownTimestamp`
      * for rows it already has, so a phone sync can't reset the 24 h cooldown.
      * See [ShownTimestampMerger]. Transactional: the read and the write see one
-     * consistent snapshot.
+     * consistent snapshot. Intended for the watch only (the phone applies
+     * `/votes` via [setVotes]). [getShownTimestamps] binds one SQL variable per
+     * id, so callers must keep the batch under SQLite's variable limit (999 on
+     * API 30); the wear receiver's 500-row ceiling does.
      */
     @Transaction
     suspend fun upsertPreservingShown(messages: List<Message>) {

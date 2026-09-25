@@ -18,16 +18,16 @@ class WatchSyncReceiver : WearableListenerService() {
         private const val TAG = "WatchSyncReceiver"
 
         // Hard ceiling to bound the blast radius of a malformed or hostile payload.
-        // v1 syncs at most 50 messages at a time; 500 is 10x headroom.
+        // The phone sends at most PhoneSyncSender.CACHE_SIZE (200) rows per DataItem;
+        // 500 is 2.5x headroom. Must stay below 999: MessageDao.getShownTimestamps binds
+        // one SQL variable per id, and that is SQLite's limit on API 30 watches.
         private const val MAX_INCOMING_MESSAGES = 500
 
         /**
-         * Applies a decoded phone payload to the watch DB. Phone rows always carry
-         * lastShownTimestamp = 0 (the phone never delivers), so a plain REPLACE
-         * would wipe this watch's 24 h cooldown on every sync — including the
-         * debounced auto-sync after each phone vote. The preserving upsert keeps
-         * the watch's timestamp for rows it already has. Extracted so it can be
-         * exercised against a real Room DB without a DataEventBuffer.
+         * Applies a decoded phone payload via [MessageDao.upsertPreservingShown]
+         * (see [com.meatsack.shared.sync.ShownTimestampMerger] for why plain REPLACE
+         * is wrong). Extracted so it can be exercised against a DAO without a
+         * DataEventBuffer.
          */
         suspend fun store(messages: List<Message>, dao: MessageDao) {
             dao.upsertPreservingShown(messages)
@@ -68,7 +68,7 @@ class WatchSyncReceiver : WearableListenerService() {
                     store(messages, AppDatabase.getDatabase(applicationContext).messageDao())
                     Log.d(TAG, "Stored ${messages.size} messages from node=$sourceNode")
                 } catch (t: Throwable) {
-                    Log.e(TAG, "Failed to insert ${messages.size} messages from $sourceNode", t)
+                    Log.e(TAG, "Failed to store ${messages.size} messages from $sourceNode", t)
                 }
             }
         }

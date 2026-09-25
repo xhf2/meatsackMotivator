@@ -61,4 +61,18 @@ class WatchSyncReceiverStoreTest {
         assertEquals(2, rows.getValue(1).votesUp)
         assertEquals(0L, rows.getValue(2).lastShownTimestamp)
     }
+
+    @Test
+    fun store_leavesRowsAbsentFromPayloadUntouched() = runBlocking {
+        val dao = db.messageDao()
+        dao.insertAll(listOf(phoneRow(1), phoneRow(3)))
+        dao.markShown(3, timestamp = 555L)
+
+        // Payload omits id 3 (e.g. pruned on the phone). The watch never deletes rows.
+        WatchSyncReceiver.store(listOf(phoneRow(1)), dao)
+
+        val rows = dao.getAllMessages().associateBy { it.id }
+        assertEquals(setOf(1L, 3L), rows.keys)
+        assertEquals(555L, rows.getValue(3).lastShownTimestamp)
+    }
 }
