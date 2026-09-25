@@ -233,10 +233,8 @@ JVM (run in CI and the pre-commit hook):
   upvotes is **not** deleted; inactive rows do not count toward the cap (a
   bucket of 50 active + 10 inactive prunes nothing); inactive rows do not
   satisfy the floor (a bucket of 5 inactive + 3 rejected active still deletes
-  the 3 rejected... wait — the floor restores fireable rows only when
-  survivors < floor; with 0 active fireable survivors it restores up to 5 of
-  the *marked fireable* rows, and rejected rows are not fireable, so the 3
-  are deleted. Assert exactly that.)
+  the 3 rejected, because the floor guard only restores *fireable* marked
+  rows and rejected rows are not fireable).
 - `LibraryEditorTest` additions (existing test style with a fake store and a
   test dispatcher): `archive` writes `setActive(id, false)` and schedules one
   sync; `unarchive` writes `setActive(id, true)`; `delete(ids)` writes
