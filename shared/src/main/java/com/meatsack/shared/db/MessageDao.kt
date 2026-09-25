@@ -4,10 +4,12 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.meatsack.shared.constants.EscalationLevel
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.model.Message
+import com.meatsack.shared.sync.ShownTimestampMerger
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -56,6 +58,23 @@ interface MessageDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(messages: List<Message>)
 
+    @Query("SELECT id, lastShownTimestamp FROM messages WHERE id IN (:ids)")
+    suspend fun getShownTimestamps(ids: List<Long>): List<ShownTimestamp>
+
+    /**
+     * Watch-side apply of a phone `/messages` payload. Like [insertAll] (REPLACE)
+     * for every phone-owned field, but keeps this device's `lastShownTimestamp`
+     * for rows it already has, so a phone sync can't reset the 24 h cooldown.
+     * See [ShownTimestampMerger]. Transactional: the read and the write see one
+     * consistent snapshot.
+     */
+    @Transaction
+    suspend fun upsertPreservingShown(messages: List<Message>) {
+        val existing = getShownTimestamps(messages.map { it.id })
+            .associate { it.id to it.lastShownTimestamp }
+        insertAll(ShownTimestampMerger.merge(messages, existing))
+    }
+
     @Query("SELECT * FROM messages ORDER BY (votesUp - votesDown) DESC")
     suspend fun getAllMessages(): List<Message>
 
@@ -93,3 +112,6 @@ interface MessageDao {
     @Query("DELETE FROM messages WHERE id IN (:ids)")
     suspend fun deleteByIds(ids: List<Long>)
 }
+
+/** Projection for [MessageDao.getShownTimestamps]. */
+data class ShownTimestamp(val id: Long, val lastShownTimestamp: Long)
