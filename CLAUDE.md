@@ -45,7 +45,7 @@ Three Gradle modules:
 
 1. Phone seeds the Room DB on first launch (`MeatsackMobileApp` → `SeedData`).
 2. User opens the phone app's **Library** tab and taps **Sync to Watch** — `PhoneSyncSender` writes a `/messages` DataItem.
-3. Watch's `WatchSyncReceiver` fires `onDataChanged`, deserializes, and inserts into the watch's Room DB.
+3. Watch's `WatchSyncReceiver` fires `onDataChanged`, deserializes, and upserts into the watch's Room DB via `MessageDao.upsertPreservingShown`.
 4. User opens the watch app (tap launcher icon) — `MainActivity` requests `ACTIVITY_RECOGNITION` then starts `MeatsackWearService`.
 5. `MeatsackWearService` polls every minute: `HealthTracker.getMinutesSinceLastMovement()` → `EscalationManager.shouldTrigger(...)` → `MessageRepository.selectMessage(...)` → `InsultNotificationService.deliverInsult(...)`.
 6. Full-screen `InsultActivity` wakes the screen. User taps 👍/👎 — vote hits local DAO.
@@ -94,5 +94,5 @@ adb -s <device-id> uninstall com.meatsack.motivator
 ## Known v1 Limitations
 
 - Message serialization uses a custom `|`-delimited string. Fine for v1 (≤50 messages × ~200 chars). If we ever need nested structure or multi-line text with `|`, switch to JSON (`kotlinx.serialization`) and bump the DataItem path (e.g. `/messages/v2`).
-- Message sync is phone → watch (`/messages`, insert-or-replace) and vote sync is watch → phone (`/votes`, absolute counts). Phone-side votes (Library ▲/▼) are pushed to the watch by a debounced auto-sync so the watch's next absolute snapshot can't overwrite them. The watch never *deletes* rows: messages pruned on the phone stay on the watch until independently downvoted there.
+- Message sync is phone → watch (`/messages`, upsert) and vote sync is watch → phone (`/votes`, absolute counts). Phone-side votes (Library ▲/▼) are pushed to the watch by a debounced auto-sync so the watch's next absolute snapshot can't overwrite them. The watch never *deletes* rows: messages pruned on the phone stay on the watch until independently downvoted there. The watch applies phone rows via `MessageDao.upsertPreservingShown` (not plain REPLACE) so a sync cannot reset the watch-owned `lastShownTimestamp` and wipe the 24 h cooldown; every other field comes from the phone. Caveat: ids are matched by value, so after a phone `pm clear` + re-seed (ids restart at 1) a new message can inherit an old row's cooldown on the watch for up to a day.
 - Service relies on `HealthTracker` daily-step deltas as a movement proxy. Emulators emit a synthetic step stream at ~2/sec, so "inactivity" never triggers naturally during development — drop `INACTIVITY_THRESHOLD_MINUTES_DEFAULT` (in `shared/src/main/java/com/meatsack/shared/constants/EscalationLevel.kt`) to 1 temporarily or pause the emulator's Health Services to test the escalation path.

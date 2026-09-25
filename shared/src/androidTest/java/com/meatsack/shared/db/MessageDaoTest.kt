@@ -251,4 +251,28 @@ class MessageDaoTest {
         dao.deleteByIds(listOf(2L))
         assertEquals(listOf("keep"), dao.getAllMessages().map { it.text })
     }
+
+    @Test
+    fun upsertPreservingShown_keepsWatchTimestamp_takesPhoneVotes() = runBlocking {
+        dao.insertAll(listOf(testMessage("original").copy(id = 7)))
+        dao.markShown(7, timestamp = 123_456L)
+
+        // Phone's copy of the same row: votes changed, lastShownTimestamp always 0.
+        dao.upsertPreservingShown(
+            listOf(testMessage("original").copy(id = 7, votesUp = 3, votesDown = 1, lastShownTimestamp = 0)),
+        )
+
+        val row = dao.getAllMessages().single()
+        assertEquals(3, row.votesUp)
+        assertEquals(1, row.votesDown)
+        assertEquals(123_456L, row.lastShownTimestamp)
+    }
+
+    @Test
+    fun upsertPreservingShown_insertsNewRowsWithZeroTimestamp() = runBlocking {
+        dao.upsertPreservingShown(listOf(testMessage("brand new").copy(id = 9)))
+        val row = dao.getAllMessages().single()
+        assertEquals("brand new", row.text)
+        assertEquals(0L, row.lastShownTimestamp)
+    }
 }
