@@ -24,9 +24,9 @@ Tap 👍 or 👎 on each insult. The algorithm learns which ones land.
 ### v2 intelligence additions
 
 - **Scheduled triggers.** Every hour during your active window, the watch compares your step count against the pace needed to hit your daily goal. Behind? Aggressive → Existential escalation based on how far. At your configured end-of-day hour, a final reckoning fires if you missed the goal. Each trigger has its own **on/off toggle** in Settings — silence behind-pace nagging, end-of-day nagging, or both.
-- **AI-generated insults.** Paste an Anthropic API key in Settings and tap **Generate 20 new insults (5 per level)** — one Claude call per escalation level, each fed your most-loved messages as style examples and your most-hated ones as an avoid-list, so new content drifts toward what actually lands for you. AI messages are tagged `AI_GENERATED`, persist in your library, and are vote-able like any other.
-- **Self-pruning library.** After each Generate, every (level, trigger, tone) bucket is capped at 50 messages with a floor of 5 fireable ones: rejected messages (3+ 👎) are deleted, the lowest-rated surplus goes next, and loved messages (more 👍 than 👎) are never pruned.
-- **Editable insult library.** The built-in insults are plain data in [`shared/src/main/assets/insults.json`](shared/src/main/assets/insults.json) (text, trigger, level, tone per record). Edit the file, rebuild, and reinstall; CI fails if a record is malformed, over 100 characters, or leaves a trigger/level bucket empty. The file only seeds an empty database, so an existing install needs its app data cleared (`adb shell pm clear com.meatsack.motivator`) to pick up changes.
+- **AI-generated insults.** Paste an Anthropic API key in Settings and tap the Generate button (20 inactivity insults per press, 5 per escalation level, full-send tone) — one Claude call per level, each fed your most-loved messages as style examples and your most-hated ones as an avoid-list, so new content drifts toward what actually lands for you. AI messages are tagged `AI_GENERATED`, persist in your library, and are vote-able like any other.
+- **Self-pruning library.** After each Generate, every (level, trigger, tone) bucket is capped at 50 messages with a floor of 5 fireable ones: rejected, non-loved messages (3+ 👎) are deleted, the lowest-rated surplus goes next, and loved messages (more 👍 than 👎) are never pruned.
+- **Editable insult library.** The built-in insults are plain data in [`shared/src/main/assets/insults.json`](shared/src/main/assets/insults.json) (text, trigger, level, tone per record). Edit the file, rebuild, and reinstall; CI fails if a record is malformed, over 100 characters, or empties one of the 11 trigger/level buckets the seed is expected to cover. The file only seeds an empty database, and both phone and watch seed themselves, so an existing install must have its app data cleared on **each** device (`adb -s <device> shell pm clear com.meatsack.motivator`) to re-seed — which also erases settings, the API key, votes, and AI-generated messages.
 - **Context-aware tone.** Toggle "Context-aware language" in Settings. When on: work-safe wording during your configurable work-safe hours, full-send outside.
 - **Two-way vote sync.** Every 👍/👎 you tap on the watch now syncs back to the phone over a dedicated `/votes` channel, so the phone Library's vote tallies always reflect what you actually rated on your wrist — the tallies that then weight which messages sync to the watch.
 - **Vote from the phone.** ▲/▼ on every Library card, so you can rate the whole library in one sitting instead of waiting for each message to fire on your wrist. Phone votes push to the watch automatically (debounced) and feed the AI generator's loved/avoid examples.
@@ -82,8 +82,8 @@ Two tabs:
   - **Behind-pace messages** and **End-of-day messages** toggles — turn either scheduled trigger off independently.
   - **Behind-pace check hour** slider — when the daily pace check fires.
   - **Movement threshold** slider — how many steps count as "moved" and reset the idle timer (default 50).
-  - **Anthropic API key** entry + **Generate 20 new insults (5 per level)**.
-  - **App theme** picker — dark **Vitals Console** or pink **Bubblegum**.
+  - **Anthropic API key** entry + the **Generate** button (20 insults per press, 5 per level).
+  - **App theme** picker — dark **Vitals** (the "Vitals Console" look) or pink **Bubblegum**.
   - **Context-aware language** toggle (off by default; full send all day) with its own **work-safe start/end** hours when enabled.
 
 All settings are persisted with Jetpack DataStore, survive reboots, and sync to the watch over the `/settings` Data Layer channel.
