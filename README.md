@@ -17,14 +17,16 @@ Tap 👍 or 👎 on each insult. The algorithm learns which ones land.
    - Half-second **haptic buzz** on your wrist
    - **Full-screen takeover** with the insult text and a stats line (step count, time of day, degree of pathetic)
    - Two circular buttons: 👍 if it hit, 👎 if it whiffed
-3. Every 30 minutes you're still idle, it **escalates**: AGGRESSIVE → SAVAGE → NUCLEAR → EXISTENTIAL.
+3. Every 30 minutes you're still idle, it **escalates**: AGGRESSIVE → SAVAGE → NUCLEAR → EXISTENTIAL. A message that has fired is off the table for 24 hours, so you don't hear the same line twice in a day.
 4. Move (enough steps — default **50**, configurable via the Movement threshold slider — within your inactivity window) → the idle timer resets and the escalation level drops back to AGGRESSIVE.
-5. The **phone app** manages the insult library: browse messages, see vote tallies, sync new messages to the watch.
+5. The **phone app** manages the insult library: browse messages, vote on them, generate new ones with Claude, and sync to the watch.
 
 ### v2 intelligence additions
 
 - **Scheduled triggers.** Every hour during your active window, the watch compares your step count against the pace needed to hit your daily goal. Behind? Aggressive → Existential escalation based on how far. At your configured end-of-day hour, a final reckoning fires if you missed the goal. Each trigger has its own **on/off toggle** in Settings — silence behind-pace nagging, end-of-day nagging, or both.
-- **AI-generated insults.** Paste an Anthropic API key in Settings and tap "Generate 10 new insults" — the app sends your top-upvoted messages as style examples so new content drifts toward what actually lands for you. AI messages are tagged `AI_GENERATED`, persist in your library, and are vote-able like any other.
+- **AI-generated insults.** Paste an Anthropic API key in Settings and tap **Generate 20 new insults (5 per level)** — one Claude call per escalation level, each fed your most-loved messages as style examples and your most-hated ones as an avoid-list, so new content drifts toward what actually lands for you. AI messages are tagged `AI_GENERATED`, persist in your library, and are vote-able like any other.
+- **Self-pruning library.** After each Generate, every (level, trigger, tone) bucket is capped at 50 messages with a floor of 5 fireable ones: rejected messages (3+ 👎) are deleted, the lowest-rated surplus goes next, and loved messages (more 👍 than 👎) are never pruned.
+- **Editable insult library.** The built-in insults are plain data in [`shared/src/main/assets/insults.json`](shared/src/main/assets/insults.json) (text, trigger, level, tone per record). Edit the file, rebuild, and reinstall; CI fails if a record is malformed, over 100 characters, or leaves a trigger/level bucket empty. The file only seeds an empty database, so an existing install needs its app data cleared (`adb shell pm clear com.meatsack.motivator`) to pick up changes.
 - **Context-aware tone.** Toggle "Context-aware language" in Settings. When on: work-safe wording during your configurable work-safe hours, full-send outside.
 - **Two-way vote sync.** Every 👍/👎 you tap on the watch now syncs back to the phone over a dedicated `/votes` channel, so the phone Library's vote tallies always reflect what you actually rated on your wrist — the tallies that then weight which messages sync to the watch.
 - **Vote from the phone.** ▲/▼ on every Library card, so you can rate the whole library in one sitting instead of waiting for each message to fire on your wrist. Phone votes push to the watch automatically (debounced) and feed the AI generator's loved/avoid examples.
@@ -79,7 +81,9 @@ Two tabs:
   - **Active hours** range slider — the window the watch is allowed to nag you in; outside it, the watch stays quiet. (Replaces the old separate quiet-hours setting.)
   - **Behind-pace messages** and **End-of-day messages** toggles — turn either scheduled trigger off independently.
   - **Behind-pace check hour** slider — when the daily pace check fires.
-  - **Anthropic API key** entry + **Generate 10 new insults**.
+  - **Movement threshold** slider — how many steps count as "moved" and reset the idle timer (default 50).
+  - **Anthropic API key** entry + **Generate 20 new insults (5 per level)**.
+  - **App theme** picker — dark **Vitals Console** or pink **Bubblegum**.
   - **Context-aware language** toggle (off by default; full send all day) with its own **work-safe start/end** hours when enabled.
 
 All settings are persisted with Jetpack DataStore, survive reboots, and sync to the watch over the `/settings` Data Layer channel.
@@ -120,13 +124,13 @@ meatsackMotivator/
 └── mobile/          # Phone companion — library browser, settings, message/settings senders, vote receiver
 ```
 
-- **`shared`** exposes the `AppDatabase` (Room + KSP), `Message` entity, the `MessageSerializer`/`VoteSyncSerializer` wire codecs, and the `SyncChannel`/`SettingsKeys` channel constants used by both sides of the sync pipes. `RoomDatabase` leaks through the public API, so Room is declared `api` not `implementation`.
+- **`shared`** exposes the `AppDatabase` (Room + KSP), `Message` entity, the `MessageSerializer`/`VoteSyncSerializer` wire codecs, the `SyncChannel`/`SettingsKeys` channel constants used by both sides of the sync pipes, the `InsultLoader` that parses the bundled `insults.json` seed, and the pure `LibraryPruner`. `RoomDatabase` leaks through the public API, so Room is declared `api` not `implementation`.
 - **`wear`** drives everything on the watch: `HealthTracker` reads `STEPS_DAILY` (plus floors and calories as of v2; heart rate deferred to v3 pending Health Connect integration) via `androidx.health.services.client` and tracks "minutes since last movement"; `EscalationManager` decides whether to fire based on time-since-last-fire (resistant to poll-drift); `MessageRepository` picks a message (30% chance of showing an unvoted one to bootstrap ratings; otherwise weighted by net votes); `InsultNotificationService` vibrates and shows the full-screen takeover; `MeatsackWearService` is the foreground service that ties it all together, polls every 60 seconds, and (v2) schedules the hourly `BehindPaceWorker` + daily `EndOfDayWorker` via WorkManager.
-- **`mobile`** is a Compose app: `MainActivity` hosts a `NavGraph` with bottom nav for Library and Settings. `SettingsRepository` wraps `DataStore<Preferences>`. `PhoneSyncSender` serializes up to 50 active messages as a `|`-delimited payload and writes a DataItem at `/messages`; `PhoneSettingsSyncer` writes settings to `/settings`; `PhoneVoteReceiver` (a `WearableListenerService`) applies vote counts that come back from the watch.
+- **`mobile`** is a Compose app: `MainActivity` hosts a `NavGraph` with bottom nav for Library and Settings. `SettingsRepository` wraps `DataStore<Preferences>`. `PhoneSyncSender` serializes up to 200 active messages as a `|`-delimited payload and writes a DataItem at `/messages`; `AiMessageGenerator` runs the per-level Claude calls, inserts, prunes, and syncs; `PhoneSettingsSyncer` writes settings to `/settings`; `PhoneVoteReceiver` (a `WearableListenerService`) applies vote counts that come back from the watch.
 - **Phone ↔ Watch sync** — three Data Layer channels, propagated via the paired Galaxy Wearable bridge. `SyncChannel`/`SettingsKeys` are the shared single source of truth for paths and keys, so neither side can drift:
   - **`/messages`** (phone → watch): `PhoneSyncSender` writes a DataItem → `WatchSyncReceiver` deserializes and upserts into the watch's Room DB.
   - **`/settings`** (phone → watch): `PhoneSettingsSyncer` writes step goal, thresholds, active hours, trigger toggles, and tone → `WatchSettingsReceiver` updates `WatchSettingsCache`, which the service and workers read.
-  - **`/votes`** (watch → phone): after each 👍/👎, `WatchVoteSender` pushes the watch's **absolute** per-message vote counts → `PhoneVoteReceiver` applies them with an idempotent `setVotes` (a *set*, not an increment, so Data Layer redelivery is safe). The watch is the sole vote authority.
+  - **`/votes`** (watch → phone): after each 👍/👎, `WatchVoteSender` pushes the watch's **absolute** per-message vote counts → `PhoneVoteReceiver` applies them with an idempotent `setVotes` (a *set*, not an increment, so Data Layer redelivery is safe). Phone-side ▲/▼ votes travel the other way inside the next `/messages` push (debounced 2 s by `LibraryEditor`), so whichever device voted last, both copies converge.
 
 ---
 
@@ -206,8 +210,8 @@ Instrumented tests (`connectedAndroidTest`) run locally when you have an emulato
 
 ## Known limitations
 
-- **`|`-delimited wire format for sync.** Fine for ≤50 short messages with no pipes or newlines in the text. If you ever add multi-line user-generated messages, see [#7](https://github.com/xhf2/meatsackMotivator/issues/7).
-- **Vote sync is watch-authoritative.** The watch is the only place votes are cast, and it sends absolute counts that the phone *sets*. There is no phone-side voting UI, so the phone never originates a vote — by design, this keeps back-sync idempotent and conflict-free.
+- **`|`-delimited wire format for sync.** Each insult is capped at 100 characters (sized for the watch face; enforced in CI and at sync time) and may not contain `|` or newlines; the phone sends at most 200 messages per push. If you ever need multi-line text, see [#7](https://github.com/xhf2/meatsackMotivator/issues/7).
+- **Votes converge by last writer, not by merge.** Both devices send absolute counts (watch → phone on `/votes`, phone → watch inside `/messages`), so a vote cast on one device while the other is offline can be overwritten when both come back. Tapping on one device at a time avoids it. Three 👎 retires a message permanently, and there is no undo.
 - **Emulator Health Services** auto-generates a synthetic step stream at ~2 steps/second, so real inactivity never triggers in the emulator. Use `TestFireActivity` for UI testing or drop `INACTIVITY_THRESHOLD_MINUTES_DEFAULT` to 1 in `shared/constants/EscalationLevel.kt` temporarily.
 - **Samsung battery optimization** is aggressive. If insults stop firing on real hardware after a few hours, whitelist meatsackMotivator on both phone and watch via Settings → Battery → Background usage limits → Never sleeping apps.
 
