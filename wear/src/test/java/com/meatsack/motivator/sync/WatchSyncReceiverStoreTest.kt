@@ -44,7 +44,7 @@ class WatchSyncReceiverStoreTest {
         override suspend fun getVotedMessages(): List<Message> = unreachable()
         override suspend fun setVotes(messageId: Long, votesUp: Int, votesDown: Int) = unreachable()
         override suspend fun markShown(messageId: Long, timestamp: Long) = unreachable()
-        override suspend fun deactivate(messageId: Long) = unreachable()
+        override suspend fun setActive(messageId: Long, active: Boolean) = unreachable()
         override suspend fun getAllMessages(): List<Message> = unreachable()
         override fun getAllMessagesFlow(): Flow<List<Message>> = unreachable()
         override suspend fun getMessageCount(): Int = unreachable()

@@ -52,8 +52,13 @@ interface MessageDao {
     @Query("UPDATE messages SET lastShownTimestamp = :timestamp WHERE id = :messageId")
     suspend fun markShown(messageId: Long, timestamp: Long)
 
-    @Query("UPDATE messages SET isActive = 0 WHERE id = :messageId")
-    suspend fun deactivate(messageId: Long)
+    /**
+     * Archive (`false`) / unarchive (`true`). An inactive row never fires on the
+     * watch (getEligibleMessages requires isActive = 1), is never pruned, and is
+     * excluded from the AI example queries. See spec 2026-09-25-library-archive.
+     */
+    @Query("UPDATE messages SET isActive = :active WHERE id = :messageId")
+    suspend fun setActive(messageId: Long, active: Boolean)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(messages: List<Message>)
