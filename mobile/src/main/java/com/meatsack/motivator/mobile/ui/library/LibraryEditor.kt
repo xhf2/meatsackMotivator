@@ -29,9 +29,9 @@ import kotlinx.coroutines.launch
  * `putDataItem` resolves on local commit, so this is rare). Both carry the
  * full table, so the later snapshot wins; no serialisation is attempted here.
  *
- * Callers must invoke [voteUp]/[voteDown] from a single-threaded [scope]
- * (e.g. `viewModelScope` on Main, or a test dispatcher); [pendingSync] is not
- * synchronised.
+ * Callers must invoke the mutators ([voteUp], [voteDown], [archive], [unarchive], [delete])
+ * from a single-threaded [scope] (e.g. `viewModelScope` on Main, or a test dispatcher);
+ * [pendingSync] is not synchronised.
  */
 class LibraryEditor(
     private val store: LibraryStore,

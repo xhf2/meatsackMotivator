@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -34,6 +35,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -54,12 +56,18 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.meatsack.motivator.mobile.sync.PhoneSyncSender
 import com.meatsack.motivator.mobile.sync.SyncResult
 import com.meatsack.motivator.mobile.ui.theme.LocalThemeChoice
+import com.meatsack.motivator.mobile.ui.theme.MeatsackTheme
 import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
+import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.MessageSource
+import com.meatsack.shared.constants.MessageTone
+import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.model.Message
 import kotlinx.coroutines.launch
 
@@ -74,7 +82,10 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val listState = rememberLazyListState()
     val bubblegum = LocalThemeChoice.current == ThemeChoice.BUBBLEGUM
+
+    LaunchedEffect(filter) { listState.scrollToItem(0) }
 
     val onSync: () -> Unit = {
         scope.launch {
@@ -128,22 +139,43 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
                 Spacer(Modifier.height(12.dp))
             }
 
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                modifier = Modifier.weight(1f),
-            ) {
-                // Stable identity across inserts and prunes; display order itself is pinned by FrozenOrder.
-                items(messages, key = { it.id }) { message ->
-                    val actions = CardActions(
-                        state = LibraryFilters.stateOf(message),
-                        onVoteUp = { viewModel.voteUp(message.id) },
-                        onVoteDown = { viewModel.voteDown(message.id) },
-                        onArchive = { viewModel.archive(message.id) },
-                        onUnarchive = { viewModel.unarchive(message.id) },
-                        onDelete = { viewModel.delete(message.id) },
+            if (messages.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = emptyStateText(filter),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
                     )
-                    if (bubblegum) BubblegumPanel(message, actions) else InsultPanel(message, actions)
+                }
+            } else {
+                LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    // Stable identity across inserts and prunes; display order itself is pinned by FrozenOrder.
+                    items(messages, key = { it.id }) { message ->
+                        val actionsState = LibraryFilters.stateOf(message)
+                        val actions = remember(message.id, actionsState) {
+                            CardActions(
+                                state = actionsState,
+                                onVoteUp = { viewModel.voteUp(message.id) },
+                                onVoteDown = { viewModel.voteDown(message.id) },
+                                onArchive = { viewModel.archive(message.id) },
+                                onUnarchive = { viewModel.unarchive(message.id) },
+                                onDelete = { viewModel.delete(message.id) },
+                            )
+                        }
+                        if (bubblegum) BubblegumPanel(message, actions) else InsultPanel(message, actions)
+                    }
                 }
             }
         }
@@ -155,8 +187,16 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
     }
 }
 
+/** Prose shown in place of the list when the selected chip has no rows. */
+private fun emptyStateText(filter: LibraryFilter): String = when (filter) {
+    LibraryFilter.ACTIVE -> "No active insults. Restore some from Archived or press Generate in Settings."
+    LibraryFilter.ARCHIVED -> "Nothing archived yet. Tap Archive on a card to keep it out of rotation."
+    LibraryFilter.RETIRED -> "No retired insults. Three downvotes retire one."
+}
+
 /** Everything a card can do; which controls render depends on [state] (spec §Filter chips). */
-internal class CardActions(
+@Immutable
+internal data class CardActions(
     val state: LibraryFilter,
     val onVoteUp: () -> Unit,
     val onVoteDown: () -> Unit,
@@ -213,6 +253,7 @@ private fun CardActionRow(
                 SecondaryAction(archiveLabel, "Archive", MaterialTheme.colorScheme.onSurfaceVariant, actions.onArchive)
             LibraryFilter.RETIRED -> {
                 SecondaryAction(archiveLabel, "Archive", MaterialTheme.colorScheme.onSurfaceVariant, actions.onArchive)
+                Spacer(Modifier.width(12.dp))
                 SecondaryAction(deleteLabel, "Delete", MaterialTheme.colorScheme.error, actions.onDelete)
             }
             LibraryFilter.ARCHIVED ->
@@ -436,6 +477,13 @@ private fun InsultPanel(message: Message, actions: CardActions) {
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 CardActionRow(
                     message = message,
                     actions = actions,
@@ -566,6 +614,13 @@ private fun BubblegumPanel(message: Message, actions: CardActions) {
                 Spacer(Modifier.size(10.dp))
                 TriggerChip(message.triggerType.name)
                 Spacer(Modifier.weight(1f))
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 CardActionRow(
                     message = message,
                     actions = actions,
@@ -626,5 +681,84 @@ private fun rememberReduceMotion(): Boolean {
             Settings.Global.ANIMATOR_DURATION_SCALE,
             1f,
         ) == 0f
+    }
+}
+
+// ============================ previews ============================
+
+private const val PREVIEW_TEXT =
+    "You soft-bellied comfort addict. Ninety minutes. Your muscles scream; your excuses drown them out."
+
+private fun previewMessage(votesUp: Int, votesDown: Int, isActive: Boolean = true) = Message(
+    text = PREVIEW_TEXT,
+    level = EscalationLevel.SAVAGE,
+    triggerType = TriggerType.INACTIVITY,
+    tone = MessageTone.FULL_SEND,
+    source = MessageSource.PRE_WRITTEN,
+    votesUp = votesUp,
+    votesDown = votesDown,
+    isActive = isActive,
+)
+
+private fun previewActions(state: LibraryFilter) = CardActions(
+    state = state,
+    onVoteUp = {},
+    onVoteDown = {},
+    onArchive = {},
+    onUnarchive = {},
+    onDelete = {},
+)
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun PreviewVitalsActive() {
+    MeatsackTheme(choice = ThemeChoice.VITALS) {
+        InsultPanel(previewMessage(votesUp = 3, votesDown = 1), previewActions(LibraryFilter.ACTIVE))
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun PreviewVitalsArchived() {
+    MeatsackTheme(choice = ThemeChoice.VITALS) {
+        InsultPanel(
+            previewMessage(votesUp = 8, votesDown = 2, isActive = false),
+            previewActions(LibraryFilter.ARCHIVED),
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun PreviewVitalsRetired() {
+    MeatsackTheme(choice = ThemeChoice.VITALS) {
+        InsultPanel(previewMessage(votesUp = 0, votesDown = 3), previewActions(LibraryFilter.RETIRED))
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun PreviewBubblegumActive() {
+    MeatsackTheme(choice = ThemeChoice.BUBBLEGUM) {
+        BubblegumPanel(previewMessage(votesUp = 3, votesDown = 1), previewActions(LibraryFilter.ACTIVE))
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun PreviewBubblegumArchived() {
+    MeatsackTheme(choice = ThemeChoice.BUBBLEGUM) {
+        BubblegumPanel(
+            previewMessage(votesUp = 8, votesDown = 2, isActive = false),
+            previewActions(LibraryFilter.ARCHIVED),
+        )
+    }
+}
+
+@Preview(showBackground = true, widthDp = 360)
+@Composable
+private fun PreviewBubblegumRetired() {
+    MeatsackTheme(choice = ThemeChoice.BUBBLEGUM) {
+        BubblegumPanel(previewMessage(votesUp = 0, votesDown = 3), previewActions(LibraryFilter.RETIRED))
     }
 }
