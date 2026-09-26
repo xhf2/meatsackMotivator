@@ -102,7 +102,28 @@ class LibraryPrunerTest {
         assertTrue(ids.isEmpty())
     }
 
-    @Test fun archivedRows_doNotSatisfyFloor() {
+    @Test fun archivedRows_neverInflateSurplus_andAreNeverVictims() {
+        // 52 active over a cap of 50: surplus is 2, measured on active rows alone. If the
+        // 5 archived rows were counted, surplus would be 7 and archived ids could be picked.
+        val active = (1L..52L).map { msg(it) }
+        val archived = (101L..105L).map { msg(it, active = false) }
+        val ids = LibraryPruner.selectForDeletion(active + archived, cap = 50, floor = 0)
+        assertEquals(2, ids.size)
+        assertTrue(ids.all { it in 1L..52L })
+    }
+
+    @Test fun archivedRows_doNotHoldTheFloor() {
+        // 6 active 0/0 with cap 2 and floor 5, plus 6 archived. If archived rows counted as
+        // fireable survivors the floor would look met and 4 active rows would go. Measured on
+        // active rows only, the floor restores 3 of the 4 surplus rows: exactly 1 active deleted.
+        val active = (1L..6L).map { msg(it) }
+        val archived = (101L..106L).map { msg(it, active = false) }
+        val ids = LibraryPruner.selectForDeletion(active + archived, cap = 2, floor = 5)
+        assertEquals(1, ids.size)
+        assertTrue(ids.single() in 1L..6L)
+    }
+
+    @Test fun archivedRows_cannotBeRestoredByFloor_andRejectedRowsStillGo() {
         // 5 archived cannot hold the floor; the 3 rejected active rows are not fireable so
         // the floor guard cannot restore them either — they are deleted.
         val archived = (1L..5L).map { msg(it, active = false) }

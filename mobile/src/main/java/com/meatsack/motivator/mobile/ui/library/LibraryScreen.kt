@@ -65,6 +65,7 @@ import com.meatsack.motivator.mobile.ui.theme.LocalThemeChoice
 import com.meatsack.motivator.mobile.ui.theme.MeatsackTheme
 import com.meatsack.motivator.mobile.ui.theme.ThemeChoice
 import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.GenerationLimits.RETIRE_DOWNVOTES
 import com.meatsack.shared.constants.MessageSource
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
@@ -191,7 +192,7 @@ fun LibraryScreen(viewModel: LibraryViewModel = viewModel()) {
 private fun emptyStateText(filter: LibraryFilter): String = when (filter) {
     LibraryFilter.ACTIVE -> "No active insults. Restore some from Archived or press Generate in Settings."
     LibraryFilter.ARCHIVED -> "Nothing archived yet. Tap Archive on a card to keep it out of rotation."
-    LibraryFilter.RETIRED -> "No retired insults. Three downvotes retire one."
+    LibraryFilter.RETIRED -> "No retired insults. $RETIRE_DOWNVOTES downvotes retire one."
 }
 
 /** Everything a card can do; which controls render depends on [state] (spec §Filter chips). */
@@ -220,7 +221,7 @@ private fun SecondaryAction(text: String, onClickLabel: String, color: Color, on
 }
 
 /**
- * Per-state action row appended to a card's meta line:
+ * Per-state action row rendered on its own line beneath a card's meta row:
  *  ACTIVE   → votes + Archive
  *  RETIRED  → Archive + Delete (votes shown read-only: the third 👎 already retired it)
  *  ARCHIVED → Restore (votes shown read-only)

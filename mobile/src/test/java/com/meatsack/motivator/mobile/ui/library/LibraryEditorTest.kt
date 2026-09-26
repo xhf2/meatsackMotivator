@@ -24,6 +24,9 @@ class LibraryEditorTest {
         val deletes = mutableListOf<List<Long>>()
         var failNextWith: Throwable? = null
 
+        /** Interleaved order of writes (and, when a test's sync appends to it, syncs). */
+        val events = mutableListOf<String>()
+
         private fun maybeFail() {
             failNextWith?.let {
                 failNextWith = null
@@ -33,18 +36,22 @@ class LibraryEditorTest {
         override suspend fun voteUp(messageId: Long) {
             maybeFail()
             ups += messageId
+            events += "voteUp"
         }
         override suspend fun voteDown(messageId: Long) {
             maybeFail()
             downs += messageId
+            events += "voteDown"
         }
         override suspend fun setActive(messageId: Long, active: Boolean) {
             maybeFail()
             actives += messageId to active
+            events += "setActive"
         }
         override suspend fun deleteByIds(ids: List<Long>) {
             maybeFail()
             deletes += ids
+            events += "delete"
         }
     }
 
@@ -268,6 +275,64 @@ class LibraryEditorTest {
 
         assertEquals(listOf(listOf(3L, 4L)), store.deletes)
         assertEquals(1, sync.calls)
+    }
+
+    @Test
+    fun deleteInsideDebounceWindow_flushesPendingSyncBeforeDeleting() = runTest {
+        // Third downvote retires id 1, then the user deletes it from the Retired chip 500 ms
+        // later. The retire must reach the watch while the row is still in the payload;
+        // otherwise the watch (which never deletes) keeps a votesDown = 2 copy firing forever.
+        val store = FakeStore()
+        val results = mutableListOf<SyncResult>()
+        val sync: suspend () -> SyncResult = {
+            store.events += "sync"
+            SyncResult.Success(1)
+        }
+        val editor = LibraryEditor(store, sync, this, debounce) { results += it }
+
+        editor.voteDown(1L)
+        advanceTimeBy(500)
+        editor.delete(listOf(1L))
+        runCurrent()
+        assertEquals(
+            "flush must run the pending sync immediately, before the delete",
+            listOf("voteDown", "sync", "delete"),
+            store.events,
+        )
+
+        advanceUntilIdle()
+        assertEquals(listOf("voteDown", "sync", "delete", "sync"), store.events)
+        assertEquals(2, results.size)
+    }
+
+    @Test
+    fun deleteWithNoPendingSync_doesNotFlush_justSchedulesOne() = runTest {
+        val store = FakeStore()
+        val sync: suspend () -> SyncResult = {
+            store.events += "sync"
+            SyncResult.Success(1)
+        }
+        val editor = LibraryEditor(store, sync, this, debounce) {}
+
+        editor.voteDown(1L)
+        advanceUntilIdle() // timer elapsed: nothing pending any more
+        editor.delete(listOf(1L))
+        advanceUntilIdle()
+
+        assertEquals(listOf("voteDown", "sync", "delete", "sync"), store.events)
+    }
+
+    @Test
+    fun deleteWriteFailure_skipsSync() = runTest {
+        val store = FakeStore().apply { failNextWith = IllegalStateException("disk full") }
+        val sync = CountingSync()
+        val editor = LibraryEditor(store, sync.fn, this, debounce) {}
+
+        editor.delete(listOf(1L))
+        advanceUntilIdle()
+
+        assertTrue(store.deletes.isEmpty())
+        assertEquals(0, sync.calls)
     }
 
     @Test

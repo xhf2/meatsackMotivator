@@ -1,6 +1,7 @@
 package com.meatsack.motivator.mobile.ui.library
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.meatsack.motivator.mobile.sync.PhoneSyncSender
@@ -83,6 +84,20 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     fun delete(messageId: Long) = editor.delete(listOf(messageId))
 
     /** Bulk delete of every currently-retired row. The screen confirms before calling this. */
-    fun deleteAllRetired() =
-        editor.delete(LibraryFilters.apply(allMessages.value, LibraryFilter.RETIRED).map { it.id })
+    fun deleteAllRetired() {
+        // Snapshot at confirm time, not when the dialog opened. allMessages.value is live
+        // only because the screen is collecting messages/counts (WhileSubscribed).
+        val ids = LibraryFilters.retiredIds(allMessages.value)
+        if (ids.isEmpty()) {
+            // The bar only shows for N > 0, so reaching here means a concurrent Generate/prune
+            // removed the rows between the dialog opening and Delete. Nothing else logs it.
+            Log.w(TAG, "deleteAllRetired: no retired rows at confirm time")
+            return
+        }
+        editor.delete(ids)
+    }
+
+    private companion object {
+        const val TAG = "LibraryViewModel"
+    }
 }

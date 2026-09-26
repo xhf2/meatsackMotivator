@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.meatsack.shared.constants.EscalationLevel
+import com.meatsack.shared.constants.GenerationLimits.RETIRE_DOWNVOTES
 import com.meatsack.shared.constants.MessageTone
 import com.meatsack.shared.constants.TriggerType
 import com.meatsack.shared.model.Message
@@ -21,7 +22,7 @@ interface MessageDao {
         AND triggerType = :triggerType
         AND tone = :tone
         AND isActive = 1
-        AND votesDown < 3
+        AND votesDown < $RETIRE_DOWNVOTES
         AND lastShownTimestamp <= :cutoffTimestamp
         ORDER BY
             CASE WHEN votesUp = 0 AND votesDown = 0 THEN 0 ELSE 1 END,
@@ -54,8 +55,10 @@ interface MessageDao {
 
     /**
      * Archive (`false`) / unarchive (`true`). An inactive row never fires on the
-     * watch (getEligibleMessages requires isActive = 1), is never pruned, and is
-     * excluded from the AI example queries. See spec 2026-09-25-library-archive.
+     * watch ([getEligibleMessages] requires isActive = 1), is never pruned
+     * (`LibraryPruner` drops inactive rows before bucketing), and is excluded from
+     * the AI example queries ([getLovedTexts] / [getHatedTexts] both require
+     * isActive = 1). See docs/superpowers/specs/2026-09-25-library-archive-design.md.
      */
     @Query("UPDATE messages SET isActive = :active WHERE id = :messageId")
     suspend fun setActive(messageId: Long, active: Boolean)

@@ -24,44 +24,30 @@ class PhoneSyncSender(private val context: Context) {
 
     companion object {
         private const val TAG = "PhoneSyncSender"
-
-        /**
-         * Maximum messages pushed in a single DataItem. Sized to comfortably hold
-         * the bundled seed (the editable insults.json — a few dozen rows across
-         * INACTIVITY + BEHIND_PACE + END_OF_DAY) plus headroom for AI-generated
-         * growth, while staying well under Wear's ~100 KB DataItem limit
-         * (200 × ~200 chars × 2 bytes ≈ 80 KB).
-         *
-         * Was 50 in v1 when the seed had only 49 INACTIVITY rows; that ceiling
-         * silently truncated v2 seed rows on phones with no voted messages,
-         * meaning watch-side workers couldn't find BEHIND_PACE/END_OF_DAY
-         * messages and always fell back to the INACTIVITY pool.
-         */
-        private const val CACHE_SIZE = 200
     }
 
     suspend fun syncMessagesToWatch(): SyncResult {
-        val db = AppDatabase.getDatabase(context)
-        // Send every row, including votesDown >= 3 (retired) and isActive = 0
-        // (archived). The watch's getEligibleMessages() hides both, so sending
-        // them can't make them fire — but omitting them means a phone-side
-        // retire/archive never reaches the watch, whose stale copy would keep
-        // firing. Rows the user has rated down tend to sort last (getAllMessages
-        // orders by net score DESC), so they are the most likely to fall off
-        // CACHE_SIZE.
-        val messages = db.messageDao().getAllMessages()
-            .take(CACHE_SIZE)
-
-        if (messages.isEmpty()) {
-            Log.d(TAG, "No messages to sync")
-            return SyncResult.NoMessages
-        }
-
-        // serialize() is inside the try: MessageSerializer.require()s text within limits
-        // and free of the '|'/newline separators, throwing IllegalArgumentException on a
-        // bad message. Building the request here (not before the try) means one malformed
-        // message yields SyncResult.Failed for the UI to report — not an app crash.
+        // Everything — the Room read included — sits inside the try so that every failure
+        // becomes SyncResult.Failed for the UI to report rather than an app crash. The
+        // manual Sync button launches this from rememberCoroutineScope() with no catch of
+        // its own, and MessageSerializer.require()s text within limits and free of the
+        // '|'/newline separators, throwing IllegalArgumentException on a bad message.
         return try {
+            val all = AppDatabase.getDatabase(context).messageDao().getAllMessages()
+            val (messages, dropped) = SyncPayload.select(all)
+
+            if (messages.isEmpty()) {
+                Log.d(TAG, "No messages to sync")
+                return SyncResult.NoMessages
+            }
+            if (dropped > 0) {
+                Log.w(
+                    TAG,
+                    "Library has ${all.size} rows; only ${SyncPayload.CACHE_SIZE} sent. " +
+                        "$dropped lowest-scored fireable rows will not reach the watch until the library shrinks",
+                )
+            }
+
             val request = PutDataMapRequest.create(SyncChannel.PATH_MESSAGES).apply {
                 dataMap.putString(SyncChannel.KEY_MESSAGE_DATA, MessageSerializer.serialize(messages))
                 dataMap.putLong(SyncChannel.KEY_TIMESTAMP, System.currentTimeMillis())

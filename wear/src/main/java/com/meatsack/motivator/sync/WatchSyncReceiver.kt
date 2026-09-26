@@ -18,7 +18,7 @@ class WatchSyncReceiver : WearableListenerService() {
         private const val TAG = "WatchSyncReceiver"
 
         // Hard ceiling to bound the blast radius of a malformed or hostile payload.
-        // The phone sends at most PhoneSyncSender.CACHE_SIZE (200) rows per DataItem;
+        // The phone sends at most SyncPayload.CACHE_SIZE (200) rows per DataItem;
         // 500 is 2.5x headroom. Must stay below 999: MessageDao.getShownTimestamps binds
         // one SQL variable per id, and that is SQLite's limit on API 30 watches.
         private const val MAX_INCOMING_MESSAGES = 500

@@ -14,7 +14,7 @@ interface LibraryStore {
     suspend fun voteUp(messageId: Long)
     suspend fun voteDown(messageId: Long)
 
-    /** Archive (`false`) / unarchive (`true`). See spec 2026-09-25-library-archive. */
+    /** Archive (`false`) / unarchive (`true`). See docs/superpowers/specs/2026-09-25-library-archive-design.md. */
     suspend fun setActive(messageId: Long, active: Boolean)
 
     /** Hard delete on the phone only; the watch never deletes rows. */

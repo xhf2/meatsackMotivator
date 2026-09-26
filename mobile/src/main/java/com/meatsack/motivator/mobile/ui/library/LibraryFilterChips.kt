@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.meatsack.shared.constants.GenerationLimits.RETIRE_DOWNVOTES
 
 /** Display labels shared by both themes; Vitals upper-cases them. */
 private fun LibraryFilter.label(): String = when (this) {
@@ -80,8 +81,9 @@ internal fun LibraryFilterChips(
 }
 
 /**
- * "Delete all retired (N)" bar shown only on the Retired chip when N > 0. Bulk and
- * permanent, so it confirms via AlertDialog before calling [onConfirmed].
+ * "Delete all retired (N)" bar. Callers show it only on the Retired chip when N > 0
+ * (see LibraryScreen). Bulk and permanent, so it confirms via AlertDialog before
+ * calling [onConfirmed].
  */
 @Composable
 internal fun DeleteAllRetiredBar(
@@ -112,7 +114,7 @@ internal fun DeleteAllRetiredBar(
         AlertDialog(
             onDismissRequest = { confirming = false },
             title = { Text("Delete $count retired insults?") },
-            text = { Text("They can never fire again (3+ downvotes). This removes them from the phone permanently. Archive any you want to keep first.") },
+            text = { Text("They can never fire again ($RETIRE_DOWNVOTES+ downvotes). This removes them from the phone permanently. Archive any you want to keep first.") },
             confirmButton = {
                 TextButton(onClick = {
                     confirming = false

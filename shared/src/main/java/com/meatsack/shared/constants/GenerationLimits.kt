@@ -18,6 +18,14 @@ object GenerationLimits {
     /** Soft max messages kept per (level, tone, trigger) bucket; surplus non-loved rows are pruned. */
     const val BUCKET_CAP = 50
 
-    /** Min fireable (votesDown < 3) rows kept per bucket; pruning never drops below this. */
+    /** Min fireable (votesDown < [RETIRE_DOWNVOTES]) rows kept per bucket; pruning never drops below this. */
     const val BUCKET_FLOOR = 5
+
+    /**
+     * Downvotes at which a message is retired: it can never fire again (the watch's
+     * eligibility query excludes it), the pruner deletes it unless loved, and the phone
+     * Library lists it under the Retired chip. The one place this number lives; the
+     * Room query in `MessageDao.getEligibleMessages` interpolates it at compile time.
+     */
+    const val RETIRE_DOWNVOTES = 3
 }

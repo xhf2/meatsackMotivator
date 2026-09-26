@@ -1,5 +1,6 @@
 package com.meatsack.shared.retention
 
+import com.meatsack.shared.constants.GenerationLimits.RETIRE_DOWNVOTES
 import com.meatsack.shared.model.Message
 
 /**
@@ -11,9 +12,9 @@ import com.meatsack.shared.model.Message
  *  - archived rows (isActive = false) are ignored entirely: never deleted, not counted toward
  *    the cap, not counted as fireable for the floor (spec 2026-09-25-library-archive).
  *  - loved (votesUp > votesDown) rows are permanent (never returned).
- *  - non-loved rows with votesDown >= 3 (rejected) are always deleted.
+ *  - non-loved rows with votesDown >= [RETIRE_DOWNVOTES] (rejected) are always deleted.
  *  - when the bucket exceeds [cap], the lowest-net non-loved rows are deleted down to the cap.
- *  - the floor guard then restores the highest-net *fireable* (votesDown < 3) marked rows so at
+ *  - the floor guard then restores the highest-net *fireable* (votesDown < [RETIRE_DOWNVOTES]) marked rows so at
  *    least [floor] fireable rows survive. Rejected rows are not fireable, so they are never
  *    restored — which is why an all-rejected bucket empties (it could not fire anyway).
  */
@@ -31,7 +32,7 @@ object LibraryPruner {
             val marked = LinkedHashSet<Long>()
 
             // Rule: rejected non-loved rows.
-            bucket.filter { it.id !in loved && it.votesDown >= 3 }.forEach { marked += it.id }
+            bucket.filter { it.id !in loved && it.votesDown >= RETIRE_DOWNVOTES }.forEach { marked += it.id }
 
             // Rule: surplus over cap — delete lowest-net non-loved until bucket size <= cap.
             var remaining = bucket.size - marked.size
@@ -44,12 +45,12 @@ object LibraryPruner {
                     .forEach { marked += it.id }
             }
 
-            // Floor guard: keep >= floor fireable (votesDown < 3) survivors.
-            val fireableSurvivors = bucket.count { it.id !in marked && it.votesDown < 3 }
+            // Floor guard: keep >= floor fireable (votesDown < RETIRE_DOWNVOTES) survivors.
+            val fireableSurvivors = bucket.count { it.id !in marked && it.votesDown < RETIRE_DOWNVOTES }
             if (fireableSurvivors < floor) {
                 val needed = floor - fireableSurvivors
                 bucket.asSequence()
-                    .filter { it.id in marked && it.votesDown < 3 }
+                    .filter { it.id in marked && it.votesDown < RETIRE_DOWNVOTES }
                     .sortedByDescending { it.votesUp - it.votesDown } // keep best first
                     .take(needed)
                     .forEach { marked -= it.id }

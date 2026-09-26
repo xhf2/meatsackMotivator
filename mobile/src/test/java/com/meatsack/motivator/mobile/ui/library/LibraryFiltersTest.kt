@@ -50,4 +50,11 @@ class LibraryFiltersTest {
             LibraryFilters.counts(emptyList()),
         )
     }
+
+    @Test fun retiredIds_includesLovedButRetired_excludesArchivedAndActive() {
+        // The dialog promises to delete every "3+ downvotes" row, loved ones included;
+        // archived rows with 3+ downvotes are the user's keep-pile and must stay.
+        val rows = listOf(msg(1), msg(2, down = 3), msg(3, down = 9, up = 20), msg(4, down = 5, active = false))
+        assertEquals(listOf(2L, 3L), LibraryFilters.retiredIds(rows))
+    }
 }
