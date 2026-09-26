@@ -275,4 +275,27 @@ class MessageDaoTest {
         assertEquals("brand new", row.text)
         assertEquals(0L, row.lastShownTimestamp)
     }
+
+    @Test
+    fun setActive_false_hidesFromEligible_andTrueRestores() = runBlocking {
+        dao.insertAll(listOf(testMessage("archive me").copy(id = 5)))
+        val eligible = {
+            runBlocking {
+                dao.getEligibleMessages(
+                    EscalationLevel.AGGRESSIVE,
+                    TriggerType.INACTIVITY,
+                    MessageTone.FULL_SEND,
+                    cutoffTimestamp = 0,
+                ).map { it.id }
+            }
+        }
+        assertEquals(listOf(5L), eligible())
+
+        dao.setActive(5, active = false)
+        assertTrue(eligible().isEmpty())
+        assertEquals(false, dao.getAllMessages().single().isActive)
+
+        dao.setActive(5, active = true)
+        assertEquals(listOf(5L), eligible())
+    }
 }

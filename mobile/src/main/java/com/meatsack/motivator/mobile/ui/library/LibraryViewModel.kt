@@ -1,6 +1,7 @@
 package com.meatsack.motivator.mobile.ui.library
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.meatsack.motivator.mobile.sync.PhoneSyncSender
@@ -10,9 +11,11 @@ import com.meatsack.shared.model.Message
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
@@ -20,12 +23,31 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     private val dao = AppDatabase.getDatabase(application).messageDao()
     private val order = FrozenOrder()
 
-    val messages: StateFlow<List<Message>> = dao.getAllMessagesFlow()
+    /** Every row, in frozen display order. Single Room observer; everything else derives from it. */
+    private val allMessages: StateFlow<List<Message>> = dao.getAllMessagesFlow()
         .map { order.apply(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val _filter = MutableStateFlow(LibraryFilter.ACTIVE)
+
+    /** Selected chip. Screen state only: resets to ACTIVE when the ViewModel is recreated. */
+    val filter: StateFlow<LibraryFilter> = _filter
+
+    val counts: StateFlow<Map<LibraryFilter, Int>> = allMessages
+        .map { LibraryFilters.counts(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryFilters.counts(emptyList()))
+
+    /** Rows for the selected chip. Filter is applied *after* FrozenOrder so chips never reorder. */
+    val messages: StateFlow<List<Message>> = combine(allMessages, _filter) { all, f ->
+        LibraryFilters.apply(all, f)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun setFilter(f: LibraryFilter) {
+        _filter.value = f
+    }
+
     /**
-     * One emission per completed debounced auto-sync after a phone vote. The screen
+     * One emission per completed debounced auto-sync after a phone mutation. The screen
      * surfaces only [SyncResult.Failed]; successes are silent.
      *
      * replay = 1 + DROP_OLDEST so the latest result survives until a collector sees
@@ -45,7 +67,7 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     fun consumeAutoSyncResult() = _autoSyncResults.resetReplayCache()
 
     private val editor = LibraryEditor(
-        store = RoomVoteStore(dao),
+        store = RoomLibraryStore(dao),
         sync = { PhoneSyncSender(application).syncMessagesToWatch() },
         scope = viewModelScope,
         onSyncResult = { _autoSyncResults.tryEmit(it) },
@@ -54,4 +76,28 @@ class LibraryViewModel(application: Application) : AndroidViewModel(application)
     fun voteUp(messageId: Long) = editor.voteUp(messageId)
 
     fun voteDown(messageId: Long) = editor.voteDown(messageId)
+
+    fun archive(messageId: Long) = editor.archive(messageId)
+
+    fun unarchive(messageId: Long) = editor.unarchive(messageId)
+
+    fun delete(messageId: Long) = editor.delete(listOf(messageId))
+
+    /** Bulk delete of every currently-retired row. The screen confirms before calling this. */
+    fun deleteAllRetired() {
+        // Snapshot at confirm time, not when the dialog opened. allMessages.value is live
+        // only because the screen is collecting messages/counts (WhileSubscribed).
+        val ids = LibraryFilters.retiredIds(allMessages.value)
+        if (ids.isEmpty()) {
+            // The bar only shows for N > 0, so reaching here means a concurrent Generate/prune
+            // removed the rows between the dialog opening and Delete. Nothing else logs it.
+            Log.w(TAG, "deleteAllRetired: no retired rows at confirm time")
+            return
+        }
+        editor.delete(ids)
+    }
+
+    private companion object {
+        const val TAG = "LibraryViewModel"
+    }
 }
